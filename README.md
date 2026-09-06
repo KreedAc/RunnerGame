@@ -25,15 +25,20 @@ Per una copia che si apre con doppio click, senza server:
 ## Una partita
 
 **Menù.** È l'unica schermata fuori dalla corsa: torre corrente, portafoglio,
-record e tre potenziamenti permanenti (Potenza iniziale, Arma di partenza,
-Oro). A fine partita ci si torna direttamente, con il riepilogo al posto della
-storia. Salvataggio in `localStorage`.
+record e tre potenziamenti permanenti. **POTENZA** (`×1.10` per livello) e
+**ORO** (`×1.08`) sono moltiplicatori composti: non finiscono mai di servire.
+**ARMA** è la tacca di partenza, e apre corsie invece di moltiplicare il
+bottino. A fine partita ci si torna direttamente, con il riepilogo al posto
+della storia. Salvataggio in `localStorage`.
 
-**Prima metà — accumuli.** Tre corsie, una riga di scelte ogni 30 blocchi:
+**Prima metà — accumuli.** Tre corsie, una riga di scelte ogni 30 blocchi. I
+numeri delle colonne sono tarati sulla **torre**, non sulla tua arma: il colpo
+di ogni arma è anch'esso un multiplo dello stesso passo, quindi un'arma
+migliore apre corsie che prima erano rosse.
 
 | | |
 |---|---|
-| 🟢 **Torre verde** | Il numero è sotto al tuo colpo: la spacchi e prendi `numero × 3` di potenza |
+| 🟢 **Torre verde** | Il numero è sotto al tuo colpo: la spacchi e prendi `numero × 3 × POTENZA` |
 | 🔴 **Torre rossa** | Troppo dura: se la prendi perdi il 14% della potenza. Schivala |
 | 👹 **Nemico** | Due o tre a partita. Lo abbatti per l'oro, oppure ti costa il 22% |
 | ⚔️ **Arma a terra** | L'oggetto vero — randello, ascia, spada, martello, lama rúnica — che galleggia sulla corsia: la raccogli e sostituisce la tua |
@@ -47,8 +52,9 @@ fra te e la torre. Ognuno costa la sua cifra di potenza, i costi crescono, e
 nella stessa riga i tre blocchi costano diverso: si sceglie ancora la corsia.
 Se la potenza finisce prima, il muro ti ferma.
 
-**La rinascita.** I potenziamenti crescono col logaritmo del denaro, le torri
-crescono del 62% l'una: prima o poi ci si ferma. Allora si rinasce — si torna
+**La rinascita.** Ogni torre chiede il 34% in più della precedente mentre i
+potenziamenti crescono col logaritmo del denaro: prima o poi ogni torre costa
+qualche corsa in più. Allora si rinasce — si torna
 alla Torre 1 con i potenziamenti azzerati, ma ogni **runa** guadagnata vale
 `+25%` su potenza e oro **per sempre**. Le rune si sommano fra una rinascita e
 l'altra: è l'unica strada per arrivare più in là.
@@ -60,7 +66,8 @@ regole restano identiche.
 **Il boss.** Sfondati tutti e trenta, ai piedi della torre ti aspetta il
 carceriere. Quello che ti resta è la forza con cui lo affronti: i due numeri
 scendono insieme, chi arriva a zero cade. Se vinci, la camera sale sul
-balcone e la principessa è libera — torre successiva, più dura.
+balcone e la principessa è libera — torre successiva, più dura e più veloce
+(la corsa accelera da 15 a 21 con le torri; solo il muro resta al suo ritmo).
 
 **I cartelli.** Piantati di traverso al muro segnano dove sei arrivato: uno
 azzurro sull'ultima corsa, uno dorato sul record.
@@ -82,8 +89,9 @@ tools/build-single.sh genera la demo a file singolo
 ```
 
 Tutto il tuning sta in cima a `core.js`: `CFG` (30 blocchi del muro, velocità,
-corsie), `C` (palette), `WEAPONS`, `BUFFS`, `UPGRADES` e le tre formule
-`towerNeed / wallBudget / bossHealth`.
+corsie), `C` (palette), `WEAPONS`, `BUFFS`, `UPGRADES` e le formule
+`towerNeed / wallBudget / bossHealth / trackUnit`. La manopola della difficoltà
+è `LEVEL_GAP`: quanto ogni torre chiede in più della precedente.
 In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.need`.
 
 ## Stato

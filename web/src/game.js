@@ -50,11 +50,17 @@ const run = {
   bossHp: 0, clash: 0,
   outcome: '',             // 'wall' | 'boss' | 'win'
   beatRecord: false,
-  swing: 0
+  swing: 0,
+  unit: 1,                 // il passo della torre in corso (vedi trackUnit)
+  speed: CFG.speed
 };
 
-const damage  = () => Math.round(WEAPONS[run.weapon].dmg * (1 + run.buffs.rate * BUFFS.rate.step));
-const gainMul = () => (1 + run.buffs.gain * BUFFS.gain.step) * runeMul(meta.runes);
+/* Il colpo è un multiplo del passo della torre, come le colonne che deve
+   rompere: è il rapporto fra i due numeri a decidere cosa si spacca. */
+const damage  = () => Math.round(WEAPONS[run.weapon].hit * run.unit *
+                                 (1 + run.buffs.rate * BUFFS.rate.step));
+const gainMul = () => UPGRADES.power.value(meta.up.power) *
+                     (1 + run.buffs.gain * BUFFS.gain.step) * runeMul(meta.runes);
 const coinMul = () => UPGRADES.income.value(meta.up.income) *
                      (1 + run.buffs.income * BUFFS.income.step) * runeMul(meta.runes);
 
@@ -192,7 +198,7 @@ function spawnWallBlock(x, z, cost, chest) {
 /* Cartello di traverso: dove sei arrivato l'ultima volta, e il record. */
 function buildMarker(depth, label, color) {
   if (depth < 1 || depth >= CFG.wallRows) return null;
-  const z = wallStartZ - (depth - 0.5) * CFG.wallGap;
+  const z = wallStartZ - (depth - 0.5) * wallGap;
   const g = new THREE.Group();
   g.position.set(0, 0, z);
   const w = CFG.trackWidth + 2;
@@ -216,6 +222,12 @@ function buildMarker(depth, label, color) {
 
 /* ---------------------------- GENERAZIONE ------------------------------ */
 let rows = 0, wallStartZ = 0, towerZ = 0, bossZ = 0, levelLen = 0;
+/* Le torri alte si corrono più in fretta, ma il muro no: i blocchi si
+   distanziano insieme alla velocità, così il tempo per scegliere la
+   corsia resta lo stesso. Senza questo, dalla nona torre in poi non si
+   farebbe in tempo a raggiungere il blocco più economico e il muro
+   diventerebbe una lotteria di riflessi. */
+let wallGap = CFG.wallGap;
 let tower = null, boss = null, bossSprite = null, heroSprite = null;
 
 function buildRun() {
@@ -225,17 +237,20 @@ function buildRun() {
   items.length = 0;
   tower = null; boss = null; bossSprite = null; heroSprite = null;
 
-  rows = Math.min(20, 10 + meta.level);
+  rows = trackRows(meta.level);
+  run.unit  = trackUnit(meta.level);   // il passo di QUESTA torre
+  run.speed = speedFor(meta.level);
+  wallGap   = CFG.wallGap * run.speed / CFG.speed;
+  const unit = run.unit;
   let z = CFG.firstRowZ;
   let refTier = meta.up.weapon;
 
   for (let i = 0; i < rows; i++) {
-    const dmg = WEAPONS[refTier].dmg;
     const lanes = shuffle([0, 1, 2]);
     const weaponRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
 
     // corsia 1: la torre alla tua portata — il guadagno
-    const easyHp = Math.max(1, Math.round(dmg * rnd(0.55, 0.95)));
+    const easyHp = Math.max(1, Math.round(unit * rnd(0.55, 0.95)));
     items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false },
                              spawnPillar(CFG.laneX[lanes[0]], z, easyHp)));
 
@@ -245,18 +260,18 @@ function buildRun() {
                                spawnWeaponPickup(CFG.laneX[lanes[1]], z, refTier + 1)));
       refTier++;
     } else if (Math.random() < 0.32) {
-      const hp = Math.max(1, Math.round(dmg * rnd(0.6, 1.7)));
+      const hp = Math.max(1, Math.round(unit * rnd(0.6, 1.7)));
       items.push(Object.assign({ kind: 'enemy', z, x: CFG.laneX[lanes[1]], hp, done: false },
                                spawnEnemy(CFG.laneX[lanes[1]], z, hp, pick(ENEMY_KINDS))));
     } else {
-      const hardHp = Math.round(dmg * rnd(1.4, 2.6));
+      const hardHp = Math.round(unit * rnd(1.4, 2.6));
       items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false },
                                spawnPillar(CFG.laneX[lanes[1]], z, hardHp)));
     }
 
     // corsia 3: spesso libera — è la via di fuga
     if (Math.random() < 0.45) {
-      const hardHp = Math.round(dmg * rnd(1.3, 2.4));
+      const hardHp = Math.round(unit * rnd(1.3, 2.4));
       items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
                                spawnPillar(CFG.laneX[lanes[2]], z, hardHp)));
     }
@@ -291,7 +306,7 @@ function buildRun() {
   for (let i = 0; i < CFG.wallRows; i++) sumW += 1 + i * 0.10;
 
   for (let i = 0; i < CFG.wallRows; i++) {
-    const wz = wallStartZ - i * CFG.wallGap;
+    const wz = wallStartZ - i * wallGap;
     const cheap = Math.max(1, Math.round(budget * (1 + i * 0.10) / sumW));
     const costs = shuffle([cheap, Math.round(cheap * 1.6), Math.round(cheap * 2.3)]);
     for (let l = 0; l < 3; l++) {
@@ -302,12 +317,12 @@ function buildRun() {
     }
   }
 
-  towerZ = wallStartZ - CFG.wallRows * CFG.wallGap - CFG.towerGap;
+  towerZ = wallStartZ - CFG.wallRows * wallGap - CFG.towerGap;
   bossZ  = towerZ + 11;
   levelLen = Math.abs(towerZ) + 60;
 
   buildWorld(levelLen);
-  buildFinishLine(wallStartZ + CFG.wallGap);
+  buildFinishLine(wallStartZ + wallGap);
 
   if (meta.last && meta.last !== meta.best) buildMarker(meta.last, 'ULTIMA ' + meta.last, 0x2f7de0);
   buildMarker(meta.best, 'RECORD ' + meta.best, 0xe0a51a);
@@ -473,7 +488,7 @@ function updateBossFight(dt) {
   // corsa fino a sotto la torre, poi lo scontro
   const stopZ = bossZ + 7;
   if (run.z > stopZ) {
-    run.z -= CFG.speed * dt;
+    run.z -= run.speed * dt;
     run.x = lerp(run.x, 0, 1 - Math.pow(0.004, dt));
     return;
   }
@@ -504,7 +519,7 @@ let runT = 0;
 const clock = new THREE.Clock();
 
 function startRun() {
-  run.power  = UPGRADES.power.value(meta.up.power);
+  run.power  = START_POWER;      // POTENZA adesso moltiplica quello che raccogli
   run.weapon = meta.up.weapon;
   run.coins = 0; run.gems = 0; run.broken = 0; run.swing = 0;
   run.beatRecord = false; run.outcome = '';
@@ -532,8 +547,10 @@ function endRun(outcome) {
   run.outcome = outcome;
 
   const record = run.broken > meta.best;
+  /* Il premio della vittoria era 200×torre: da solo pagava i potenziamenti
+     della torre successiva, che cadeva al primo tentativo. */
   const total  = run.coins + Math.round(run.broken * 6 * coinMul())
-               + (outcome === 'win' ? Math.round(200 * meta.level * coinMul()) : 0);
+               + (outcome === 'win' ? Math.round(90 * meta.level * coinMul()) : 0);
 
   meta.coins += total;
   meta.gems  += run.gems;
@@ -622,7 +639,7 @@ function nearestLaneX() {
 function update(dt) {
   if (steering()) {
     runT += dt;
-    run.z -= CFG.speed * dt;
+    run.z -= run.speed * dt;
     run.x = lerp(run.x, run.targetX, 1 - Math.pow(0.0015, dt));
 
     const lane = nearestLaneX();
@@ -640,7 +657,7 @@ function update(dt) {
       if (!steering()) break;
     }
 
-    if (state === 'run' && run.z <= wallStartZ + CFG.wallGap) state = 'wall';
+    if (state === 'run' && run.z <= wallStartZ + wallGap) state = 'wall';
     /* Se per qualsiasi motivo si arriva ai piedi della torre senza aver
        consumato il muro, lo scontro parte comunque: nessuna corsa deve
        poter oltrepassare il boss senza affrontarlo. */

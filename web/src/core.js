@@ -7,7 +7,9 @@ const CFG = {
   trackWidth : 8,
   laneX      : [-2.4, 0, 2.4],   // tre corsie: la scelta di ogni riga
   laneLimit  : 2.7,
-  speed      : 15,               // unità/sec
+  speed      : 15,               // unità/sec alla prima torre
+  speedStep  : 0.7,              // quanto accelera ad ogni torre...
+  speedMax   : 21,               // ...fino a qui
   rowSpacing : 30,
   firstRowZ  : -42,
   runOut     : 46,               // dall'ultima riga al muro della torre
@@ -82,16 +84,19 @@ const THEMES = [
 
 const themeFor = lvl => THEMES[(lvl - 1) % THEMES.length];
 
-/* Armi: il danno di un colpo. Decide cosa riesci a rompere.
+/* Armi. `hit` non è un danno assoluto ma un multiplo del passo della
+   torre (vedi trackUnit): l'ascia vale sempre 1.6 colonne facili, sia
+   alla prima torre che alla ventesima. Così un'arma migliore apre corsie
+   — che è il suo mestiere — invece di moltiplicare il bottino.
    `shape` conta quanto il danno: l'arma sta a terra da raccogliere e si
    deve riconoscere a colpo d'occhio quale stai per prendere. */
 const WEAPONS = [
-  { name: 'Pugni',     dmg: 3,   shape: null,     handle: null,     blade: null,     len: 0    },
-  { name: 'Randello',  dmg: 7,   shape: 'club',   handle: 0x8a6a3a, blade: 0x6b4a35, len: 0.85 },
-  { name: 'Ascia',     dmg: 15,  shape: 'axe',    handle: 0x8a6a3a, blade: 0xb9c6d2, len: 1.0  },
-  { name: 'Spada',     dmg: 30,  shape: 'sword',  handle: 0x8a6a3a, blade: 0xdfe8f2, len: 1.2  },
-  { name: 'Martello',  dmg: 58,  shape: 'hammer', handle: 0x8a6a3a, blade: 0xffc93c, len: 1.15 },
-  { name: 'Lama Rúna', dmg: 110, shape: 'sword',  handle: 0x3a2a4a, blade: 0x69e8ff, len: 1.35 }
+  { name: 'Pugni',     hit: 0.85, shape: null,     handle: null,     blade: null,     len: 0    },
+  { name: 'Randello',  hit: 1.20, shape: 'club',   handle: 0x8a6a3a, blade: 0x6b4a35, len: 0.85 },
+  { name: 'Ascia',     hit: 1.60, shape: 'axe',    handle: 0x8a6a3a, blade: 0xb9c6d2, len: 1.0  },
+  { name: 'Spada',     hit: 2.10, shape: 'sword',  handle: 0x8a6a3a, blade: 0xdfe8f2, len: 1.2  },
+  { name: 'Martello',  hit: 2.70, shape: 'hammer', handle: 0x8a6a3a, blade: 0xffc93c, len: 1.15 },
+  { name: 'Lama Rúna', hit: 3.50, shape: 'sword',  handle: 0x3a2a4a, blade: 0x69e8ff, len: 1.35 }
 ];
 
 /* Bonus raccolti lungo la pista: valgono solo per la partita in corso. */
@@ -101,22 +106,57 @@ const BUFFS = {
   gain  : { name: 'Potenza',  icon: '⚡', step: 0.25, color: '#7cc9ff' }
 };
 
-/* Potenziamenti permanenti, comprati nel menù (azzerati dalla rinascita) */
+/* Potenziamenti permanenti, comprati nel menù (azzerati dalla rinascita).
+   POTENZA e ORO sono moltiplicatori composti: +10% e +8% ad ogni livello,
+   per sempre. Erano somme fisse (20 + 14×liv), e a partire dalla quinta
+   torre valevano meno di un arrotondamento — l'unica cosa che contava era
+   l'ARMA, che però finisce a sei tacche. Da lì il gioco moriva. */
 const UPGRADES = {
-  power : { name: 'POTENZA',  base: 45,  mult: 1.52, max: 60, value: l => 20 + l * 14 },
-  weapon: { name: 'ARMA',     base: 150, mult: 2.20, max: WEAPONS.length - 1, value: l => l },
-  income: { name: 'ORO',      base: 70,  mult: 1.58, max: 60, value: l => 1 + l * 0.15 }
+  power : { name: 'POTENZA',  base: 55,  mult: 1.34, max: 300, value: l => Math.pow(1.10, l) },
+  weapon: { name: 'ARMA',     base: 420, mult: 3.00, max: WEAPONS.length - 1, value: l => l },
+  income: { name: 'ORO',      base: 90,  mult: 1.34, max: 300, value: l => Math.pow(1.08, l) }
 };
 
 const upgradeCost = (key, level) =>
   Math.round(UPGRADES[key].base * Math.pow(UPGRADES[key].mult, level));
 
+/* La potenza con cui si parte: un fondo di magazzino, tutto il resto si
+   raccoglie correndo. */
+const START_POWER = 30;
+
 /* Quanta potenza serve per liberare la principessa della torre N.
-   Il 55% se ne va nel muro, il 45% resta da spendere contro il boss:
+   Il 62% se ne va nel muro, il 38% resta da spendere contro il boss:
    arrivare non basta, bisogna arrivarci con qualcosa in mano. */
 const towerNeed  = lvl => Math.round(430 * Math.pow(1.62, lvl - 1));
-const wallBudget = lvl => Math.round(towerNeed(lvl) * 0.55);
-const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.45);
+const wallBudget = lvl => Math.round(towerNeed(lvl) * 0.62);
+const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.38);
+
+/* ---------------------------- IL PASSO DELLA PISTA --------------------
+   Prima le colonne erano tarate sull'arma del giocatore: comprare
+   un'arma raddoppiava sia quello che potevi rompere sia quello che
+   valeva. Ogni tacca d'arma regalava una torre e mezza, e le torri 2-5
+   cadevano al primo tentativo.
+
+   Adesso le colonne sono tarate sulla TORRE. `trackUnit` è il numero da
+   cui discendono tutti gli altri: la colonna facile vale 0,55-0,95 unità,
+   quelle dure 1,3-2,6. L'arma decide quante corsie riesci ad aprire — al
+   massimo il doppio di bottino, non il doppio per tacca — e il resto lo
+   fanno i potenziamenti.
+
+   BASE_SHARE: quanto copre una corsa nuda alla prima torre.
+   LEVEL_GAP : quanto in più chiede ogni torre rispetto alla precedente,
+               al netto di quello che la pista dà da sola. È questa la
+               manopola della difficoltà. */
+const BASE_SHARE = 0.55;
+const LEVEL_GAP  = 1.34;
+const trackRows  = lvl => Math.min(20, 10 + lvl);
+const trackUnit  = lvl => towerNeed(lvl) * BASE_SHARE /
+                          (trackRows(lvl) * 3 * 0.75 * Math.pow(LEVEL_GAP, lvl - 1));
+
+/* Le torri alte si corrono anche più in fretta: meno tempo per decidere
+   la corsia. Sale piano e si ferma, altrimenti il muro diventa una
+   lotteria di riflessi. */
+const speedFor = lvl => Math.min(CFG.speedMax, CFG.speed + (lvl - 1) * CFG.speedStep);
 
 /* -------------------------------- RINASCITA ---------------------------
    I potenziamenti crescono in modo logaritmico col denaro, le torri in

@@ -16,14 +16,16 @@ potenza consumata dal muro è la stessa che serve contro il boss, quindi
 sfondare al limite significa presentarsi a mani vuote. Il potenziamento smette
 di essere "un numero più grande" e diventa "il margine per il boss".
 
-## 2. Le tre formule
+## 2. Le formule
 
-Tutto il bilanciamento di una torre sta in tre righe di `core.js`:
+Tutto il bilanciamento di una torre sta in poche righe di `core.js`:
 
 ```
 towerNeed(n)  = 430 × 1.62^(n-1)     quanta potenza serve in tutto
-wallBudget(n) = towerNeed × 0.55     quanto se ne va nel muro
-bossHealth(n) = towerNeed × 0.45     quanto ne resta da spendere
+wallBudget(n) = towerNeed × 0.62     quanto se ne va nel muro
+bossHealth(n) = towerNeed × 0.38     quanto ne resta da spendere
+
+trackUnit(n)  = towerNeed × 0.55 / (righe × 3 × 0.75 × 1.34^(n-1))
 ```
 
 `wallBudget` è il costo del percorso **migliore** attraverso il muro: i costi
@@ -31,15 +33,66 @@ delle trenta righe sono normalizzati perché la somma delle scelte ottime faccia
 esattamente quella cifra. Giocare male costa di più — nella stessa riga i tre
 blocchi valgono ×1, ×1.6 e ×2.3 del passo.
 
-Il 55/45 è la parte interessante. Con 100/0 il boss sarebbe un dazio; con 0/100
-il muro sarebbe scenografia. A 55/45 un giocatore perfetto senza potenziamenti
+Il 62/38 è la parte interessante. Con 100/0 il boss sarebbe un dazio; con 0/100
+il muro sarebbe scenografia. Così un giocatore perfetto senza potenziamenti
 sfonda il muro e arriva davanti al carceriere quasi scarico: vede la torre, la
 principessa, e perde. È esattamente la sconfitta che fa comprare il primo
 potenziamento.
 
-`towerNeed` cresce del 62% a torre, più in fretta di quanto cresca la potenza
-naturale di una corsa (più righe, armi migliori). La differenza è quello che i
-potenziamenti devono coprire.
+## 2b. Perché le torri 2, 3 e 4 cadevano al primo colpo
+
+La prima versione tarava le colonne della pista sull'**arma del giocatore**:
+`hp = danno × 0,55…0,95`. Sembrava ovvio — la pista si adatta a te — ed era
+l'errore che ha rotto tutta la curva.
+
+Il danno raddoppia ad ogni tacca d'arma. Se le colonne valgono quanto il tuo
+danno, comprare un'arma raddoppia **sia** quello che riesci a rompere **sia**
+quello che ti frutta: ×2 di bottino per tacca, contro un +62% richiesto dalla
+torre successiva. Una tacca d'arma pagava una torre e mezza. Comprata l'arma,
+la torre dopo cadeva al primo tentativo — e le tacche sono sei: finite quelle,
+la crescita si fermava di colpo e non si passava più. Piatto, poi muro.
+
+La correzione è un cambio di ancoraggio: **le colonne sono tarate sulla torre,
+non su di te**. `trackUnit(n)` è il passo del livello, e tutto discende da lì —
+colonna facile 0,55-0,95 unità, colonne dure 1,3-2,6, e il colpo di ogni arma
+è anch'esso un multiplo dell'unità (`hit`: dai pugni a 0,85 alla Lama Rúna a
+3,5). Così l'arma torna a fare il suo mestiere — **aprire corsie** — e il suo
+guadagno è limitato: rompere sempre la colonna più dura invece della più facile
+vale circa il doppio *in tutto*, non il doppio per tacca.
+
+A quel punto serviva un asse di crescita che non finisse mai, e i potenziamenti
+sono diventati moltiplicatori composti: POTENZA `×1.10^liv` su tutta la potenza
+raccolta, ORO `×1.08^liv` sul bottino. Prima POTENZA era `20 + 14×liv`, cioè
+una somma fissa che dalla quinta torre in poi era meno di un arrotondamento:
+di fatto c'era un solo potenziamento utile, e finiva.
+
+`LEVEL_GAP = 1.34` è la manopola della difficoltà: quanto ogni torre chiede in
+più rispetto a quello che la pista dà da sola. È tutto lì — una costante.
+
+Misurato con un simulatore dell'economia (`playRun` + un giocatore che sceglie
+sempre la corsia migliore, 10 progressioni complete), poi verificato in gioco
+con un autopilota che gioca davvero le corse nel browser:
+
+| torre | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| prima | 2,3 | 1,0 | 1,0 | 1,0 | 1,0 | 1,5 | ∞ | — | — | — | — | — | — | — |
+| adesso | 3,2 | 1,9 | 2,1 | 1,5 | 2,1 | 2,2 | 2,4 | 2,0 | 3,2 | 4,1 | 4,4 | 6,0 | 6,4 | 6,8 |
+
+(tentativi medi per superare la torre). Nessun vicolo cieco: la curva sale
+piano e la rinascita la rimette in orizzontale.
+
+## 2c. La corsa accelera
+
+Il bilanciamento è solo metà della difficoltà: l'altra metà è quanto tempo hai
+per decidere. La velocità sale di 0,7 unità a torre da 15 a 21 — un terzo in
+più — quindi alle torri alte una riga passa in 1,4 secondi invece di 2.
+
+Il muro però è escluso: i suoi blocchi si distanziano insieme alla velocità
+(`wallGap × velocità / 15`), così il tempo per raggiungere il blocco più
+economico resta identico a quello della prima torre. Senza questo accorgimento
+dalla nona torre in poi non si farebbe più in tempo a scegliere la corsia, il
+percorso ottimo diventerebbe irraggiungibile e il bilanciamento — che su quel
+percorso è costruito — salterebbe.
 
 ## 3. Il colore è la regola, e la forma dice cosa fa
 
@@ -105,11 +158,17 @@ vedere quando vince.
 
 ## 6. La rinascita, e perché serve
 
-I potenziamenti si comprano con l'oro e crescono col **logaritmo** del denaro
-accumulato; le torri crescono del **62% l'una**. Fatta la matematica, il tetto
-arriva presto: anche partendo con l'arma migliore e prendendo tutte le corsie
-giuste, la potenza massima di una corsa sta attorno alle 5.500 unità, cioè la
-sesta o settima torre. Da lì in poi non c'è acquisto che colmi la differenza.
+Ogni torre chiede il **34% in più** di moltiplicatore rispetto alla precedente
+(`LEVEL_GAP`), e i potenziamenti crescono col **logaritmo** del denaro: ogni
+tacca di POTENZA vale +10% ma costa il 34% più della precedente. Finché
+l'incasso di una corsa cresce quanto il prezzo della tacca successiva si
+avanza; poi il rapporto si gira e ogni torre costa qualche corsa in più della
+precedente — sei o sette tentativi attorno alla dodicesima, e la salita
+continua a farsi ripida.
+
+Non è un muro secco (quello c'era prima, ed era un bug di bilanciamento: finite
+le sei tacche dell'arma non si passava più). È una salita che rallenta, ed è
+esattamente il punto in cui rinascere conviene.
 
 La rinascita è l'uscita da quel vicolo. Si torna alla Torre 1 con oro e
 potenziamenti azzerati, ma si incassano tante **rune** quante sono le torri già

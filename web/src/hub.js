@@ -24,12 +24,12 @@ function upgradeInfo(key) {
   return { u, lvl, maxed, cost, afford: meta.coins >= cost };
 }
 
-/* Come si legge il valore di un potenziamento nel menù */
+/* Come si legge il valore di un potenziamento nel menù.
+   POTENZA e ORO sono moltiplicatori: si leggono ×1.10, ×1.21, ×1.33… */
 function upgradeValueText(key) {
   const lvl = meta.up[key];
   if (key === 'weapon') return WEAPONS[lvl].name;
-  if (key === 'income') return '×' + UPGRADES.income.value(lvl).toFixed(2);
-  return String(UPGRADES.power.value(lvl));
+  return '×' + UPGRADES[key].value(lvl).toFixed(2);
 }
 
 function buyUpgrade(key) {
