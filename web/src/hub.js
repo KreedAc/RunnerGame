@@ -53,7 +53,7 @@ function renderWallet() {
 /* Azzera i potenziamenti e riporta alla prima torre, ma le rune restano e
    valgono +25% su potenza e oro per sempre. È l'unica uscita quando le
    torri crescono più in fretta di quanto il denaro possa comprare. */
-let rebirthHook = null;      // lo riempie game.js: deve ricostruire il mondo
+let rebuildHook = null;      // lo riempie game.js: deve ricostruire il mondo
 let rebirthArmed = false;
 
 function renderRebirth() {
@@ -89,7 +89,46 @@ function tapRebirth() {
   rebirthArmed = false;
   writeSave(meta);
   flashBanner('+' + gain + ' RUNE');
-  if (rebirthHook) rebirthHook();
+  if (rebuildHook) rebuildHook();
+  renderHub();
+}
+
+/* ----------------------------- RICOMINCIA -----------------------------
+   Azzera il salvataggio e riporta alla Torre 1 senza rune né niente: è la
+   rinascita senza premio, per rivedere il gioco con gli occhi di chi
+   comincia adesso. Compare solo se c'è qualcosa da cancellare, e come la
+   rinascita chiede due tocchi — con un pollice, uno solo è troppo poco
+   per una cosa che non si può annullare. */
+let resetArmed = false;
+let resetTimer = 0;
+
+const hasProgress = () => meta.level > 1 || meta.coins > 0 || meta.runes > 0 ||
+                          meta.gems > 0 || !!meta.lastOutcome ||
+                          meta.up.power > 0 || meta.up.weapon > 0 || meta.up.income > 0;
+
+function renderReset() {
+  const btn = $('resetBtn');
+  btn.classList.toggle('hidden', !hasProgress());
+  btn.classList.toggle('armed', resetArmed);
+  btn.textContent = resetArmed ? 'TOCCA ANCORA: CANCELLA TUTTO'
+                               : 'RICOMINCIA DA CAPO';
+}
+
+function tapReset() {
+  if (!resetArmed) {
+    resetArmed = true;
+    renderReset();
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => { resetArmed = false; renderReset(); }, 6000);
+    return;
+  }
+  clearTimeout(resetTimer);
+  resetArmed = false;
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* niente da fare */ }
+  Object.assign(meta, defaultSave());
+  writeSave(meta);
+  flashBanner('TUTTO DA CAPO');
+  if (rebuildHook) rebuildHook();
   renderHub();
 }
 
@@ -105,6 +144,7 @@ function renderHub() {
       : meta.best ? 'RECORD ' + meta.best + '/' + CFG.wallRows + ' DEL MURO'
                   : 'NESSUNA TORRE ANCORA CONQUISTATA');
   renderRebirth();
+  renderReset();
 
   /* Alla prima partita servono le regole; dopo serve il risultato.
      Non hanno senso insieme: si scambiano il posto. */
@@ -139,6 +179,7 @@ document.querySelectorAll('.up-card').forEach(card => {
   card.addEventListener('click', () => buyUpgrade(card.dataset.key));
 });
 $('rebirthCard').addEventListener('click', tapRebirth);
+$('resetBtn').addEventListener('click', tapReset);
 
 /* Come si racconta la fine dell'ultima corsa */
 const OUTCOME_TEXT = {

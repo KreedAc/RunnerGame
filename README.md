@@ -29,7 +29,9 @@ record e tre potenziamenti permanenti. **POTENZA** (`×1.10` per livello) e
 **ORO** (`×1.08`) sono moltiplicatori composti: non finiscono mai di servire.
 **ARMA** è la tacca di partenza, e apre corsie invece di moltiplicare il
 bottino. A fine partita ci si torna direttamente, con il riepilogo al posto
-della storia. Salvataggio in `localStorage`.
+della storia. Salvataggio in `localStorage`, e in fondo al menù un
+**RICOMINCIA DA CAPO** che lo cancella — due tocchi per confermare, e compare
+solo se c'è qualcosa da cancellare.
 
 **Prima metà — accumuli.** Tre corsie, una riga di scelte ogni 30 blocchi. I
 numeri delle colonne sono tarati sulla **torre**, non sulla tua arma: il colpo

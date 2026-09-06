@@ -201,6 +201,18 @@ Due attriti voluti:
 - Serve **toccare due volte**. Azzerare i potenziamenti è irreversibile, e un
   tocco solo, in un gioco che si gioca col pollice, è troppo poco.
 
+## 6b. Ricominciare da capo
+
+In fondo al menù, sotto ai potenziamenti, c'è **RICOMINCIA DA CAPO**: cancella
+il salvataggio e riporta alla Torre 1 senza rune né oro. È la rinascita senza
+premio, e serve soprattutto a rivedere il gioco con gli occhi di chi comincia
+adesso — cosa che, tarando la difficoltà, si fa di continuo.
+
+Tre attriti, gli stessi ragionamenti della rinascita: sta **in fondo**, lontano
+dal pollice che preme ALL'ASSALTO; chiede **due tocchi**, perché non si torna
+indietro; e **non compare affatto** finché non c'è qualcosa da cancellare, così
+la prima schermata resta pulita.
+
 ## 7. Le zone
 
 Ogni torre cambia mondo: Valle Gelata, Bosco Rosso, Dune d'Ossa, Notte di Rúna.

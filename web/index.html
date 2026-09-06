@@ -173,6 +173,18 @@
     background:linear-gradient(180deg,#ffd970,#f5a91d);color:#3a2000;
     font-variant-numeric:tabular-nums}
 
+  /* ricomincia da capo: sta in fondo, lontano dal pollice che gioca, e
+     chiede due tocchi — cancella tutto e non si torna indietro */
+  .reset-btn{display:block;margin:16px auto 0;padding:8px 18px;border-radius:99px;
+    cursor:pointer;font-family:inherit;font-size:10.5px;font-weight:800;
+    letter-spacing:1.2px;color:rgba(255,255,255,.55);
+    background:transparent;border:2px solid rgba(255,255,255,.16);
+    transition:color .15s,border-color .15s,background .15s}
+  .reset-btn:active{transform:translateY(2px)}
+  .reset-btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  .reset-btn.armed{color:#ffb4a2;border-color:rgba(255,120,90,.75);
+    background:rgba(120,30,20,.45)}
+
   @media (prefers-reduced-motion:reduce){
     .swipe::after,.pop{animation:none}
     #banner.show{animation:none;opacity:1}
@@ -270,6 +282,8 @@
       <div class="up-cost">90</div>
     </button>
   </div>
+
+  <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
 </div>
 
 <script src="vendor/three.min.js"></script>

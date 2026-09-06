@@ -598,8 +598,9 @@ function backToHub() {
 
 $('playBtn').onclick = () => startRun();
 
-/* La rinascita cambia zona e potenziamenti: il mondo va ricostruito. */
-rebirthHook = () => {
+/* Rinascita e ricomincia cambiano zona e potenziamenti: il mondo va
+   ricostruito da zero. */
+rebuildHook = () => {
   run.x = 0; run.targetX = 0; run.z = 0;
   setWeapon(hero, meta.up.weapon);
   buildRun();
