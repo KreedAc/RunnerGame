@@ -1,0 +1,114 @@
+<title>Gate Runner</title>
+<style>
+  :root{
+    --orange:#ff9f1a; --deep:#12203a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0;overflow:hidden;background:#0b1220;
+    font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    user-select:none;-webkit-user-select:none;touch-action:none}
+  #stage{position:fixed;inset:0}
+  canvas{display:block;width:100%;height:100%}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;
+    justify-content:space-between;padding:env(safe-area-inset-top,12px) 14px 18px}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-top:12px}
+  .pill{background:rgba(10,18,34,.55);backdrop-filter:blur(6px);
+    border:2px solid rgba(255,255,255,.22);border-radius:999px;
+    padding:7px 16px;color:#fff;font-weight:800;font-size:15px;letter-spacing:.4px;
+    text-shadow:0 2px 0 rgba(0,0,0,.35)}
+  #count{font-size:30px;padding:6px 22px;color:#fff;
+    background:linear-gradient(180deg,#ffb43d,#f07d16);border-color:rgba(255,255,255,.5)}
+  #progressWrap{margin:14px 4px 0;height:9px;border-radius:99px;
+    background:rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.25);overflow:hidden}
+  #progress{height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg,#7bf07a,#2fd44a);transition:width .12s linear}
+
+  /* floating +/x popups */
+  #pops{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .pop{position:absolute;left:50%;top:56%;transform:translate(-50%,0);
+    font-size:44px;font-weight:900;color:#fff;-webkit-text-stroke:3px rgba(0,0,0,.35);
+    animation:popUp .85s ease-out forwards}
+  @keyframes popUp{
+    0%{opacity:0;transform:translate(-50%,10px) scale(.6)}
+    25%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}
+    100%{opacity:0;transform:translate(-50%,-120px) scale(1)}
+  }
+
+  /* ---------- overlays ---------- */
+  .screen{position:fixed;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;padding:28px;text-align:center;
+    background:linear-gradient(180deg,rgba(8,16,32,.05) 0%,rgba(8,16,32,.15) 45%,rgba(8,16,32,.78) 100%);
+    color:#fff}
+  /* schermata di fine: contenuto in basso, il personaggio resta visibile */
+  .screen.bottom{justify-content:flex-end;gap:12px;padding-bottom:52px}
+  .screen.hidden{display:none}
+  .title{font-size:clamp(38px,12vw,74px);font-weight:900;line-height:.95;
+    background:linear-gradient(180deg,#fff,#ffcf7a);-webkit-background-clip:text;
+    background-clip:text;color:transparent;
+    filter:drop-shadow(0 5px 0 rgba(0,0,0,.35))}
+  .sub{font-size:17px;font-weight:700;opacity:.9;max-width:22ch;line-height:1.45}
+  .btn{pointer-events:auto;cursor:pointer;border:none;border-radius:20px;
+    padding:17px 46px;font-size:22px;font-weight:900;color:#4a2200;
+    background:linear-gradient(180deg,#ffd056,#ff9f1a);
+    box-shadow:0 7px 0 #c96f00,0 12px 24px rgba(0,0,0,.4);
+    transition:transform .08s,box-shadow .08s}
+  .btn:active{transform:translateY(5px);box-shadow:0 2px 0 #c96f00,0 6px 14px rgba(0,0,0,.4)}
+  .stat{font-size:20px;font-weight:800;opacity:.95}
+  .big{font-size:clamp(44px,15vw,86px);font-weight:900;
+    text-shadow:0 5px 0 rgba(0,0,0,.3)}
+  .hint{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;opacity:.8}
+  .swipe{width:64px;height:34px;border:3px solid rgba(255,255,255,.6);border-radius:99px;
+    position:relative}
+  .swipe::after{content:"";position:absolute;top:4px;left:4px;width:20px;height:20px;
+    border-radius:50%;background:#fff;animation:sw 1.5s ease-in-out infinite}
+  @keyframes sw{0%,100%{transform:translateX(0)}50%{transform:translateX(30px)}}
+</style>
+
+<div id="stage"></div>
+
+<div id="hud">
+  <div>
+    <div class="top">
+      <div class="pill" id="levelPill">LIVELLO 1</div>
+      <div class="pill" id="count">10</div>
+      <div class="pill" id="targetPill">🎯 --</div>
+    </div>
+    <div id="progressWrap"><div id="progress"></div></div>
+  </div>
+  <div></div>
+</div>
+<div id="pops"></div>
+
+<div class="screen" id="menu">
+  <div class="title">GATE<br>RUNNER</div>
+  <div class="sub">Attraversa i gate giusti.<br>Diventa il più alto di tutti.</div>
+  <button class="btn" id="playBtn">GIOCA</button>
+  <div class="hint"><span class="swipe"></span> trascina per muoverti</div>
+</div>
+
+<div class="screen bottom hidden" id="result">
+  <div class="title" id="resTitle">VITTORIA!</div>
+  <div class="big" id="resCount">0</div>
+  <div class="stat" id="resInfo"></div>
+  <button class="btn" id="nextBtn">AVANTI</button>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script>
+/* three.js: copia locale (offline / Android) con fallback su CDN */
+(function () {
+  function load(src, cb) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = cb;
+    s.onerror = function () { document.body.insertAdjacentHTML('beforeend',
+      '<div style="position:fixed;inset:0;display:grid;place-items:center;color:#fff;font:700 16px system-ui;background:#0b1220">Impossibile caricare three.js</div>'); };
+    document.head.appendChild(s);
+  }
+  var boot = function () { load('game.js'); };
+  if (window.THREE) boot();
+  else load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', boot);
+})();
+</script>
