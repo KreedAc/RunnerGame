@@ -265,11 +265,16 @@ function buildWeaponModel(tier) {
   return g;
 }
 
+/* La presa. Il modello ha l'impugnatura al centro e la lama verso +Y,
+   quindi agganciandolo al fondo del braccio con una leggera inclinazione
+   viene da solo il gesto di chi corre con l'arma in pugno, lama in su.
+   Prima stava a mezz'aria sopra la mano e puntava in avanti come un
+   bastone da passeggio. */
 function buildWeapon(tier) {
   const model = buildWeaponModel(tier);
   if (!model) return null;
-  model.position.set(0, -0.58, 0.24);
-  model.rotation.x = -1.15;
+  model.position.set(0.09, -0.80, 0.04);
+  model.rotation.set(0.24, 0, -0.30);   // inclinata in fuori: la testa del martello sfiorava la spalla
   return model;
 }
 

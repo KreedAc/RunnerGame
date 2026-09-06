@@ -136,7 +136,27 @@ Costa poco perché la palette del mondo sta tutta in `THEMES` dentro `core.js` e
 zona è aggiungere dodici numeri a una lista. I personaggi restano fuori dal
 tema — l'eroe dev'essere sempre lo stesso, ovunque si trovi.
 
-## 8. Niente schermata di fine partita
+## 8. Il muro è pieno, gli ostacoli no
+
+Le corsie stanno a x = −2.4, 0, +2.4 e la collisione si risolveva per
+distanza: veniva colpito l'oggetto entro 1.15 unità dal giocatore. Tenendosi
+a **x = ±1.2**, cioè esattamente a metà fra due corsie, si restava a 1.2 da
+tutti e tre i blocchi di ogni riga — e si attraversava l'intero muro senza
+romperne uno e senza pagare un punto di potenza. Poi, non essendo mai arrivati
+a 30 blocchi, lo scontro col boss non partiva e si correva oltre la torre nel
+vuoto.
+
+La correzione è concettuale, non numerica: **il muro è pieno**. Le sue righe si
+risolvono sempre sulla corsia più vicina, non sulla distanza, quindi un blocco
+si paga sempre. Gli ostacoli lungo la pista restano a distanza, perché lì
+schivare è il gioco. In più una rete di sicurezza: se per qualsiasi motivo si
+arriva ai piedi della torre col muro non consumato, lo scontro parte comunque —
+nessuna corsa può oltrepassare il boss senza affrontarlo.
+
+I blocchi sono anche stati allargati da 1.9 a 2.36, quanto basta perché si
+tocchino: la fessura che si vedeva era la stessa da cui si passava.
+
+## 9. Niente schermata di fine partita
 
 Era un passaggio a vuoto: leggevi un numero, premevi un bottone, e solo allora
 arrivavi dove si spende. Adesso la corsa finisce, si resta fermi un attimo a
@@ -145,7 +165,7 @@ riepilogo al posto della storia e i potenziamenti sotto al pollice.
 
 Un tap in meno per ciclo, e il ciclo è quello che si ripete cento volte.
 
-## 9. I cartelli
+## 10. I cartelli
 
 Due striscioni attraversano il muro alla riga corrispondente: azzurro
 sull'ultima corsa, dorato sul record. Si vedono da lontano, quindi la corsa ha
@@ -154,7 +174,7 @@ un bersaglio intermedio anche quando la torre è ancora fuori portata.
 `markerZ(d) = wallStartZ − (d − 0.5) × wallGap`, cioè subito dopo l'ultimo
 blocco abbattuto.
 
-## 10. Verso Android
+## 11. Verso Android
 
 ### A. WebView (Capacitor) — la più veloce
 Il prototipo diventa un `.apk` senza riscrivere niente: `npx cap init`,
@@ -181,7 +201,7 @@ povero di Unity.
 Restare su A finché il gameplay non convince, poi portare in Unity per la
 pubblicazione. Le formule di questo documento si trasferiscono direttamente.
 
-## 11. Prestazioni
+## 12. Prestazioni
 
 Il conteggio delle mesh è la cosa da tenere d'occhio: circa 600–800 per il mondo
 (terreno, alberi, case, montagne), ~150 per gli oggetti della pista e ~270 per il
@@ -198,7 +218,7 @@ Se su fascia bassa non regge, in ordine di resa:
    (sta negli examples di three, va aggiunto): con i colori piatti è molto
    più semplice di prima, basta raggruppare per materiale.
 
-## 12. Cosa manca, in ordine di impatto sul feel
+## 13. Cosa manca, in ordine di impatto sul feel
 
 1. **Audio** — musica loop e sfx sull'impatto. Sposta la qualità percepita più
    di qualunque effetto grafico.

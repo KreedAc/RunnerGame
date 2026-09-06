@@ -179,8 +179,8 @@ function spawnPickup(x, z, kind) {
 function spawnWallBlock(x, z, cost, chest) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  putOn(g, GEO.box, chest ? MAT.chestWood : MAT.wallBrick, 0, 0, 0, 1.9, 1.6, 1.5);
-  putOn(g, GEO.box, chest ? MAT.gold : MAT.wallDark, 0, 1.6, 0, 2.05, 0.3, 1.6);
+  putOn(g, GEO.box, chest ? MAT.chestWood : MAT.wallBrick, 0, 0, 0, 2.36, 1.6, 1.5);
+  putOn(g, GEO.box, chest ? MAT.gold : MAT.wallDark, 0, 1.6, 0, 2.42, 0.3, 1.6);
   const sprite = labelSprite(fmt(cost), chest ? '#ffd24b' : '#ffffff', 0.58);
   sprite.position.set(0, 2.5, 0);
   g.add(sprite);
@@ -605,16 +605,33 @@ addEventListener('keydown', e => {
 /* --------------------------------- LOOP -------------------------------- */
 const HIT_X = 1.15;
 
+/* La corsia più vicina al giocatore. Serve al muro: fra un blocco e
+   l'altro non c'è spazio da cui passare, quindi la riga si risolve sempre
+   sul blocco più vicino invece che sulla distanza. Prima, tenendosi a
+   x = ±1.2 — esattamente a metà fra due corsie — si attraversava tutto il
+   muro senza rompere niente e senza pagare nulla. */
+function nearestLaneX() {
+  let best = CFG.laneX[0], bd = Infinity;
+  for (const lx of CFG.laneX) {
+    const d = Math.abs(run.x - lx);
+    if (d < bd) { bd = d; best = lx; }
+  }
+  return best;
+}
+
 function update(dt) {
   if (steering()) {
     runT += dt;
     run.z -= CFG.speed * dt;
     run.x = lerp(run.x, run.targetX, 1 - Math.pow(0.0015, dt));
 
+    const lane = nearestLaneX();
     for (const it of items) {
       if (it.done || run.z > it.z) continue;
       it.done = true;
-      if (Math.abs(run.x - it.x) > HIT_X) continue;      // schivato
+      const touched = it.kind === 'block' ? it.x === lane          // il muro è pieno
+                                          : Math.abs(run.x - it.x) <= HIT_X;
+      if (!touched) continue;                                      // schivato
       if (it.kind === 'pillar')      hitPillar(it);
       else if (it.kind === 'enemy')  hitEnemy(it);
       else if (it.kind === 'weapon') takeWeapon(it);
@@ -624,6 +641,10 @@ function update(dt) {
     }
 
     if (state === 'run' && run.z <= wallStartZ + CFG.wallGap) state = 'wall';
+    /* Se per qualsiasi motivo si arriva ai piedi della torre senza aver
+       consumato il muro, lo scontro parte comunque: nessuna corsa deve
+       poter oltrepassare il boss senza affrontarlo. */
+    if (state === 'wall' && run.z <= bossZ + 14) startBossFight();
     renderHud();
     $('progress').style.width = clamp(run.z / towerZ, 0, 1) * 100 + '%';
 
