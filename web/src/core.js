@@ -143,11 +143,15 @@ const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.38);
    massimo il doppio di bottino, non il doppio per tacca — e il resto lo
    fanno i potenziamenti.
 
-   BASE_SHARE: quanto copre una corsa nuda alla prima torre.
+   BASE_SHARE: quanto copre una corsa nuda alla prima torre. Più è bassa,
+               più potenziamenti servono ad ogni torre — alza tutta la
+               curva in blocco, prima torre compresa.
    LEVEL_GAP : quanto in più chiede ogni torre rispetto alla precedente,
-               al netto di quello che la pista dà da sola. È questa la
-               manopola della difficoltà. */
-const BASE_SHARE = 0.55;
+               al netto di quello che la pista dà da sola. Inclina la
+               curva: alzarla non tocca le prime torri e fa esplodere la
+               coda, quindi è la manopola sbagliata per "è troppo facile
+               all'inizio". */
+const BASE_SHARE = 0.42;
 const LEVEL_GAP  = 1.34;
 const trackRows  = lvl => Math.min(20, 10 + lvl);
 const trackUnit  = lvl => towerNeed(lvl) * BASE_SHARE /

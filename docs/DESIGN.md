@@ -25,7 +25,7 @@ towerNeed(n)  = 430 × 1.62^(n-1)     quanta potenza serve in tutto
 wallBudget(n) = towerNeed × 0.62     quanto se ne va nel muro
 bossHealth(n) = towerNeed × 0.38     quanto ne resta da spendere
 
-trackUnit(n)  = towerNeed × 0.55 / (righe × 3 × 0.75 × 1.34^(n-1))
+trackUnit(n)  = towerNeed × 0.42 / (righe × 3 × 0.75 × 1.34^(n-1))
 ```
 
 `wallBudget` è il costo del percorso **migliore** attraverso il muro: i costi
@@ -66,8 +66,13 @@ raccolta, ORO `×1.08^liv` sul bottino. Prima POTENZA era `20 + 14×liv`, cioè
 una somma fissa che dalla quinta torre in poi era meno di un arrotondamento:
 di fatto c'era un solo potenziamento utile, e finiva.
 
-`LEVEL_GAP = 1.34` è la manopola della difficoltà: quanto ogni torre chiede in
-più rispetto a quello che la pista dà da sola. È tutto lì — una costante.
+Le manopole sono due e fanno cose diverse — impararlo è costato un secondo
+giro di misure. `LEVEL_GAP = 1.34` **inclina** la curva: quanto ogni torre
+chiede in più di quello che la pista dà da sola. Alzarla non tocca le prime
+torri (la prima non ha nessun gap davanti) e fa esplodere la coda — a 1,45 la
+nona torre passava da 3 a 15 tentativi mentre la seconda restava a 2. Per
+"è troppo facile all'inizio" serve invece `BASE_SHARE = 0.42`, quanto copre una
+corsa nuda: **alza tutta la curva in blocco**, prima torre compresa.
 
 Misurato con un simulatore dell'economia (`playRun` + un giocatore che sceglie
 sempre la corsia migliore, 10 progressioni complete), poi verificato in gioco
@@ -75,11 +80,24 @@ con un autopilota che gioca davvero le corse nel browser:
 
 | torre | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| prima | 2,3 | 1,0 | 1,0 | 1,0 | 1,0 | 1,5 | ∞ | — | — | — | — | — | — | — |
-| adesso | 3,2 | 1,9 | 2,1 | 1,5 | 2,1 | 2,2 | 2,4 | 2,0 | 3,2 | 4,1 | 4,4 | 6,0 | 6,4 | 6,8 |
+| all'inizio | 2,3 | 1,0 | 1,0 | 1,0 | 1,0 | 1,5 | ∞ | — | — | — | — | — | — | — |
+| primo giro | 3,2 | 1,9 | 2,1 | 1,5 | 2,1 | 2,2 | 2,4 | 2,0 | 3,2 | 4,1 | 4,4 | 6,0 | 6,4 | 6,8 |
+| adesso | 4,3 | 2,5 | 1,8 | 2,2 | 3,2 | 2,3 | 3,1 | 4,5 | 3,2 | 5,8 | 5,5 | 9,8 | 9,0 | 14,0 |
 
 (tentativi medi per superare la torre). Nessun vicolo cieco: la curva sale
 piano e la rinascita la rimette in orizzontale.
+
+Il primo giro di correzioni aveva sistemato la struttura ma lasciato la curva
+troppo bassa — le torri 2, 3 e 4 cadevano ancora al primo tentativo. Il numero
+che le ha alzate è `BASE_SHARE`, da 0,55 a 0,42: adesso una corsa senza
+potenziamenti alla prima torre si ferma **al muro**, attorno al
+venticinquesimo blocco, e non vede nemmeno il carceriere.
+
+E il simulatore gioca perfetto, cosa che un pollice su un telefono non fa: due
+modifiche pesano solo sulla persona vera. La terza corsia è occupata nel 70%
+delle righe invece che nel 45% — una corsia vuota rende la riga una non-scelta,
+si tirava dritto senza rischiare niente — e sbagliare colonna costa il 18%
+della potenza invece del 14%.
 
 ## 2c. La corsa accelera
 

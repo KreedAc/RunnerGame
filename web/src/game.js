@@ -269,8 +269,10 @@ function buildRun() {
                                spawnPillar(CFG.laneX[lanes[1]], z, hardHp)));
     }
 
-    // corsia 3: spesso libera — è la via di fuga
-    if (Math.random() < 0.45) {
+    /* corsia 3: quasi sempre occupata. Era libera più di una volta su
+       due, e una corsia vuota rende la riga una non-scelta: si tirava
+       dritto senza rischiare niente. */
+    if (Math.random() < 0.70) {
       const hardHp = Math.round(unit * rnd(1.3, 2.4));
       items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
                                spawnPillar(CFG.laneX[lanes[2]], z, hardHp)));
@@ -404,7 +406,10 @@ function hitPillar(it) {
     popup('+' + fmt(gain), '#8dff87');
     shatter(it.obj, 8, MAT.good);
   } else {
-    const loss = Math.max(3, Math.round(run.power * 0.14));
+    /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
+       incontrano più spesso, e il prezzo dev'essere abbastanza alto da
+       far scegliere davvero. */
+    const loss = Math.max(3, Math.round(run.power * 0.18));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff7a6e');
     shatter(it.obj, 8, MAT.bad);

@@ -39,7 +39,7 @@ migliore apre corsie che prima erano rosse.
 | | |
 |---|---|
 | 🟢 **Torre verde** | Il numero è sotto al tuo colpo: la spacchi e prendi `numero × 3 × POTENZA` |
-| 🔴 **Torre rossa** | Troppo dura: se la prendi perdi il 14% della potenza. Schivala |
+| 🔴 **Torre rossa** | Troppo dura: se la prendi perdi il 18% della potenza. Schivala |
 | 👹 **Nemico** | Due o tre a partita. Lo abbatti per l'oro, oppure ti costa il 22% |
 | ⚔️ **Arma a terra** | L'oggetto vero — randello, ascia, spada, martello, lama rúnica — che galleggia sulla corsia: la raccogli e sostituisce la tua |
 | ⚡ **Bonus** | Oro, Attacco e Potenza: valgono solo per questa partita |
@@ -91,7 +91,8 @@ tools/build-single.sh genera la demo a file singolo
 Tutto il tuning sta in cima a `core.js`: `CFG` (30 blocchi del muro, velocità,
 corsie), `C` (palette), `WEAPONS`, `BUFFS`, `UPGRADES` e le formule
 `towerNeed / wallBudget / bossHealth / trackUnit`. La manopola della difficoltà
-è `LEVEL_GAP`: quanto ogni torre chiede in più della precedente.
+sono `BASE_SHARE` (quanto copre una corsa nuda: alza o abbassa tutta la curva)
+e `LEVEL_GAP` (quanto chiede ogni torre in più della precedente: la inclina).
 In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.need`.
 
 ## Stato
