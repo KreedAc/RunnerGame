@@ -109,15 +109,34 @@
   .btn.ghost:active{box-shadow:0 2px 0 #29303f}
   .play-wrap{display:flex;justify-content:center;margin-bottom:14px}
 
-  .res-title{font-size:clamp(30px,9vw,50px);font-weight:900;
-    background:linear-gradient(180deg,#fff,#ffcf7a);-webkit-background-clip:text;
-    background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 rgba(0,0,0,.4))}
-  .res-big{font-size:clamp(52px,18vw,96px);font-weight:900;line-height:1;
-    text-shadow:0 5px 0 rgba(0,0,0,.35)}
-  .res-label{font-size:13px;font-weight:800;letter-spacing:2px;opacity:.7}
-  .res-coins{font-size:26px;font-weight:900;color:#ffd24b}
-  .res-info{font-size:14px;font-weight:700;opacity:.85}
-  .res-btns{display:flex;gap:10px;margin-top:8px}
+  /* riepilogo dell'ultima corsa, al posto delle regole */
+  .last-run{position:relative;margin:20px auto 0;max-width:300px;padding:16px 18px 13px;
+    border-radius:18px;background:rgba(10,18,34,.6);
+    border:2px solid rgba(255,255,255,.22)}
+  .lr-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+    padding:3px 14px;border-radius:99px;white-space:nowrap;
+    background:linear-gradient(180deg,#ffd056,#f0a01a);color:#4a2200;
+    font-size:11px;font-weight:900;letter-spacing:1.2px}
+  .lr-row{display:flex;align-items:center;justify-content:space-around;gap:10px}
+  .lr-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .lr-cell b{font-size:34px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+  .lr-cell b.gold{color:#ffd24b}
+  .lr-cell span{font-size:10px;font-weight:800;letter-spacing:1.4px;opacity:.6}
+  .lr-sep{width:2px;align-self:stretch;background:rgba(255,255,255,.16);border-radius:2px}
+
+  /* striscione dei momenti che contano */
+  #banner{position:fixed;left:0;right:0;top:36%;text-align:center;pointer-events:none;
+    padding:0 16px;opacity:0;
+    font-size:clamp(26px,8.5vw,44px);font-weight:900;color:#ffd24b;
+    -webkit-text-stroke:3px rgba(0,0,0,.5);text-wrap:balance}
+  #banner.show{animation:bannerIn 1.7s ease-out forwards}
+  @keyframes bannerIn{
+    0%{opacity:0;transform:scale(.6)}
+    12%{opacity:1;transform:scale(1.14)}
+    22%{transform:scale(1)}
+    78%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(1.06)}
+  }
 
   .hint{display:flex;align-items:center;justify-content:center;gap:10px;
     font-size:13px;font-weight:700;opacity:.75;margin-top:10px}
@@ -125,7 +144,8 @@
   .swipe::after{content:"";position:absolute;top:4px;left:4px;width:16px;height:16px;
     border-radius:50%;background:#fff;animation:sw 1.5s ease-in-out infinite}
   @keyframes sw{0%,100%{transform:translateX(0)}50%{transform:translateX(26px)}}
-  @media (prefers-reduced-motion:reduce){.swipe::after,.pop{animation:none}}
+  @media (prefers-reduced-motion:reduce){.swipe::after,.pop,#banner.show{animation:none}
+    #banner.show{opacity:1}}
 </style>
 
 <div id="stage"></div>
@@ -144,6 +164,7 @@
   <div id="buffRail"></div>
 </div>
 <div id="pops"></div>
+<div id="banner"></div>
 
 <!-- ========================== MENÙ INIZIALE ========================= -->
 <div class="screen" id="hub">
@@ -161,14 +182,24 @@
     <div class="best" id="hubBest">NESSUN RECORD</div>
   </div>
 
-  <div class="hub-rules">
+  <div class="hub-rules" id="hubRules">
     <div><span>🟢</span><div>Numero verde: lo spacchi e guadagni potenza.</div></div>
     <div><span>🔴</span><div>Numero rosso: schivalo, o ti costa potenza.</div></div>
     <div><span>🔨</span><div>Passa dal banco da lavoro: l'arma sale di livello.</div></div>
     <div><span>🏁</span><div>Al traguardo la potenza si consuma blocco dopo blocco.</div></div>
   </div>
 
-  <div class="hint"><span class="swipe"></span> trascina per cambiare corsia</div>
+  <!-- riepilogo della corsa appena chiusa: prende il posto delle regole -->
+  <div class="last-run hidden" id="lastRun">
+    <div class="lr-badge hidden" id="lrBadge">NUOVO RECORD</div>
+    <div class="lr-row">
+      <div class="lr-cell"><b id="lrDepth">0</b><span>BLOCCHI</span></div>
+      <div class="lr-sep"></div>
+      <div class="lr-cell"><b id="lrCoins" class="gold">+0</b><span>BOTTINO</span></div>
+    </div>
+  </div>
+
+  <div class="hint" id="hubHint"><span class="swipe"></span> trascina per cambiare corsia</div>
   <div class="spacer"></div>
 
   <div class="play-wrap"><button class="btn" id="playBtn">GIOCA</button></div>
@@ -192,19 +223,6 @@
       <div class="up-value">×1.00</div>
       <div class="up-cost">70</div>
     </button>
-  </div>
-</div>
-
-<!-- ========================= FINE PARTITA =========================== -->
-<div class="screen hidden" id="result">
-  <div class="res-title" id="resTitle">FINE CORSA</div>
-  <div class="res-label">BLOCCHI ABBATTUTI</div>
-  <div class="res-big" id="resDepth">0</div>
-  <div class="res-coins" id="resCoins">+0</div>
-  <div class="res-info" id="resInfo"></div>
-  <div class="res-btns">
-    <button class="btn ghost" id="homeBtn">MENÙ</button>
-    <button class="btn" id="againBtn">ANCORA</button>
   </div>
 </div>
 

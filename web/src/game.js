@@ -45,6 +45,7 @@ const run = {
   buffs: { income: 0, rate: 0, gain: 0 },
   x: 0, targetX: 0, z: 0,
   depth: 0,                       // blocchi abbattuti nel finale
+  beatRecord: false,
   swing: 0
 };
 
@@ -156,6 +157,34 @@ function buildFinaleBlock(x, z, cost, chest) {
   return { obj: g, sprite };
 }
 
+/* Cartello piantato di traverso alla pista: segna dove sei arrivato.
+   È il bersaglio della corsa — lo vedi da lontano e sai cosa battere. */
+function buildMarker(depth, label, color) {
+  if (depth < 1 || depth >= CFG.finaleRows) return null;
+  const z = finaleStartZ - (depth - 0.5) * CFG.finaleGap;
+  const g = new THREE.Group();
+  g.position.set(0, 0, z);
+  const w = CFG.trackWidth + 2;
+
+  putBlock(g, BLOCK.log, -w / 2, 0, 0, 0.4, 5.6, 0.4);
+  putBlock(g, BLOCK.log,  w / 2, 0, 0, 0.4, 5.6, 0.4);
+
+  const band = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, 1.2),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92,
+                                  side: THREE.DoubleSide })
+  );
+  band.position.set(0, 4.6, 0);
+  g.add(band);
+
+  const s = labelSprite(label, '#ffffff', 0.5);
+  s.position.set(0, 4.6, 0.12);
+  g.add(s);
+
+  world.add(g);
+  return g;
+}
+
 /* ---------------------------- GENERAZIONE ------------------------------ */
 let rows = 0, finishZ = 0, finaleStartZ = 0, levelLen = 0, expectedPower = 0;
 
@@ -241,6 +270,10 @@ function buildRun() {
                    chest, row: i, done: false, ...b });
     }
   }
+
+  // prima l'ultima corsa (azzurro), poi il record (oro) che le sta davanti
+  if (meta.last && meta.last !== meta.best) buildMarker(meta.last, 'ULTIMA ' + meta.last, 0x2f7de0);
+  buildMarker(meta.best, 'RECORD ' + meta.best, 0xe0a51a);
 
   levelLen = Math.abs(finaleStartZ - CFG.finaleRows * CFG.finaleGap) + 50;
   buildWorld(levelLen);
@@ -367,6 +400,10 @@ function hitFinaleBlock(it) {
   breakBlocks(it.obj, 5);
   it.obj.visible = false;
   run.depth++;
+  if (!run.beatRecord && meta.best > 0 && run.depth > meta.best) {
+    run.beatRecord = true;
+    flashBanner('RECORD SUPERATO!');
+  }
   if (it.chest) {
     const c = Math.round(it.cost * 2 * coinMul());
     run.coins += c;
@@ -384,7 +421,7 @@ function renderHud() {
 }
 
 /* --------------------------- STATO E CICLO ----------------------------- */
-let state = 'hub';                 // hub | run | finale | result
+let state = 'hub';                 // hub | run | finale | over
 let runT = 0;
 const clock = new THREE.Clock();
 
@@ -392,6 +429,7 @@ function startRun() {
   run.power  = UPGRADES.power.value(meta.up.power);
   run.weapon = meta.up.weapon;
   run.coins = 0; run.gems = 0; run.depth = 0; run.swing = 0;
+  run.beatRecord = false;
   run.buffs = { income: 0, rate: 0, gain: 0 };
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
@@ -405,26 +443,38 @@ function startRun() {
 }
 
 function endRun() {
-  state = 'result';
+  state = 'over';                    // una pausa per vedere dove ci si è fermati
   const record = run.depth > meta.best;
-  const bonus = Math.round(run.depth * 6 * coinMul());
-  const total = run.coins + bonus;
+  const total  = run.coins + Math.round(run.depth * 6 * coinMul());
+
   meta.coins += total;
   meta.gems  += run.gems;
   meta.level++;
-  if (run.depth > meta.best) meta.best = run.depth;
+  meta.last  = run.depth;
+  meta.lastCoins = total;
+  meta.lastRecord = record;
+  if (record) meta.best = run.depth;
   writeSave(meta);
 
-  $('resDepth').textContent = run.depth;
-  $('resInfo').textContent  = 'Bottino ' + fmt(run.coins) + ' + bonus ' + fmt(bonus);
-  $('resCoins').textContent = '+' + fmt(total);
-  $('resTitle').textContent = record ? 'NUOVO RECORD!' : 'FINE CORSA';
-  setTimeout(() => { showScreen('result'); renderWallet(); }, 700);
+  if (record) flashBanner('NUOVO RECORD: ' + run.depth);
+
+  setTimeout(backToHub, record ? 2000 : 1400);
 }
 
-$('playBtn').onclick   = () => startRun();
-$('againBtn').onclick  = () => startRun();
-$('homeBtn').onclick   = () => { renderHub(); showScreen('hub'); state = 'hub'; buildRun(); };
+/* Niente schermata intermedia: si finisce e si è già davanti ai
+   potenziamenti, con il riepilogo della corsa appena chiusa. */
+function backToHub() {
+  state = 'hub';
+  run.x = 0; run.targetX = 0; run.z = 0;
+  hero.rotation.x = 0;
+  setWeapon(hero, meta.up.weapon);
+  buildRun();                        // ricostruisce la pista e i cartelli
+  renderHub();
+  showScreen('hub');
+  snapCamera();
+}
+
+$('playBtn').onclick = () => startRun();
 
 /* -------------------------------- INPUT -------------------------------- */
 let dragging = false, lastPX = 0;
@@ -463,7 +513,7 @@ function update(dt) {
       else if (it.kind === 'craft') takeCraft(it);
       else if (it.kind === 'block') hitFinaleBlock(it);
       else                          takePickup(it);
-      if (state === 'result') break;
+      if (state !== 'run' && state !== 'finale') break;
     }
 
     if (state === 'run' && run.z <= finaleStartZ + CFG.finaleGap) state = 'finale';
@@ -514,11 +564,18 @@ function update(dt) {
   }
 
   /* --- camera --- */
-  const menu = state === 'hub' || state === 'result';
+  const menu = state === 'hub';
   camera.position.x = lerp(camera.position.x, run.x * 0.4, 1 - Math.pow(0.01, dt));
   camera.position.y = lerp(camera.position.y, menu ? 5.0 : 6.2, 1 - Math.pow(0.02, dt));
   camera.position.z = lerp(camera.position.z, run.z + (menu ? 13 : 14), 1 - Math.pow(0.005, dt));
   camera.lookAt(run.x * 0.5, menu ? 1.3 : 1.6, run.z - (menu ? 12 : 24));
+}
+
+/* Tornando al menù la camera è a fondo pista: senza questo salto farebbe
+   tutta la strada al contrario in dissolvenza. */
+function snapCamera() {
+  camera.position.set(0, 5.0, 13);
+  camera.lookAt(0, 1.3, -12);
 }
 
 /* hook di debug */

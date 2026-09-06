@@ -24,9 +24,11 @@ Per una copia che si apre con doppio click, senza server:
 
 ## Come funziona una partita
 
-**Menù iniziale.** Livello, portafoglio, record, e tre potenziamenti permanenti
-comprati con le monete: Potenza iniziale, Arma di partenza, Guadagno. Il
-salvataggio sta in `localStorage`.
+**Menù iniziale.** È l'unica schermata fuori dalla corsa: livello, portafoglio,
+record e tre potenziamenti permanenti comprati con le monete (Potenza iniziale,
+Arma di partenza, Guadagno). A fine partita ci si torna direttamente — niente
+schermata intermedia — e al posto delle regole compare il riepilogo della corsa
+appena chiusa. Il salvataggio sta in `localStorage`.
 
 **La corsa.** Tre corsie, una riga di scelte ogni 30 blocchi:
 
@@ -47,6 +49,11 @@ numerati. Ogni blocco che sfondi costa il suo numero di potenza, e i costi
 crescono riga dopo riga. Si continua finché la potenza regge: quanti blocchi
 abbatti è il punteggio. Alcuni sono forzieri e pagano monete. Anche qui si
 sceglie la corsia, perché nella stessa riga i costi sono diversi.
+
+**I cartelli.** Piantati di traverso alla pista, segnano dove sei arrivato: uno
+azzurro sull'ultima corsa, uno dorato sul record. Si vedono da lontano, quindi
+la corsa ha un bersaglio invece di un numero astratto — e quando superi quello
+dorato parte lo striscione «RECORD SUPERATO!».
 
 ## Struttura
 
@@ -73,6 +80,7 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.sta
 - [x] Mondo voxel con texture generate a runtime (nessun asset da scaricare)
 - [x] Corsie con ostacoli da rompere o schivare, nemici, banchi da lavoro, bonus
 - [x] Finale a consumo di potenza, con scelta di corsia e forzieri
+- [x] Cartelli su pista per ultima corsa e record, con striscione al sorpasso
 - [ ] Audio e particellari oltre alle scaglie
 - [ ] Zone con temi diversi (neve, deserto, notte)
 - [ ] Missioni giornaliere, valuta premium, skin

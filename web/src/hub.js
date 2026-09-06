@@ -8,9 +8,10 @@ const $ = id => document.getElementById(id);
 
 /* ---------------------------- SCHERMATE ------------------------------ */
 /* Una sola alla volta è visibile; il mondo 3D resta sempre sotto. */
-const SCREENS = ['hub', 'result'];
+/* Il menù è l'unica schermata: a fine partita si torna qui, con il
+   riepilogo della corsa appena fatta sopra ai potenziamenti. */
 function showScreen(name) {
-  SCREENS.forEach(s => $(s).classList.toggle('hidden', s !== name));
+  $('hub').classList.toggle('hidden', name !== 'hub');
   $('hud').classList.toggle('hidden', name !== null);
 }
 
@@ -51,6 +52,18 @@ function renderHub() {
   $('hubLevel').textContent = 'LIVELLO ' + meta.level;
   $('hubBest').textContent  = meta.best ? 'RECORD ' + meta.best + ' BLOCCHI' : 'NESSUN RECORD';
 
+  /* Alla prima partita servono le regole; dopo serve il risultato.
+     Non hanno senso insieme: si scambiano il posto. */
+  const played = meta.last > 0 || meta.best > 0;
+  $('hubRules').classList.toggle('hidden', played);
+  $('hubHint').classList.toggle('hidden', played);
+  $('lastRun').classList.toggle('hidden', !played);
+  if (played) {
+    $('lrDepth').textContent = meta.last;
+    $('lrCoins').textContent = '+' + fmt(meta.lastCoins);
+    $('lrBadge').classList.toggle('hidden', !meta.lastRecord);
+  }
+
   for (const key of Object.keys(UPGRADES)) {
     const { u, lvl, maxed, cost, afford } = upgradeInfo(key);
     const card = document.querySelector('.up-card[data-key="' + key + '"]');
@@ -85,6 +98,18 @@ function renderBuffRail(buffs) {
                    Math.round(stacks * b.step * 100) + '%</b>';
     rail.appendChild(el);
   }
+}
+
+/* Striscione a tutto schermo per i momenti che contano (record superato) */
+let bannerTimer = 0;
+function flashBanner(text) {
+  const el = $('banner');
+  el.textContent = text;
+  el.classList.remove('show');
+  void el.offsetWidth;               // forza il riavvio dell'animazione
+  el.classList.add('show');
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => el.classList.remove('show'), 1700);
 }
 
 /* ------------------------------ POPUP --------------------------------- */

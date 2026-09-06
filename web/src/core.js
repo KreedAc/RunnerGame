@@ -74,7 +74,13 @@ const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace('.0', '') + 'M'
 const SAVE_KEY = 'blockyrun.v1';
 
 function defaultSave() {
-  return { coins: 0, gems: 0, level: 1, best: 0, up: { power: 0, weapon: 0, income: 0 } };
+  return {
+    coins: 0, gems: 0, level: 1,
+    best: 0,          // record di blocchi abbattuti
+    last: 0,          // dove sei arrivato la partita scorsa
+    lastCoins: 0, lastRecord: false,
+    up: { power: 0, weapon: 0, income: 0 }
+  };
 }
 
 function loadSave() {

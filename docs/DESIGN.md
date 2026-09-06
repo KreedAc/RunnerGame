@@ -62,7 +62,32 @@ su 36 disponibili: il resto è margine per chi ha comprato i potenziamenti.
 14% della potenza, un nemico il 22%. Un costo fisso sarebbe irrilevante a fine
 corsa e letale all'inizio; una percentuale pesa uguale in ogni momento.
 
-## 5. Grafica voxel senza asset
+## 5. I cartelli, e perché non c'è una schermata di fine partita
+
+Due modifiche che lavorano insieme.
+
+**Il finale aveva un problema di leggibilità**: "sono arrivato a 14 blocchi" è
+un numero astratto mentre corri, e la profondità non si percepisce dentro un
+corridoio tutto uguale. Ora due cartelli attraversano la pista — azzurro
+sull'ultima corsa, dorato sul record — piantati alla riga corrispondente. Si
+vedono da lontano, quindi la corsa smette di essere "vado avanti finché posso"
+e diventa "devo arrivare a *quello*". Superare il cartello dorato fa partire
+uno striscione a tutto schermo: il momento ha un suo picco.
+
+`markerZ(d) = finaleStartZ − (d − 0.5) × finaleGap`, cioè subito dopo l'ultimo
+blocco abbattuto. Se ultima corsa e record coincidono si disegna solo il dorato.
+
+**La schermata di fine partita è sparita.** Era un passaggio a vuoto: leggevi un
+numero, premevi un bottone, e solo allora arrivavi dove si spende. Adesso la
+corsa finisce, si resta un attimo fermi a vedere dove ci si è fermati (1.4s, o
+2s se è record, per far respirare lo striscione), e poi si è già nel menù con il
+riepilogo al posto delle regole e i potenziamenti sotto al pollice. Un tap in
+meno per ciclo, e il ciclo è quello che si ripete cento volte.
+
+Le regole del gioco restano visibili solo finché non hai giocato: dopo, quello
+spazio serve al risultato. Non hanno mai senso insieme.
+
+## 6. Grafica voxel senza asset
 
 Tutto è `BoxGeometry` scalato. Nessun modello, nessuna texture scaricata: le
 texture sono disegnate su canvas 16×16 al caricamento e filtrate `NearestFilter`.
@@ -84,7 +109,7 @@ proprio centro: è la differenza fra una corsa e un frullatore.
 Le etichette 3D adattano il corpo del font alla larghezza del canvas: senza
 questo "Bastone" veniva tagliato a "aston".
 
-## 6. Verso Android
+## 7. Verso Android
 
 ### A. WebView (Capacitor) — la più veloce
 Il prototipo diventa un `.apk` senza riscrivere niente: `npx cap init`,
@@ -111,7 +136,7 @@ povero di Unity.
 Restare su A finché il gameplay non convince, poi portare in Unity per la
 pubblicazione. Le formule di questo documento si trasferiscono direttamente.
 
-## 7. Prestazioni
+## 8. Prestazioni
 
 Il conteggio delle mesh è la cosa da tenere d'occhio: circa 600–800 per il mondo
 (terreno, alberi, case, montagne), ~150 per gli oggetti della pista e ~320 per il
@@ -125,7 +150,7 @@ Se su fascia bassa non regge, in ordine di resa:
    (sta negli examples di three, va aggiunto) usando un atlas al posto dei
    materiali per faccia.
 
-## 8. Cosa manca, in ordine di impatto sul feel
+## 9. Cosa manca, in ordine di impatto sul feel
 
 1. **Audio** — musica loop e sfx sull'impatto. Sposta la qualità percepita più
    di qualunque effetto grafico.
