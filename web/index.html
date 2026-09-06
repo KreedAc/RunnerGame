@@ -1,7 +1,7 @@
-<title>Blocky Power Run</title>
+<title>Torre di Ghiaccio</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;margin:0;overflow:hidden;background:#0b1220;
+  html,body{height:100%;margin:0;overflow:hidden;background:#0d1a2b;
     font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
     user-select:none;-webkit-user-select:none;touch-action:none}
   #stage{position:fixed;inset:0}
@@ -12,28 +12,32 @@
   #hud{position:fixed;inset:0;pointer-events:none;
     padding:calc(env(safe-area-inset-top,0px) + 12px) 12px 0}
   .row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-  .pill{background:rgba(10,18,34,.6);backdrop-filter:blur(6px);
-    border:2px solid rgba(255,255,255,.22);border-radius:12px;
+  .pill{background:rgba(16,32,52,.66);backdrop-filter:blur(6px);
+    border:2px solid rgba(255,255,255,.24);border-radius:14px;
     padding:6px 13px;color:#fff;font-weight:800;font-size:14px;letter-spacing:.3px;
-    text-shadow:0 2px 0 rgba(0,0,0,.35);white-space:nowrap}
+    text-shadow:0 2px 0 rgba(0,0,0,.4);white-space:nowrap}
   .pill small{display:block;font-size:10px;opacity:.6;letter-spacing:1.2px;font-weight:800}
   .pill b{font-size:19px;font-variant-numeric:tabular-nums}
 
   /* la potenza è il numero che conta: sta al centro e domina */
-  #powerPill{background:linear-gradient(180deg,#6ad0ff,#1f7fd6);
-    border-color:rgba(255,255,255,.55);padding:5px 22px;text-align:center}
+  #powerPill{background:linear-gradient(180deg,#6fe0ff,#1f8fd6);
+    border-color:rgba(255,255,255,.6);padding:5px 22px;text-align:center}
   #powerPill b{font-size:31px;line-height:1.05}
-  #powerPill small{opacity:.85}
+  #powerPill small{opacity:.9}
+
+  .row.mid{justify-content:center;gap:8px;margin-top:7px}
+  #wallPill{background:rgba(60,40,86,.7);border-color:rgba(200,170,255,.4)}
+  #wallPill b{color:#e2ccff}
 
   #progressWrap{margin:11px 2px 0;height:8px;border-radius:99px;
-    background:rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.25);overflow:hidden}
+    background:rgba(0,0,0,.32);border:2px solid rgba(255,255,255,.28);overflow:hidden}
   #progress{height:100%;width:0;border-radius:99px;
-    background:linear-gradient(90deg,#7bf07a,#2fd44a);transition:width .12s linear}
+    background:linear-gradient(90deg,#8ff0ff,#ffd24b);transition:width .12s linear}
 
-  /* colonnina dei bonus raccolti, a sinistra come nel riferimento */
-  #buffRail{position:absolute;left:12px;top:150px;display:flex;flex-direction:column;gap:6px}
-  .buff{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:10px;
-    background:rgba(10,18,34,.62);border:2px solid;color:#fff;
+  /* colonnina dei bonus raccolti */
+  #buffRail{position:absolute;left:12px;top:158px;display:flex;flex-direction:column;gap:6px}
+  .buff{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:11px;
+    background:rgba(16,32,52,.68);border:2px solid;color:#fff;
     font-size:11px;font-weight:800;letter-spacing:.2px}
   .buff-icon{font-size:13px}
   .buff-name{opacity:.7}
@@ -41,7 +45,7 @@
 
   #pops{position:fixed;inset:0;pointer-events:none;overflow:hidden}
   .pop{position:absolute;top:48%;transform:translate(-50%,0);
-    font-size:38px;font-weight:900;color:#fff;-webkit-text-stroke:3px rgba(0,0,0,.42);
+    font-size:38px;font-weight:900;color:#fff;-webkit-text-stroke:3px rgba(24,20,38,.55);
     animation:popUp .85s ease-out forwards}
   @keyframes popUp{
     0%{opacity:0;transform:translate(-50%,10px) scale(.6)}
@@ -49,103 +53,102 @@
     100%{opacity:0;transform:translate(-50%,-120px) scale(1)}
   }
 
-  /* ============================ SCHERMATE =========================== */
-  .screen{position:fixed;inset:0;display:flex;flex-direction:column;
+  /* striscione dei momenti che contano */
+  #banner{position:fixed;left:0;right:0;top:34%;text-align:center;pointer-events:none;
+    padding:0 16px;opacity:0;
+    font-size:clamp(26px,8.5vw,44px);font-weight:900;color:#ffd24b;
+    -webkit-text-stroke:3px rgba(24,20,38,.6);text-wrap:balance}
+  #banner.show{animation:bannerIn 1.9s ease-out forwards}
+  @keyframes bannerIn{
+    0%{opacity:0;transform:scale(.6)}
+    10%{opacity:1;transform:scale(1.14)}
+    20%{transform:scale(1)}
+    82%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(1.06)}
+  }
+
+  /* ============================== MENÙ ============================== */
+  #hub{position:fixed;inset:0;display:flex;flex-direction:column;
     padding:calc(env(safe-area-inset-top,0px) + 14px) 14px
       calc(env(safe-area-inset-bottom,0px) + 26px);
-    color:#fff;overflow-y:auto}
-  #hub{background:linear-gradient(180deg,rgba(8,16,32,.12),rgba(8,16,32,.35) 40%,rgba(8,16,32,.9))}
-  #result{background:linear-gradient(180deg,rgba(8,16,32,.1),rgba(8,16,32,.3) 40%,rgba(8,16,32,.92));
-    justify-content:flex-end;align-items:center;gap:10px;text-align:center}
+    color:#fff;overflow-y:auto;
+    background:linear-gradient(180deg,rgba(10,26,44,.12),rgba(10,26,44,.4) 42%,rgba(10,26,44,.92))}
 
   .hub-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .wallet{display:flex;gap:8px}
-  .coin-pill{display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:12px;
-    background:rgba(10,18,34,.62);border:2px solid rgba(255,255,255,.22);
+  .coin-pill{display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:13px;
+    background:rgba(16,32,52,.68);border:2px solid rgba(255,255,255,.24);
     font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
 
-  .hub-title{margin-top:22px;text-align:center}
-  .hub-title .name{font-size:clamp(34px,11vw,60px);font-weight:900;line-height:.92;
-    background:linear-gradient(180deg,#fff,#ffcf7a);-webkit-background-clip:text;
-    background-clip:text;color:transparent;filter:drop-shadow(0 5px 0 rgba(0,0,0,.4))}
-  .hub-title .zone{margin-top:6px;font-size:14px;font-weight:800;letter-spacing:2px;opacity:.75}
+  .hub-title{margin-top:20px;text-align:center}
+  .hub-title .name{font-size:clamp(32px,10.5vw,58px);font-weight:900;line-height:.92;
+    background:linear-gradient(180deg,#fff,#9fe6ff 55%,#ffd24b);-webkit-background-clip:text;
+    background-clip:text;color:transparent;filter:drop-shadow(0 5px 0 rgba(24,20,38,.55))}
+  .hub-title .zone{margin-top:7px;font-size:14px;font-weight:800;letter-spacing:2px;opacity:.8}
   .hub-title .best{margin-top:3px;font-size:12px;font-weight:800;letter-spacing:1.4px;
-    color:#ffd24b;opacity:.9}
+    color:#ffd24b;opacity:.92}
 
-  .hub-rules{margin:18px auto 0;display:flex;flex-direction:column;gap:7px;
-    max-width:32ch;font-size:13px;font-weight:700;line-height:1.4}
-  .hub-rules div{display:flex;gap:9px;align-items:flex-start}
-  .hub-rules span{flex:none;width:20px;text-align:center}
+  .story{margin:16px auto 0;max-width:31ch;font-size:13.5px;font-weight:700;
+    line-height:1.5;text-align:center;opacity:.92;text-wrap:balance}
+  .story b{color:#ffd24b}
 
-  .spacer{flex:1;min-height:16px}
+  /* riepilogo dell'ultima corsa */
+  .last-run{position:relative;margin:18px auto 0;max-width:310px;padding:17px 18px 13px;
+    border-radius:20px;background:rgba(16,32,52,.66);
+    border:2px solid rgba(255,255,255,.24)}
+  .lr-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+    padding:3px 14px;border-radius:99px;white-space:nowrap;
+    background:linear-gradient(180deg,#ffd056,#f0a01a);color:#3a2000;
+    font-size:11px;font-weight:900;letter-spacing:1.2px}
+  .lr-out{font-size:12px;font-weight:900;letter-spacing:1.4px;text-align:center;
+    margin-bottom:9px;opacity:.9}
+  .lr-row{display:flex;align-items:center;justify-content:space-around;gap:10px}
+  .lr-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .lr-cell b{font-size:32px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+  .lr-cell b.gold{color:#ffd24b}
+  .lr-cell span{font-size:10px;font-weight:800;letter-spacing:1.4px;opacity:.6}
+  .lr-sep{width:2px;align-self:stretch;background:rgba(255,255,255,.18);border-radius:2px}
 
-  /* le tre carte di potenziamento, come nella barra in basso del riferimento */
-  #upgrades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .hint{display:flex;align-items:center;justify-content:center;gap:10px;
+    font-size:13px;font-weight:700;opacity:.75;margin-top:12px}
+  .swipe{width:56px;height:30px;border:3px solid rgba(255,255,255,.6);border-radius:99px;position:relative}
+  .swipe::after{content:"";position:absolute;top:4px;left:4px;width:16px;height:16px;
+    border-radius:50%;background:#fff;animation:sw 1.5s ease-in-out infinite}
+  @keyframes sw{0%,100%{transform:translateX(0)}50%{transform:translateX(26px)}}
+
+  .spacer{flex:1;min-height:14px}
+
+  .btn{pointer-events:auto;cursor:pointer;border:none;border-radius:20px;
+    padding:16px 52px;font-size:22px;font-weight:900;color:#3a2000;font-family:inherit;
+    background:linear-gradient(180deg,#ffd970,#f5a91d);
+    box-shadow:0 7px 0 #b96e00,0 12px 26px rgba(0,0,0,.45);
+    transition:transform .08s,box-shadow .08s}
+  .btn:active{transform:translateY(5px);box-shadow:0 2px 0 #b96e00,0 6px 14px rgba(0,0,0,.4)}
+  .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .play-wrap{display:flex;justify-content:center;margin-bottom:14px}
+
+  /* le tre carte di potenziamento */
+  #upgrades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .up-card{display:flex;flex-direction:column;align-items:center;gap:5px;
-    padding:11px 6px 9px;border-radius:16px;cursor:pointer;font-family:inherit;
-    background:linear-gradient(180deg,#4a5570,#333c52);
+    padding:11px 6px 9px;border-radius:18px;cursor:pointer;font-family:inherit;
+    background:linear-gradient(180deg,#3f5a7a,#26374d);
     border:2px solid rgba(255,255,255,.3);
-    box-shadow:0 5px 0 rgba(0,0,0,.45);color:#fff;
+    box-shadow:0 5px 0 rgba(9,18,30,.6);color:#fff;
     transition:transform .08s,box-shadow .08s,filter .12s}
-  .up-card:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.45)}
-  .up-card.locked{filter:grayscale(.65) brightness(.7);cursor:default}
+  .up-card:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(9,18,30,.6)}
+  .up-card.locked{filter:grayscale(.6) brightness(.68);cursor:default}
   .up-card:focus-visible{outline:3px solid #fff;outline-offset:2px}
   .up-name{font-size:12px;font-weight:900;letter-spacing:.8px}
   .up-level{font-size:10px;opacity:.62;font-weight:800}
   .up-value{font-size:19px;font-weight:900;color:#8fe3ff;font-variant-numeric:tabular-nums}
   .up-cost{margin-top:2px;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:900;
-    background:linear-gradient(180deg,#ffd056,#f0a01a);color:#4a2200;
+    background:linear-gradient(180deg,#ffd970,#f5a91d);color:#3a2000;
     font-variant-numeric:tabular-nums}
 
-  .btn{pointer-events:auto;cursor:pointer;border:none;border-radius:18px;
-    padding:16px 52px;font-size:22px;font-weight:900;color:#4a2200;font-family:inherit;
-    background:linear-gradient(180deg,#ffd056,#ff9f1a);
-    box-shadow:0 7px 0 #c96f00,0 12px 24px rgba(0,0,0,.4);
-    transition:transform .08s,box-shadow .08s}
-  .btn:active{transform:translateY(5px);box-shadow:0 2px 0 #c96f00,0 6px 14px rgba(0,0,0,.4)}
-  .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
-  .btn.ghost{background:linear-gradient(180deg,#5f6b86,#414b63);color:#fff;
-    box-shadow:0 6px 0 #29303f,0 10px 20px rgba(0,0,0,.35);padding:13px 32px;font-size:16px}
-  .btn.ghost:active{box-shadow:0 2px 0 #29303f}
-  .play-wrap{display:flex;justify-content:center;margin-bottom:14px}
-
-  /* riepilogo dell'ultima corsa, al posto delle regole */
-  .last-run{position:relative;margin:20px auto 0;max-width:300px;padding:16px 18px 13px;
-    border-radius:18px;background:rgba(10,18,34,.6);
-    border:2px solid rgba(255,255,255,.22)}
-  .lr-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
-    padding:3px 14px;border-radius:99px;white-space:nowrap;
-    background:linear-gradient(180deg,#ffd056,#f0a01a);color:#4a2200;
-    font-size:11px;font-weight:900;letter-spacing:1.2px}
-  .lr-row{display:flex;align-items:center;justify-content:space-around;gap:10px}
-  .lr-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
-  .lr-cell b{font-size:34px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
-  .lr-cell b.gold{color:#ffd24b}
-  .lr-cell span{font-size:10px;font-weight:800;letter-spacing:1.4px;opacity:.6}
-  .lr-sep{width:2px;align-self:stretch;background:rgba(255,255,255,.16);border-radius:2px}
-
-  /* striscione dei momenti che contano */
-  #banner{position:fixed;left:0;right:0;top:36%;text-align:center;pointer-events:none;
-    padding:0 16px;opacity:0;
-    font-size:clamp(26px,8.5vw,44px);font-weight:900;color:#ffd24b;
-    -webkit-text-stroke:3px rgba(0,0,0,.5);text-wrap:balance}
-  #banner.show{animation:bannerIn 1.7s ease-out forwards}
-  @keyframes bannerIn{
-    0%{opacity:0;transform:scale(.6)}
-    12%{opacity:1;transform:scale(1.14)}
-    22%{transform:scale(1)}
-    78%{opacity:1;transform:scale(1)}
-    100%{opacity:0;transform:scale(1.06)}
+  @media (prefers-reduced-motion:reduce){
+    .swipe::after,.pop{animation:none}
+    #banner.show{animation:none;opacity:1}
   }
-
-  .hint{display:flex;align-items:center;justify-content:center;gap:10px;
-    font-size:13px;font-weight:700;opacity:.75;margin-top:10px}
-  .swipe{width:56px;height:30px;border:3px solid rgba(255,255,255,.6);border-radius:99px;position:relative}
-  .swipe::after{content:"";position:absolute;top:4px;left:4px;width:16px;height:16px;
-    border-radius:50%;background:#fff;animation:sw 1.5s ease-in-out infinite}
-  @keyframes sw{0%,100%{transform:translateX(0)}50%{transform:translateX(26px)}}
-  @media (prefers-reduced-motion:reduce){.swipe::after,.pop,#banner.show{animation:none}
-    #banner.show{opacity:1}}
 </style>
 
 <div id="stage"></div>
@@ -155,10 +158,11 @@
   <div class="row">
     <div class="pill"><small>ARMA</small><b id="hWeapon">Pugni</b></div>
     <div class="pill" id="powerPill"><small>POTENZA</small><b id="hPower">20</b></div>
-    <div class="pill"><small>MONETE</small><b id="hCoins">0</b></div>
+    <div class="pill"><small>ORO</small><b id="hCoins">0</b></div>
   </div>
-  <div class="row" style="justify-content:center;margin-top:7px">
+  <div class="row mid">
     <div class="pill"><small>COLPO</small><b id="hDamage">3</b></div>
+    <div class="pill" id="wallPill"><small>MURO</small><b id="hWall">0/30</b></div>
   </div>
   <div id="progressWrap"><div id="progress"></div></div>
   <div id="buffRail"></div>
@@ -166,10 +170,10 @@
 <div id="pops"></div>
 <div id="banner"></div>
 
-<!-- ========================== MENÙ INIZIALE ========================= -->
-<div class="screen" id="hub">
+<!-- ============================== MENÙ ============================== -->
+<div id="hub">
   <div class="hub-top">
-    <div class="pill" id="hubLevel">LIVELLO 1</div>
+    <div class="pill" id="hubLevel">TORRE 1</div>
     <div class="wallet">
       <div class="coin-pill">🪙 <span id="hubCoins">0</span></div>
       <div class="coin-pill">💎 <span id="hubGems">0</span></div>
@@ -177,23 +181,23 @@
   </div>
 
   <div class="hub-title">
-    <div class="name">BLOCKY<br>POWER RUN</div>
-    <div class="zone">PIANURA DEI BLOCCHI</div>
+    <div class="name">TORRE<br>DI GHIACCIO</div>
+    <div class="zone" id="hubZone">VALLE GELATA</div>
     <div class="best" id="hubBest">NESSUN RECORD</div>
   </div>
 
-  <div class="hub-rules" id="hubRules">
-    <div><span>🟢</span><div>Numero verde: lo spacchi e guadagni potenza.</div></div>
-    <div><span>🔴</span><div>Numero rosso: schivalo, o ti costa potenza.</div></div>
-    <div><span>🔨</span><div>Passa dal banco da lavoro: l'arma sale di livello.</div></div>
-    <div><span>🏁</span><div>Al traguardo la potenza si consuma blocco dopo blocco.</div></div>
+  <div class="story" id="hubStory">
+    Il carceriere ha rinchiuso la principessa in cima alla torre.
+    Spacca le colonne <b>verdi</b> per farti potenza, schiva le <b>rosse</b>,
+    passa dalle fucine — poi sfonda i <b>30 blocchi</b> del muro.
+    Quello che ti resta è la forza con cui affronti il boss.
   </div>
 
-  <!-- riepilogo della corsa appena chiusa: prende il posto delle regole -->
   <div class="last-run hidden" id="lastRun">
     <div class="lr-badge hidden" id="lrBadge">NUOVO RECORD</div>
+    <div class="lr-out" id="lrOut"></div>
     <div class="lr-row">
-      <div class="lr-cell"><b id="lrDepth">0</b><span>BLOCCHI</span></div>
+      <div class="lr-cell"><b id="lrDepth">0</b><span>MURO</span></div>
       <div class="lr-sep"></div>
       <div class="lr-cell"><b id="lrCoins" class="gold">+0</b><span>BOTTINO</span></div>
     </div>
@@ -202,7 +206,7 @@
   <div class="hint" id="hubHint"><span class="swipe"></span> trascina per cambiare corsia</div>
   <div class="spacer"></div>
 
-  <div class="play-wrap"><button class="btn" id="playBtn">GIOCA</button></div>
+  <div class="play-wrap"><button class="btn" id="playBtn">ALL'ASSALTO</button></div>
 
   <div id="upgrades">
     <button class="up-card" data-key="power">
@@ -218,7 +222,7 @@
       <div class="up-cost">150</div>
     </button>
     <button class="up-card" data-key="income">
-      <div class="up-name">GUADAGNO</div>
+      <div class="up-name">ORO</div>
       <div class="up-level">Livello 0</div>
       <div class="up-value">×1.00</div>
       <div class="up-cost">70</div>
@@ -230,7 +234,7 @@
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
 (function () {
-  const FILES = ['src/core.js', 'src/blocks.js', 'src/world.js',
+  const FILES = ['src/core.js', 'src/art.js', 'src/world.js',
                  'src/actors.js', 'src/hub.js', 'src/game.js'];
   function load(src, cb) {
     const s = document.createElement('script');
@@ -239,7 +243,7 @@
     s.onerror = function () {
       document.body.insertAdjacentHTML('beforeend',
         '<div style="position:fixed;inset:0;display:grid;place-items:center;color:#fff;' +
-        'font:700 15px system-ui;background:#0b1220">Impossibile caricare ' + src + '</div>');
+        'font:700 15px system-ui;background:#0d1a2b">Impossibile caricare ' + src + '</div>');
     };
     document.head.appendChild(s);
   }

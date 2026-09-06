@@ -1,130 +1,176 @@
 /* =====================================================================
-   WORLD — pista, terreno, alberi, case, nuvole
-   Il piano di calpestio è y = 0: i blocchi del suolo stanno fra −1 e 0.
+   WORLD — sentiero di neve, scogliere di ghiaccio, pini, cristalli
+   e la torre in cui è rinchiusa la principessa.
+   Il piano di calpestio è y = 0.
    ===================================================================== */
 
-const world = new THREE.Group();      // ricostruito ad ogni livello
+const world = new THREE.Group();
 scene.add(world);
 
 function clearWorld() {
   while (world.children.length) world.remove(world.children[0]);
 }
 
+/* ------------------------------ SENTIERO ------------------------------ */
+let pathMat = null;
+function pathMaterial(total) {
+  // bande morbide lungo la corsia: senza, la neve è una lastra bianca
+  // e alla velocità di corsa non si percepisce nessun movimento
+  if (!pathMat) {
+    const c = document.createElement('canvas');
+    c.width = 8; c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#e7f0f8'; g.fillRect(0, 0, 8, 64);
+    g.fillStyle = 'rgba(150,182,208,.30)'; g.fillRect(0, 0, 8, 5);
+    g.fillStyle = 'rgba(150,182,208,.14)'; g.fillRect(0, 32, 8, 3);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.minFilter = t.magFilter = THREE.LinearFilter;
+    pathMat = new THREE.MeshLambertMaterial({ map: t });
+  }
+  pathMat.map.repeat.set(1, total / 9);
+  return pathMat;
+}
+
 function buildGround(len) {
-  const total = len + 60;
-  const zc = -len / 2 + 12;           // centro della striscia lungo Z
+  const total = len + 70;
+  const zc = -len / 2 + 14;
 
-  // la pista: ghiaia chiara, si legge bene sotto ai gate
-  putBlock(world, BLOCK.gravel, 0, -1, zc, CFG.trackWidth, 1, total);
-
-  // bordo di cobblestone su entrambi i lati
+  putOn(world, GEO.box, pathMaterial(total), 0, -1.2, zc, CFG.trackWidth, 1.2, total);
+  // cordoli arrotondati: due mezzi cilindri lungo i bordi
   for (const s of [-1, 1]) {
-    putBlock(world, BLOCK.cobble, s * (CFG.trackWidth / 2 + 0.5), -1, zc, 1, 1, total);
+    const rail = put(world, GEO.cyl, MAT.snowEdge,
+                     s * (CFG.trackWidth / 2 + 0.15), -0.15, zc, 0.7, total, 0.7);
+    rail.rotation.x = Math.PI / 2;
   }
-
-  // prato ai lati (due lastroni: il resto è rilievo appoggiato sopra)
+  // piana di ghiaccio ai lati
   for (const s of [-1, 1]) {
-    putBlock(world, BLOCK.grass, s * 32, -1, zc, 56, 1, total + 60);
+    putOn(world, GEO.box, MAT.ice, s * 34, -1.6, zc, 60, 1.2, total + 70);
   }
 }
 
-function buildTerrain(len) {
-  // rilievo a gradoni: mucchi di blocchi di erba, pietra e sabbia
-  const EDGE = CFG.trackWidth / 2 + 1.5;      // bordo della pista + cordolo
-  for (let z = 20; z > -len - 40; z -= rnd(5, 11)) {
+/* --------------------------- SCOGLIERE E FLORA ------------------------- */
+function buildCliffs(len) {
+  const EDGE = CFG.trackWidth / 2 + 3;
+  for (let z = 24; z > -len - 60; z -= rnd(7, 15)) {
     for (const side of [-1, 1]) {
-      const r = Math.random();
-      if (r < 0.42) {
-        const w = rint(2, 6), h = rint(1, 3);
-        const x = side * (EDGE + w / 2 + rnd(0, 22));
-        putBlock(world, BLOCK.grass, x, 0, z, w, h, rint(2, 6));
-        continue;
-      }
-      const d = rnd(EDGE + 4, 30);
+      const d = rnd(EDGE, EDGE + 26);
       const x = side * d;
-      if (r < 0.58) {
-        putBlock(world, BLOCK.sand, x, 0, z, rint(3, 6), 1, rint(3, 6));
-      } else if (r < 0.72 && d > 14) {
-        // affioramento di roccia
-        putBlock(world, BLOCK.stone, x, 0, z, rint(2, 4), rint(3, 9), rint(2, 4));
-      } else if (r < 0.80) {
-        // pozza d'acqua incassata di un blocco
-        putBlock(world, BLOCK.sand,  x, 0, z, 5, 1, 5);
-        putBlock(world, BLOCK.water, x, 0.6, z, 4, 0.5, 4);
-      }
-    }
-  }
-}
-
-function buildTree(x, z) {
-  const h = rint(4, 6);
-  putBlock(world, BLOCK.log, x, 0, z, 1, h, 1);
-  // chioma: una fascia larga e un cappello sopra
-  putBlock(world, BLOCK.leaves, x, h - 2, z, 5, 2, 5);
-  putBlock(world, BLOCK.leaves, x, h,     z, 3, 1, 3);
-  putBlock(world, BLOCK.leaves, x, h + 1, z, 1, 1, 1);
-}
-
-function buildHouse(x, z) {
-  const w = rint(5, 7), d = rint(5, 7), h = rint(3, 4);
-  putBlock(world, BLOCK.planks, x, 0, z, w, h, d);
-  // finestre sulla facciata rivolta alla pista
-  const fz = z + (x < 0 ? d / 2 : -d / 2);
-  putBlock(world, BLOCK.glass, x - 1, 1.2, fz, 1, 1, 0.2);
-  putBlock(world, BLOCK.glass, x + 1, 1.2, fz, 1, 1, 0.2);
-  // tetto a due spioventi, a gradoni di mattoni
-  for (let i = 0; i < 3; i++) {
-    putBlock(world, BLOCK.brick, x, h + i, z, w - i * 2 + 1, 1, d - i * 2 + 1);
-  }
-}
-
-function buildProps(len) {
-  for (let z = 16; z > -len - 30; z -= rnd(9, 18)) {
-    for (const side of [-1, 1]) {
-      const d = rnd(CFG.trackWidth / 2 + 5, 28), x = side * d;
       const r = Math.random();
-      if (r < 0.5)              buildTree(x, z);
-      else if (r < 0.72 && d > 13) buildHouse(x, z);
-      else if (r < 0.85) {
-        // recinto di legno
-        for (let k = -2; k <= 2; k++) putBlock(world, BLOCK.log, x, 0, z + k, 0.3, 1.5, 0.3);
+
+      if (r < 0.46) {
+        // guglia di ghiaccio: due coni sfalsati, sfaccettati
+        const h = rnd(4, 13);
+        const sp = putOn(world, GEO.cone6, MAT.ice, x, 0, z, rnd(2.6, 5.2), h, rnd(2.6, 5.2));
+        sp.rotation.y = rnd(0, 3);
+        if (Math.random() < 0.5) {
+          const s2 = putOn(world, GEO.cone6, MAT.iceDark, x + rnd(-2.5, 2.5), 0, z + rnd(-3, 3),
+                           rnd(1.8, 3.2), rnd(3, 8), rnd(1.8, 3.2));
+          s2.rotation.y = rnd(0, 3);
+        }
+      } else if (r < 0.68) {
+        // masso: sfera schiacciata a faccette
+        const s = rnd(1.8, 4.4);
+        putOn(world, GEO.sph8, MAT.rock, x, 0, z, s * 1.3, s, s * 1.2).rotation.y = rnd(0, 3);
+      } else if (r < 0.88) {
+        // pino: tre coni impilati
+        const h = rnd(3.2, 5.5);
+        putOn(world, GEO.cyl8, MAT.trunk, x, 0, z, 0.42, h * 0.42, 0.42);
+        putOn(world, GEO.cone6, MAT.pine, x, h * 0.22, z, h * 0.72, h * 0.62, h * 0.72);
+        putOn(world, GEO.cone6, MAT.pine, x, h * 0.60, z, h * 0.54, h * 0.52, h * 0.54);
+        putOn(world, GEO.cone6, MAT.pine, x, h * 0.95, z, h * 0.34, h * 0.42, h * 0.34);
+      } else {
+        // grappolo di cristalli, come nei riferimenti
+        for (let i = 0; i < rint(3, 5); i++) {
+          const cx = x + rnd(-1.6, 1.6), cz = z + rnd(-1.6, 1.6);
+          const cr = put(world, GEO.octa, MAT.ice, cx, rnd(0.8, 2.2), cz,
+                         rnd(0.5, 1.0), rnd(1.6, 3.4), rnd(0.5, 1.0));
+          cr.rotation.y = rnd(0, 3);
+        }
       }
     }
   }
 }
 
-function buildSkyline(len) {
-  // montagne lontane: chiudono l'orizzonte, altrimenti si vede il vuoto
-  for (let i = 0; i < 22; i++) {
+function buildHorizon(len) {
+  // montagne lontane: chiudono la scena senza costare quasi niente
+  for (let i = 0; i < 18; i++) {
     const side = Math.random() < 0.5 ? -1 : 1;
-    putBlock(world, Math.random() < 0.5 ? BLOCK.grass : BLOCK.stone,
-             side * rnd(48, 115), 0, rnd(-len - 200, -20),
-             rint(12, 30), rint(6, 22), rint(12, 30));
+    const h = rnd(14, 42);
+    const m = putOn(world, GEO.cone6, MAT.iceDark,
+                    side * rnd(52, 130), 0, rnd(-len - 220, -20),
+                    rnd(18, 46), h, rnd(18, 46));
+    m.rotation.y = rnd(0, 3);
   }
-  putBlock(world, BLOCK.grass, 0, 0, -len - 170, 260, rint(12, 20), 40);
 }
 
 function buildClouds(len) {
-  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xfbfdff });
-  for (let i = 0; i < 20; i++) {
+  const cloud = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  for (let i = 0; i < 16; i++) {
     const g = new THREE.Group();
-    // alte e lontane dai bordi: se passano vicino alla camera entrano nell'HUD
-    g.position.set((Math.random() < 0.5 ? -1 : 1) * rnd(30, 100),
-                   rnd(34, 60), rnd(-len - 120, -40));
+    g.position.set((Math.random() < 0.5 ? -1 : 1) * rnd(28, 95),
+                   rnd(30, 56), rnd(-len - 140, -50));
     for (let j = 0; j < rint(3, 5); j++) {
-      const m = new THREE.Mesh(boxGeo, cloudMat);
-      m.position.set(rnd(-6, 6), rnd(-1, 1), rnd(-3, 3));
-      m.scale.set(rnd(5, 11), rnd(2, 3), rnd(4, 7));
-      g.add(m);
+      put(g, GEO.sph8, cloud, rnd(-5, 5), rnd(-0.8, 0.8), rnd(-2.5, 2.5),
+          rnd(5, 9), rnd(3, 4.5), rnd(4, 6));
     }
     world.add(g);
   }
 }
 
+/* -------------------------------- TORRE -------------------------------- */
+/* In cima la principessa, alla base il boss. È visibile dall'inizio del
+   muro: sapere dove stai andando è metà della motivazione.               */
+function buildTower(z) {
+  const g = new THREE.Group();
+  g.position.set(0, 0, z);
+
+  putOn(g, GEO.cyl, MAT.stoneDark, 0, 0, 0, 15, 1.2, 15);        // basamento
+  putOn(g, GEO.cyl, MAT.stone,     0, 1.2, 0, 11, 1.0, 11);
+
+  const H = 26;
+  putOn(g, GEO.taper, MAT.stone, 0, 2.2, 0, 7.6, H, 7.6);        // fusto
+
+  // fasce di pietra scura, danno scala all'altezza
+  for (let y = 6; y < H; y += 6) {
+    putOn(g, GEO.cyl, MAT.stoneDark, 0, y, 0, 7.9, 0.7, 7.9);
+  }
+  // finestre a spirale
+  for (let i = 0; i < 7; i++) {
+    const a = i * 1.1, y = 5 + i * 2.8;
+    put(g, GEO.box, mat(0x2a2438),
+        Math.sin(a) * 3.4, y, Math.cos(a) * 3.4, 0.9, 1.5, 0.9);
+  }
+
+  /* Balcone e tetto. Il tetto sta alto e stretto apposta: se scende
+     troppo, la principessa sparisce sotto la falda ed è l'unica cosa
+     che il giocatore vuole vedere quando vince. */
+  putOn(g, GEO.cyl, MAT.stoneDark, 0, H + 1.4, 0, 9.6, 0.8, 9.6);
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2;
+    if (Math.abs(a - Math.PI / 2) < 0.6) continue;         // varco davanti
+    putOn(g, GEO.box, MAT.stone, Math.sin(a) * 4.4, H + 2.2, Math.cos(a) * 4.4, 0.8, 1.0, 0.8);
+  }
+  putOn(g, GEO.cyl,  MAT.stone,     0, H + 3.4, 0, 6.6, 1.6, 6.6);   // tamburo
+  putOn(g, GEO.cone, mat(0xd94f7d), 0, H + 5.0, 0, 8.6, 6.4, 8.6);   // tetto
+  putOn(g, GEO.cyl,  MAT.gold,      0, H + 11.4, 0, 0.3, 2.2, 0.3);
+  const flag = put(g, GEO.box, mat(C.princess), 1.3, H + 12.8, 0, 2.4, 1.3, 0.1);
+  flag.userData.noOutline = true;
+
+  // la principessa, affacciata dal varco, rivolta verso di te
+  const p = buildPrincess();
+  p.position.set(0, H + 2.2, 3.9);
+  p.scale.setScalar(1.5);
+  g.add(p);
+
+  world.add(g);
+  return { obj: g, princess: p, height: H };
+}
+
+/* ------------------------------ ASSEMBLAGGIO --------------------------- */
 function buildWorld(len) {
   buildGround(len);
-  buildTerrain(len);
-  buildProps(len);
-  buildSkyline(len);
+  buildCliffs(len);
+  buildHorizon(len);
   buildClouds(len);
 }

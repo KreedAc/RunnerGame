@@ -1,115 +1,105 @@
-# Blocky Power Run — note di design
+# Torre di Ghiaccio — note di design
 
-## 1. Il ciclo di gioco
+## 1. La storia serve al gioco, non il contrario
 
-Menù → corsa → finale → bottino → potenziamenti → corsa. Una partita dura
-40-60 secondi ed è divisa in due metà con regole opposte:
+Il carceriere ha rapito la principessa e la tiene in cima alla torre. È una
+premessa banale di proposito: il suo lavoro è dare un nome a numeri che prima
+erano astratti.
 
-- **prima metà: accumuli.** Corri su tre corsie e a ogni riga scegli cosa
-  prendere. Spaccare fa salire la potenza, sbagliare la fa scendere.
-- **seconda metà: spendi.** Oltre la linea a scacchi ogni blocco costa
-  potenza. Quanto lontano arrivi è il punteggio.
+Prima il finale era "vado avanti finché posso" e il punteggio era un numero
+senza scala. Adesso il muro ha una fine — **30 blocchi** — e dietro c'è
+qualcosa di preciso. Il giocatore non insegue un record, insegue una torre che
+vede in fondo alla pista fin dal primo secondo di corsa.
 
-È la struttura che rende leggibile la prima metà: mentre corri, il numero
-grande in alto è l'unica cosa che conta, e sai già a cosa servirà.
+E soprattutto la storia impone la struttura giusta: **arrivare non basta**. La
+potenza consumata dal muro è la stessa che serve contro il boss, quindi
+sfondare al limite significa presentarsi a mani vuote. Il potenziamento smette
+di essere "un numero più grande" e diventa "il margine per il boss".
 
-## 2. Il colore è la regola
+## 2. Le tre formule
 
-Ogni torre e ogni nemico mostrano un numero. Il numero è **verde se il tuo
-colpo attuale ci arriva, rosso se no** — non è una proprietà dell'oggetto, è
-una relazione con te in questo momento. Quando passi da un banco da lavoro e
-l'arma sale, `refreshThreats()` ricolora tutto quello che non hai ancora
-incontrato: file che erano rosse diventano verdi davanti ai tuoi occhi.
+Tutto il bilanciamento di una torre sta in tre righe di `core.js`:
 
-È il modo più economico per insegnare il gioco senza tutorial, e trasforma il
-banco da lavoro da "bonus generico" a "chiave che apre corsie".
+```
+towerNeed(n)  = 430 × 1.62^(n-1)     quanta potenza serve in tutto
+wallBudget(n) = towerNeed × 0.55     quanto se ne va nel muro
+bossHealth(n) = towerNeed × 0.45     quanto ne resta da spendere
+```
 
-Le torri cambiano anche materiale (cobblestone verde o rosso), così la lettura
-regge anche a distanza, prima che il numero sia decifrabile.
+`wallBudget` è il costo del percorso **migliore** attraverso il muro: i costi
+delle trenta righe sono normalizzati perché la somma delle scelte ottime faccia
+esattamente quella cifra. Giocare male costa di più — nella stessa riga i tre
+blocchi valgono ×1, ×1.6 e ×2.3 del passo.
 
-## 3. Perché tre corsie e non due
+Il 55/45 è la parte interessante. Con 100/0 il boss sarebbe un dazio; con 0/100
+il muro sarebbe scenografia. A 55/45 un giocatore perfetto senza potenziamenti
+sfonda il muro e arriva davanti al carceriere quasi scarico: vede la torre, la
+principessa, e perde. È esattamente la sconfitta che fa comprare il primo
+potenziamento.
 
-Con due corsie la scelta è binaria e quasi sempre ovvia. Con tre c'è quasi
-sempre una via di fuga neutra: prendere il verde, evitare il rosso, o passare
-in mezzo senza guadagnare né perdere. Le righe sono costruite così:
+`towerNeed` cresce del 62% a torre, più in fretta di quanto cresca la potenza
+naturale di una corsa (più righe, armi migliori). La differenza è quello che i
+potenziamenti devono coprire.
 
-- corsia 1: la torre alla tua portata (il guadagno);
-- corsia 2: il banco da lavoro, oppure un nemico, oppure una torre dura;
-- corsia 3: libera nel 55% dei casi — è l'uscita di sicurezza.
+## 3. Il colore è la regola
 
-I nemici sono rari di proposito, due o tre per partita: sono l'eccezione che
-spezza il ritmo, non l'ostacolo di base.
+Ogni colonna e ogni nemico mostrano un numero, **verde se il tuo colpo attuale
+ci arriva, rosso se no**. Non è una proprietà dell'oggetto: è una relazione con
+te in questo momento. Passata una fucina, `refreshThreats()` ricolora tutto
+quello che non hai ancora incontrato, e file che erano rosse diventano verdi
+davanti agli occhi.
 
-## 4. Bilanciamento
+È il modo più economico per insegnare il gioco senza tutorial, e trasforma la
+fucina da bonus generico a chiave che apre corsie.
 
-**Il riferimento.** La pista si genera seguendo un giocatore perfetto e
-tenendo traccia della sua potenza e della sua arma. Gli hp delle torri sono
-calcolati sul colpo che avrebbe *in quel punto*, non su un valore assoluto: una
-torre "facile" vale sempre il 55-95% del colpo, una "dura" l'1.3-2.6×. Così la
-difficoltà resta costante mentre i numeri crescono di ordine di grandezza.
+## 4. Grafica: dal voxel al low-poly liscio
 
-**La stima dei bonus.** Il giocatore raccoglie anche i bonus della colonnina,
-che il riferimento non simula. Sperimentalmente valgono circa +50%, quindi
-`expectedPower = refPower × 1.5`.
+Il look a blocchi è stato abbandonato. Cosa è cambiato davvero:
 
-**I costi del finale.** `costo(i) = base × (1 + i × 0.42)` con
-`base = expectedPower / 55`. In ogni riga i tre blocchi valgono
-`×0.65`, `×1`, `×1.5` del passo, quindi scegliere bene allunga la corsa di
-qualche blocco. Con questi numeri un giocatore perfetto arriva a ~14 blocchi
-su 36 disponibili: il resto è margine per chi ha comprato i potenziamenti.
+- **Niente texture.** Colori piatti su `MeshLambertMaterial`. Le texture pixel
+  16×16 e il filtro NEAREST sono spariti del tutto.
+- **`flatShading` sul paesaggio.** Rocce, guglie di ghiaccio, pini e cristalli
+  sono coni e sfere a poche facce con le sfaccettature visibili. I personaggi
+  restano lisci: il contrasto fra i due li stacca dallo sfondo.
+- **Contorni sui personaggi** (`addOutline`). Guscio rovesciato: una copia di
+  ogni mesh, ingrandita di 0.1 e disegnata solo dalle facce interne. È quello
+  che dà il bordo scuro dei giochi cartoon senza post-processing, e costa solo
+  il doppio delle mesh su una decina di attori.
+- **Poche geometrie riusate.** Otto primitive in `GEO` per tutto il gioco.
+  Personaggi, torre, cristalli e blocchi sono le stesse forme scalate.
+- **Cielo a sfumatura** invece del colore piatto, e nebbia intonata
+  all'orizzonte.
 
-**Le percentuali invece dei valori fissi.** Prendere una torre rossa costa il
-14% della potenza, un nemico il 22%. Un costo fisso sarebbe irrilevante a fine
-corsa e letale all'inizio; una percentuale pesa uguale in ogni momento.
+La nebbia è stata la trappola: partiva a 110 unità su una pista lunga 700, e
+tutto oltre la prima riga di colonne era latte bianco. Portata a 190–580 la
+scena ha ripreso profondità e i colori sono tornati.
 
-## 5. I cartelli, e perché non c'è una schermata di fine partita
+## 5. Il momento della vittoria
 
-Due modifiche che lavorano insieme.
+Battuto il boss, la camera lascia il duello e sale sul balcone della torre.
+Il tetto è stato alzato e ristretto apposta: nella prima versione la
+principessa spariva sotto la falda, ed è l'unica cosa che il giocatore vuole
+vedere quando vince.
 
-**Il finale aveva un problema di leggibilità**: "sono arrivato a 14 blocchi" è
-un numero astratto mentre corri, e la profondità non si percepisce dentro un
-corridoio tutto uguale. Ora due cartelli attraversano la pista — azzurro
-sull'ultima corsa, dorato sul record — piantati alla riga corrispondente. Si
-vedono da lontano, quindi la corsa smette di essere "vado avanti finché posso"
-e diventa "devo arrivare a *quello*". Superare il cartello dorato fa partire
-uno striscione a tutto schermo: il momento ha un suo picco.
+## 6. Niente schermata di fine partita
 
-`markerZ(d) = finaleStartZ − (d − 0.5) × finaleGap`, cioè subito dopo l'ultimo
-blocco abbattuto. Se ultima corsa e record coincidono si disegna solo il dorato.
+Era un passaggio a vuoto: leggevi un numero, premevi un bottone, e solo allora
+arrivavi dove si spende. Adesso la corsa finisce, si resta fermi un attimo a
+vedere com'è andata (2,2s, 3,4s se hai vinto), e si è già nel menù con il
+riepilogo al posto della storia e i potenziamenti sotto al pollice.
 
-**La schermata di fine partita è sparita.** Era un passaggio a vuoto: leggevi un
-numero, premevi un bottone, e solo allora arrivavi dove si spende. Adesso la
-corsa finisce, si resta un attimo fermi a vedere dove ci si è fermati (1.4s, o
-2s se è record, per far respirare lo striscione), e poi si è già nel menù con il
-riepilogo al posto delle regole e i potenziamenti sotto al pollice. Un tap in
-meno per ciclo, e il ciclo è quello che si ripete cento volte.
+Un tap in meno per ciclo, e il ciclo è quello che si ripete cento volte.
 
-Le regole del gioco restano visibili solo finché non hai giocato: dopo, quello
-spazio serve al risultato. Non hanno mai senso insieme.
+## 7. I cartelli
 
-## 6. Grafica voxel senza asset
+Due striscioni attraversano il muro alla riga corrispondente: azzurro
+sull'ultima corsa, dorato sul record. Si vedono da lontano, quindi la corsa ha
+un bersaglio intermedio anche quando la torre è ancora fuori portata.
 
-Tutto è `BoxGeometry` scalato. Nessun modello, nessuna texture scaricata: le
-texture sono disegnate su canvas 16×16 al caricamento e filtrate `NearestFilter`.
+`markerZ(d) = wallStartZ − (d − 0.5) × wallGap`, cioè subito dopo l'ultimo
+blocco abbattuto.
 
-Tre dettagli che fanno la differenza:
-
-- **La griglia dei blocchi.** Ogni tile ha un bordo scuro sul perimetro, e la
-  texture si ripete una volta per unità di mondo. Un muro 5×3 mostra 15 blocchi,
-  non un blocco stirato. Senza questo, il terreno sembra moquette.
-- **Le facce diverse per lato.** Il blocco d'erba usa un array di 6 materiali:
-  erba sopra, terra sotto, terra con la frangia verde sui lati.
-- **I volti 8×8.** Occhi, sopracciglia e bocca disegnati a pixel su una texture
-  minuscola, applicata solo alla faccia +Z della testa. Cambiando cinque colori
-  si passa dall'eroe allo zombie allo scheletro senza toccare la geometria.
-
-Gli arti ruotano attorno a un perno posto in alto (spalla, anca), non attorno al
-proprio centro: è la differenza fra una corsa e un frullatore.
-
-Le etichette 3D adattano il corpo del font alla larghezza del canvas: senza
-questo "Bastone" veniva tagliato a "aston".
-
-## 7. Verso Android
+## 8. Verso Android
 
 ### A. WebView (Capacitor) — la più veloce
 Il prototipo diventa un `.apk` senza riscrivere niente: `npx cap init`,
@@ -136,28 +126,28 @@ povero di Unity.
 Restare su A finché il gameplay non convince, poi portare in Unity per la
 pubblicazione. Le formule di questo documento si trasferiscono direttamente.
 
-## 8. Prestazioni
+## 9. Prestazioni
 
 Il conteggio delle mesh è la cosa da tenere d'occhio: circa 600–800 per il mondo
-(terreno, alberi, case, montagne), ~150 per gli oggetti della pista e ~320 per il
-corridoio finale (36 righe × 3 blocchi). Ogni blocco è una mesh separata perché
-serve la ripetizione della texture per faccia.
+(terreno, alberi, case, montagne), ~150 per gli oggetti della pista e ~270 per il
+muro (30 righe × 3 blocchi) e ~80 per la torre. I contorni raddoppiano le mesh
+dei soli personaggi.
 
 Se su fascia bassa non regge, in ordine di resa:
-1. ridurre `CFG.finaleRows` da 36 a 24;
-2. diradare `buildTerrain` e `buildProps`;
-3. unire i blocchi statici con `BufferGeometryUtils.mergeBufferGeometries`
-   (sta negli examples di three, va aggiunto) usando un atlas al posto dei
-   materiali per faccia.
+1. ridurre `CFG.wallRows` da 30 a 20;
+2. diradare `buildCliffs`;
+3. unire le forme statiche con `BufferGeometryUtils.mergeBufferGeometries`
+   (sta negli examples di three, va aggiunto): con i colori piatti è molto
+   più semplice di prima, basta raggruppare per materiale.
 
-## 9. Cosa manca, in ordine di impatto sul feel
+## 10. Cosa manca, in ordine di impatto sul feel
 
 1. **Audio** — musica loop e sfx sull'impatto. Sposta la qualità percepita più
    di qualunque effetto grafico.
 2. **Impatti più grassi** — scossa di camera, numeri che schizzano dal punto
    colpito invece che dal centro schermo, rallentamento di un frame.
-3. **Zone** — la pista è sempre la stessa pianura. Neve, deserto e notte
-   cambierebbero solo la palette dei blocchi: il codice è già pronto.
+3. **Torri a tema** — la valle è sempre la stessa. Deserto, vulcano e notte
+   cambierebbero solo la palette `C` in cima a `core.js`: il codice è già pronto.
 4. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
 5. **Missioni e valuta premium** — i cristalli si raccolgono ma non si spendono
    ancora.

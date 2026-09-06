@@ -4,10 +4,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p dist
-OUT=dist/blocky-power-run.html
+OUT=dist/torre-di-ghiaccio.html
 
 # stesso ordine di caricamento di index.html
-SRC="web/src/core.js web/src/blocks.js web/src/world.js web/src/actors.js web/src/hub.js web/src/game.js"
+SRC="web/src/core.js web/src/art.js web/src/world.js web/src/actors.js web/src/hub.js web/src/game.js"
 
 # tutto tranne il loader: markup, CSS e i div dell'interfaccia
 sed '/<script src="vendor\/three.min.js">/,$d' web/index.html > "$OUT"

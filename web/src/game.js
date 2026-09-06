@@ -1,9 +1,11 @@
 /* =====================================================================
-   GAME — la partita: pista a corsie, ostacoli, nemici, banchi di potenza
-   e il finale in cui la potenza accumulata si consuma.
+   GAME — la corsa verso la torre.
+   Prima metà: accumuli potenza scegliendo cosa spaccare e cosa schivare.
+   Seconda metà: la spendi sfondando il muro. Quello che ti resta è
+   quello con cui affronti il boss ai piedi della torre.
    ===================================================================== */
 
-initBlocks();
+initArt();
 
 /* --------------------------- ETICHETTE 3D ---------------------------- */
 function labelTexture(text, color) {
@@ -11,13 +13,13 @@ function labelTexture(text, color) {
   c.width = 320; c.height = 160;
   const g = c.getContext('2d');
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  let size = 112;                       // rimpicciolisce finché non ci sta
+  let size = 112;
   do {
     g.font = 'bold ' + size + 'px system-ui, Arial, sans-serif';
     size -= 4;
   } while (g.measureText(text).width > 292 && size > 24);
   g.lineJoin = 'round';
-  g.lineWidth = size * 0.2; g.strokeStyle = 'rgba(12,18,30,.85)';
+  g.lineWidth = size * 0.22; g.strokeStyle = 'rgba(24,20,38,.9)';
   g.strokeText(text, 160, 84);
   g.fillStyle = color || '#ffffff';
   g.fillText(text, 160, 84);
@@ -44,141 +46,137 @@ const run = {
   power: 0, weapon: 0, coins: 0, gems: 0,
   buffs: { income: 0, rate: 0, gain: 0 },
   x: 0, targetX: 0, z: 0,
-  depth: 0,                       // blocchi abbattuti nel finale
+  broken: 0,               // blocchi del muro sfondati
+  bossHp: 0, clash: 0,
+  outcome: '',             // 'wall' | 'boss' | 'win'
   beatRecord: false,
   swing: 0
 };
 
-const damage = () => Math.round(WEAPONS[run.weapon].dmg * (1 + run.buffs.rate * BUFFS.rate.step));
-const gainMul  = () => 1 + run.buffs.gain   * BUFFS.gain.step;
-const coinMul  = () => UPGRADES.income.value(meta.up.income) * (1 + run.buffs.income * BUFFS.income.step);
+const damage  = () => Math.round(WEAPONS[run.weapon].dmg * (1 + run.buffs.rate * BUFFS.rate.step));
+const gainMul = () => 1 + run.buffs.gain * BUFFS.gain.step;
+const coinMul = () => UPGRADES.income.value(meta.up.income) * (1 + run.buffs.income * BUFFS.income.step);
 
 /* --------------------------------- EROE -------------------------------- */
-const hero = buildActor('hero');
+const hero = buildHero();
 hero.rotation.y = Math.PI;                 // di spalle: corre verso −Z
 scene.add(hero);
 
 const shadow = new THREE.Mesh(
-  new THREE.CircleGeometry(0.75, 20),
-  new THREE.MeshBasicMaterial({ color: 0x11202c, transparent: true, opacity: 0.24 })
+  GEO.disc,
+  new THREE.MeshBasicMaterial({ color: 0x1b2a3a, transparent: true, opacity: 0.2 })
 );
 shadow.rotation.x = -Math.PI / 2;
-shadow.position.y = 0.03;
+shadow.position.y = 0.04;
+shadow.scale.setScalar(1.8);
 scene.add(shadow);
 
 /* --------------------------- OGGETTI DI PISTA -------------------------- */
-const items = [];      // tutto ciò che si può incontrare, ordinato per z
+const items = [];
 
-/* Torre da rompere: una colonna di blocchi col suo numero sopra.
-   Verde = la spacchi, rossa = ti rimbalza addosso e perdi potenza. */
-function buildTower(x, z, hp) {
+/* Colonna da spaccare: il numero dice quanto è dura, il colore se ce la fai. */
+function spawnPillar(x, z, hp) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const h = clamp(2 + Math.floor(Math.log10(Math.max(hp, 1))), 2, 5);
-  const blocks = [];
-  for (let i = 0; i < h; i++) {
-    const w = 1.7 - i * 0.12;
-    blocks.push(putBlock(g, BLOCK.cobble, 0, i, 0, w, 1, w));
-  }
+  const h = clamp(2.4 + Math.log10(Math.max(hp, 1)) * 1.1, 2.4, 5.4);
+  const parts = [
+    putOn(g, GEO.cyl8,  MAT.stone, 0, 0,       0, 2.1, 0.5, 2.1),
+    putOn(g, GEO.taper, MAT.stone, 0, 0.5,     0, 1.8, h,   1.8),
+    putOn(g, GEO.octa,  MAT.stone, 0, h + 0.5, 0, 1.1, 1.2, 1.1)
+  ];
   const sprite = labelSprite(fmt(hp), '#ffffff', 0.8);
-  sprite.position.set(0, h + 0.9, 0);
+  sprite.position.set(0, h + 2.2, 0);
   g.add(sprite);
   world.add(g);
-  return { obj: g, sprite, blocks };
+  return { obj: g, sprite, parts };
 }
 
-/* Nemico: uno o due per riga, lo schivi o lo abbatti. */
-function buildEnemy(x, z, hp, type) {
+/* Nemico appostato sulla corsia: lo abbatti per l'oro, o ti costa potenza. */
+function spawnEnemy(x, z, hp, kind) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const m = buildActor(type, { arms: type !== 'bomber' });
+  const m = buildEnemy(kind);
   g.add(m);
-  const sprite = labelSprite(fmt(hp), '#ffffff', 0.75);
-  sprite.position.set(0, 2.7, 0);
+  const sprite = labelSprite(fmt(hp), '#ffffff', 0.72);
+  sprite.position.set(0, 2.6, 0);
   g.add(sprite);
   world.add(g);
   return { obj: g, sprite, mob: m };
 }
 
-/* Banco da lavoro: ci passi attraverso e l'arma sale di livello. */
-function buildCraft(x, z, tier) {
+/* Fucina: ci passi attraverso e l'arma sale di livello. */
+function spawnForge(x, z, tier) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  putBlock(g, BLOCK.planks, -1.1, 0, 0, 0.5, 3, 0.5);
-  putBlock(g, BLOCK.planks,  1.1, 0, 0, 0.5, 3, 0.5);
-  putBlock(g, BLOCK.planks,  0,   3, 0, 2.7, 0.6, 0.6);
+  putOn(g, GEO.cyl,  MAT.stoneDark, -1.2, 0, 0, 0.55, 3.4, 0.55);
+  putOn(g, GEO.cyl,  MAT.stoneDark,  1.2, 0, 0, 0.55, 3.4, 0.55);
+  putOn(g, GEO.box,  MAT.stone,      0,   3.4, 0, 3.2, 0.7, 0.7);
+  putOn(g, GEO.box,  mat(0x2f7de0),  0,   1.6, 0, 2.3, 1.2, 0.18);
+  // incudine
+  putOn(g, GEO.box, MAT.stoneDark, 0, 0, 0, 1.3, 0.5, 0.8);
+  putOn(g, GEO.box, MAT.stoneDark, 0, 0.5, 0, 0.6, 0.4, 0.5);
 
-  const board = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.2, 1.1),
-    new THREE.MeshBasicMaterial({ color: 0x2f7de0, transparent: true, opacity: 0.92 })
-  );
-  board.position.set(0, 2.1, 0.05);
-  g.add(board);
-
-  const sprite = labelSprite(WEAPONS[tier].name, '#ffffff', 0.62);
-  sprite.position.set(0, 2.1, 0.2);
+  const sprite = labelSprite(WEAPONS[tier].name, '#ffffff', 0.6);
+  sprite.position.set(0, 2.2, 0.2);
   g.add(sprite);
   world.add(g);
   return { obj: g, sprite };
 }
 
-/* Raccolte: monete, cristalli e i bonus della colonnina di sinistra. */
-function buildPickup(x, z, kind, amount) {
+/* Raccolte: oro, gemme e i bonus della colonnina di sinistra. */
+function spawnPickup(x, z, kind) {
   const g = new THREE.Group();
-  g.position.set(x, 1.0, z);
-  const color = { coin: 0xffc93c, gem: 0x4fe3d5,
-                  income: 0x6fe07a, rate: 0xffc14d, gain: 0x7cc9ff }[kind];
-  const m = new THREE.Mesh(boxGeo, new THREE.MeshLambertMaterial({ color }));
-  m.scale.set(0.8, 0.8, 0.8);
-  g.add(m);
-
-  if (BUFFS[kind]) {
-    const s = labelSprite('+' + Math.round(BUFFS[kind].step * 100) + '%', '#ffffff', 0.55);
+  g.position.set(x, 1.1, z);
+  if (kind === 'coin') {
+    const c = put(g, GEO.cyl, MAT.gold, 0, 0, 0, 0.75, 0.16, 0.75);
+    c.rotation.x = Math.PI / 2;
+  } else if (kind === 'gem') {
+    put(g, GEO.octa, mat(0x4fe3d5), 0, 0, 0, 0.7, 1.0, 0.7);
+  } else {
+    const col = { income: 0xffd24b, rate: 0xff9d5c, gain: 0x7cc9ff }[kind];
+    put(g, GEO.octa, mat(col), 0, 0, 0, 0.85, 1.0, 0.85);
+    const s = labelSprite('+' + Math.round(BUFFS[kind].step * 100) + '%', '#ffffff', 0.5);
     s.position.set(0, 1.1, 0);
     g.add(s);
   }
   world.add(g);
-  return { obj: g, spin: rnd(1, 2) };
+  return { obj: g, spin: rnd(1.4, 2.4) };
 }
 
-/* ------------------------------- FINALE -------------------------------- */
-/* Il muro di blocchi numerati: ogni blocco costa potenza. Si va avanti
-   finché la potenza regge, scegliendo di riga in riga il costo minore. */
-function buildFinaleBlock(x, z, cost, chest) {
+/* -------------------------------- MURO --------------------------------- */
+/* Trenta blocchi separano dalla torre. Ognuno costa potenza; nella
+   stessa riga i tre costi sono diversi, quindi si sceglie ancora. */
+function spawnWallBlock(x, z, cost, chest) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const mat = chest ? BLOCK.planks : BLOCK.obsidian;
-  putBlock(g, mat, 0, 0, 0, 1.7, 1.8, 1.3);
-  if (chest) putBlock(g, BLOCK.brick, 0, 1.8, 0, 1.8, 0.35, 1.4);
-  const sprite = labelSprite(fmt(cost), chest ? '#ffd24b' : '#ffffff', 0.6);
-  sprite.position.set(0, 2.4, 0);
+  putOn(g, GEO.box, chest ? MAT.chest : MAT.wall, 0, 0, 0, 1.9, 1.6, 1.5);
+  putOn(g, GEO.box, chest ? MAT.gold : MAT.wallDark, 0, 1.6, 0, 2.05, 0.3, 1.6);
+  const sprite = labelSprite(fmt(cost), chest ? '#ffd24b' : '#ffffff', 0.58);
+  sprite.position.set(0, 2.5, 0);
   g.add(sprite);
   world.add(g);
   return { obj: g, sprite };
 }
 
-/* Cartello piantato di traverso alla pista: segna dove sei arrivato.
-   È il bersaglio della corsa — lo vedi da lontano e sai cosa battere. */
+/* Cartello di traverso: dove sei arrivato l'ultima volta, e il record. */
 function buildMarker(depth, label, color) {
-  if (depth < 1 || depth >= CFG.finaleRows) return null;
-  const z = finaleStartZ - (depth - 0.5) * CFG.finaleGap;
+  if (depth < 1 || depth >= CFG.wallRows) return null;
+  const z = wallStartZ - (depth - 0.5) * CFG.wallGap;
   const g = new THREE.Group();
   g.position.set(0, 0, z);
   const w = CFG.trackWidth + 2;
 
-  putBlock(g, BLOCK.log, -w / 2, 0, 0, 0.4, 5.6, 0.4);
-  putBlock(g, BLOCK.log,  w / 2, 0, 0, 0.4, 5.6, 0.4);
-
+  putOn(g, GEO.cyl, MAT.stoneDark, -w / 2, 0, 0, 0.4, 6, 0.4);
+  putOn(g, GEO.cyl, MAT.stoneDark,  w / 2, 0, 0, 0.4, 6, 0.4);
   const band = new THREE.Mesh(
     new THREE.PlaneGeometry(w, 1.2),
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92,
                                   side: THREE.DoubleSide })
   );
-  band.position.set(0, 4.6, 0);
+  band.position.set(0, 5, 0);
   g.add(band);
-
-  const s = labelSprite(label, '#ffffff', 0.5);
-  s.position.set(0, 4.6, 0.12);
+  const s = labelSprite(label, '#ffffff', 0.48);
+  s.position.set(0, 5, 0.12);
   g.add(s);
 
   world.add(g);
@@ -186,135 +184,145 @@ function buildMarker(depth, label, color) {
 }
 
 /* ---------------------------- GENERAZIONE ------------------------------ */
-let rows = 0, finishZ = 0, finaleStartZ = 0, levelLen = 0, expectedPower = 0;
+let rows = 0, wallStartZ = 0, towerZ = 0, bossZ = 0, levelLen = 0;
+let tower = null, boss = null, bossSprite = null, heroSprite = null;
 
 function buildRun() {
   clearWorld();
   items.length = 0;
+  tower = null; boss = null; bossSprite = null; heroSprite = null;
 
-  rows = Math.min(20, 10 + meta.level);          // mappe lunghe: 10-20 righe
+  rows = Math.min(20, 10 + meta.level);
   let z = CFG.firstRowZ;
-
-  /* riferimento: un giocatore che prende sempre la scelta migliore.
-     Serve a tarare gli hp delle torri e i costi del finale.            */
-  let refPower = UPGRADES.power.value(meta.up.power);
-  let refTier  = meta.up.weapon;
+  let refTier = meta.up.weapon;
 
   for (let i = 0; i < rows; i++) {
     const dmg = WEAPONS[refTier].dmg;
     const lanes = shuffle([0, 1, 2]);
-    const craftRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
+    const forgeRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
 
-    // corsia 1: la torre "buona", quella che riesci a rompere
+    // corsia 1: la colonna alla tua portata — il guadagno
     const easyHp = Math.max(1, Math.round(dmg * rnd(0.55, 0.95)));
-    const t = buildTower(CFG.laneX[lanes[0]], z, easyHp);
-    items.push({ kind: 'tower', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false, ...t });
-    refPower += easyHp * 3;
+    items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false },
+                             spawnPillar(CFG.laneX[lanes[0]], z, easyHp)));
 
-    // corsia 2: il banco da lavoro, oppure una minaccia
-    if (craftRow) {
-      const c = buildCraft(CFG.laneX[lanes[1]], z, refTier + 1);
-      items.push({ kind: 'craft', z, x: CFG.laneX[lanes[1]], tier: refTier + 1, done: false, ...c });
+    // corsia 2: la fucina, oppure una minaccia
+    if (forgeRow) {
+      items.push(Object.assign({ kind: 'forge', z, x: CFG.laneX[lanes[1]], tier: refTier + 1, done: false },
+                               spawnForge(CFG.laneX[lanes[1]], z, refTier + 1)));
       refTier++;
     } else if (Math.random() < 0.32) {
       const hp = Math.max(1, Math.round(dmg * rnd(0.6, 1.7)));
-      const e = buildEnemy(CFG.laneX[lanes[1]], z, hp, pick(['zombie', 'skeleton', 'bomber']));
-      items.push({ kind: 'enemy', z, x: CFG.laneX[lanes[1]], hp, done: false, ...e });
+      items.push(Object.assign({ kind: 'enemy', z, x: CFG.laneX[lanes[1]], hp, done: false },
+                               spawnEnemy(CFG.laneX[lanes[1]], z, hp, pick(ENEMY_KINDS))));
     } else {
       const hardHp = Math.round(dmg * rnd(1.4, 2.6));
-      const t2 = buildTower(CFG.laneX[lanes[1]], z, hardHp);
-      items.push({ kind: 'tower', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false, ...t2 });
+      items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false },
+                               spawnPillar(CFG.laneX[lanes[1]], z, hardHp)));
     }
 
-    // corsia 3: quasi sempre libera — è la via di fuga
+    // corsia 3: spesso libera — è la via di fuga
     if (Math.random() < 0.45) {
       const hardHp = Math.round(dmg * rnd(1.3, 2.4));
-      const t3 = buildTower(CFG.laneX[lanes[2]], z, hardHp);
-      items.push({ kind: 'tower', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false, ...t3 });
+      items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
+                               spawnPillar(CFG.laneX[lanes[2]], z, hardHp)));
     }
 
-    // raccolte sparse fra una riga e l'altra
+    // raccolte fra una riga e l'altra
     const pz = z + CFG.rowSpacing * 0.5;
     if (i > 0) {
       if (Math.random() < 0.26) {
         const kind = pick(['income', 'rate', 'gain']);
-        const p = buildPickup(CFG.laneX[rint(0, 2)], pz, kind);
-        items.push({ kind: 'buff', buff: kind, z: pz, x: p.obj.position.x, done: false, ...p });
+        const lane = CFG.laneX[rint(0, 2)];
+        items.push(Object.assign({ kind: 'buff', buff: kind, z: pz, x: lane, done: false },
+                                 spawnPickup(lane, pz, kind)));
       } else {
         const lane = CFG.laneX[rint(0, 2)];
         for (let k = 0; k < 3; k++) {
           const cz = pz + k * 2.2;
           const kind = Math.random() < 0.12 ? 'gem' : 'coin';
-          const p = buildPickup(lane, cz, kind);
-          items.push({ kind, z: cz, x: lane, done: false, ...p });
+          items.push(Object.assign({ kind, z: cz, x: lane, done: false },
+                                   spawnPickup(lane, cz, kind)));
         }
       }
     }
     z -= CFG.rowSpacing;
   }
 
-  finishZ = z - CFG.runOut + CFG.rowSpacing;
-  finaleStartZ = finishZ - 10;
-  expectedPower = Math.round(refPower * 1.5);   // ~ quello che raccogli davvero
+  wallStartZ = z - CFG.runOut + CFG.rowSpacing;
 
-  /* il finale: costi crescenti, tre blocchi per riga fra cui scegliere */
-  const base = Math.max(1, Math.round(expectedPower / 55));
-  for (let i = 0; i < CFG.finaleRows; i++) {
-    const fz = finaleStartZ - i * CFG.finaleGap;
-    const step = Math.round(base * (1 + i * 0.42));
-    const costs = shuffle([step, Math.round(step * 1.5), Math.round(step * 0.65)]);
+  /* Il muro: il costo complessivo del percorso migliore è wallBudget,
+     così il bilanciamento sta in una sola formula invece che in trenta. */
+  const budget = wallBudget(meta.level);
+  let sumW = 0;
+  for (let i = 0; i < CFG.wallRows; i++) sumW += 1 + i * 0.10;
+
+  for (let i = 0; i < CFG.wallRows; i++) {
+    const wz = wallStartZ - i * CFG.wallGap;
+    const cheap = Math.max(1, Math.round(budget * (1 + i * 0.10) / sumW));
+    const costs = shuffle([cheap, Math.round(cheap * 1.6), Math.round(cheap * 2.3)]);
     for (let l = 0; l < 3; l++) {
       const chest = Math.random() < 0.12;
-      const b = buildFinaleBlock(CFG.laneX[l], fz, costs[l], chest);
-      items.push({ kind: 'block', z: fz, x: CFG.laneX[l], cost: costs[l],
-                   chest, row: i, done: false, ...b });
+      items.push(Object.assign({ kind: 'block', z: wz, x: CFG.laneX[l],
+                                 cost: costs[l], chest, done: false },
+                               spawnWallBlock(CFG.laneX[l], wz, costs[l], chest)));
     }
   }
 
-  // prima l'ultima corsa (azzurro), poi il record (oro) che le sta davanti
+  towerZ = wallStartZ - CFG.wallRows * CFG.wallGap - CFG.towerGap;
+  bossZ  = towerZ + 11;
+  levelLen = Math.abs(towerZ) + 60;
+
+  buildWorld(levelLen);
+  buildFinishLine(wallStartZ + CFG.wallGap);
+
   if (meta.last && meta.last !== meta.best) buildMarker(meta.last, 'ULTIMA ' + meta.last, 0x2f7de0);
   buildMarker(meta.best, 'RECORD ' + meta.best, 0xe0a51a);
 
-  levelLen = Math.abs(finaleStartZ - CFG.finaleRows * CFG.finaleGap) + 50;
-  buildWorld(levelLen);
-  buildFinishLine(finishZ);
+  tower = buildTower(towerZ);
+
+  boss = buildBoss();
+  boss.position.set(0, 0, bossZ);
+  boss.scale.setScalar(1.9);
+  world.add(boss);
+
+  bossSprite = labelSprite(fmt(bossHealth(meta.level)), '#ff8f7a', 1.15);
+  bossSprite.position.set(0, 6.4, bossZ);
+  world.add(bossSprite);
+
   refreshThreats();
 }
 
-/* linea a scacchi + corridoio scuro del finale */
 function buildFinishLine(z) {
-  const tex = pixelTex(16, g => {
-    for (let y = 0; y < 16; y += 8) for (let x = 0; x < 16; x += 8) {
-      g.fillStyle = ((x + y) / 8) % 2 ? '#1c1c22' : '#f4f4f8';
-      g.fillRect(x, y, 8, 8);
-    }
-  });
-  const m = new THREE.Mesh(boxGeo, new THREE.MeshLambertMaterial({ map: tex }));
-  m.position.set(0, 0.02, z);
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  for (let y = 0; y < 64; y += 16) for (let x = 0; x < 64; x += 16) {
+    g.fillStyle = ((x + y) / 16) % 2 ? '#241d2e' : '#f4f7fb';
+    g.fillRect(x, y, 16, 16);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(4, 1);
+  const m = new THREE.Mesh(GEO.box, new THREE.MeshLambertMaterial({ map: t }));
+  m.position.set(0, 0.05, z);
   m.scale.set(CFG.trackWidth, 0.1, 2.4);
   world.add(m);
-
-  putBlock(world, BLOCK.obsidian, 0, -1,
-           z - CFG.finaleRows * CFG.finaleGap / 2 - 6,
-           CFG.trackWidth + 2, 1, CFG.finaleRows * CFG.finaleGap + 24);
 }
 
-/* Colora i numeri di torri e nemici in base a quello che riesci a fare
-   adesso: verde = ci passi sopra, rosso = ti costa potenza. */
+/* Il colore dice se quella colonna è alla tua portata adesso. Cambia
+   appena l'arma sale: file che erano rosse diventano verdi. */
 function refreshThreats() {
   const dmg = damage();
   for (const it of items) {
     if (it.done) continue;
-    if (it.kind === 'tower' || it.kind === 'enemy') {
-      const ok = dmg >= it.hp;
-      setLabel(it.sprite, fmt(it.hp), ok ? '#7bf07a' : '#ff8a6e');
-      if (it.blocks) {
-        const mat = ok ? BLOCK.cobbleGood : BLOCK.cobbleBad;
-        it.blocks.forEach((b, i) => {
-          const w = 1.7 - i * 0.12;
-          b.material = repeatMat(mat, w, 1, w);
-        });
-      }
+    if (it.kind !== 'pillar' && it.kind !== 'enemy') continue;
+    const ok = dmg >= it.hp;
+    setLabel(it.sprite, fmt(it.hp), ok ? '#8dff87' : '#ff8a6e');
+    if (it.parts) {
+      it.parts[0].material = ok ? MAT.goodDark : MAT.badDark;
+      it.parts[1].material = ok ? MAT.good : MAT.bad;
+      it.parts[2].material = ok ? MAT.goodDark : MAT.badDark;
     }
   }
 }
@@ -322,33 +330,33 @@ function refreshThreats() {
 /* ------------------------------ RISOLUZIONE ---------------------------- */
 const debris = [];
 
-function breakBlocks(group, n) {
-  // scaglie che schizzano via: bastano pochi cubetti per leggere l'impatto
+function shatter(group, n, material) {
   for (let i = 0; i < n; i++) {
-    const m = new THREE.Mesh(boxGeo, BLOCK.stone);
-    m.scale.setScalar(rnd(0.25, 0.5));
+    const m = new THREE.Mesh(GEO.octa, material || MAT.stone);
+    m.scale.setScalar(rnd(0.3, 0.65));
     m.position.copy(group.position);
-    m.position.y += rnd(0.5, 2.5);
-    m.userData.vel = new THREE.Vector3(rnd(-6, 6), rnd(4, 9), rnd(2, 8));
+    m.position.y += rnd(0.6, 2.6);
+    m.userData.vel = new THREE.Vector3(rnd(-7, 7), rnd(5, 10), rnd(2, 9));
     m.userData.life = 1.1;
     world.add(m);
     debris.push(m);
   }
 }
 
-function hitTower(it) {
+function hitPillar(it) {
   const dmg = damage();
   run.swing = 0.35;
   if (dmg >= it.hp) {
     const gain = Math.round(it.hp * 3 * gainMul());
     run.power += gain;
-    popup('+' + fmt(gain), '#7bf07a');
+    popup('+' + fmt(gain), '#8dff87');
+    shatter(it.obj, 8, MAT.good);
   } else {
     const loss = Math.max(3, Math.round(run.power * 0.14));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff7a6e');
+    shatter(it.obj, 8, MAT.bad);
   }
-  breakBlocks(it.obj, 7);
   it.obj.visible = false;
 }
 
@@ -370,7 +378,7 @@ function hitEnemy(it) {
   }
 }
 
-function takeCraft(it) {
+function takeForge(it) {
   run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
   setWeapon(hero, run.weapon);
   popup('▲ ' + WEAPONS[run.weapon].name, '#8fc6ff');
@@ -379,13 +387,9 @@ function takeCraft(it) {
 }
 
 function takePickup(it) {
-  if (it.kind === 'coin') {
-    const c = Math.round(8 * coinMul());
-    run.coins += c;
-  } else if (it.kind === 'gem') {
-    run.gems += 1;
-    popup('+1 💎', '#4fe3d5');
-  } else {
+  if (it.kind === 'coin')      run.coins += Math.round(8 * coinMul());
+  else if (it.kind === 'gem') { run.gems += 1; popup('+1 💎', '#4fe3d5'); }
+  else {
     run.buffs[it.buff]++;
     const b = BUFFS[it.buff];
     popup(b.icon + ' +' + Math.round(b.step * 100) + '%', b.color);
@@ -395,21 +399,55 @@ function takePickup(it) {
   it.obj.visible = false;
 }
 
-function hitFinaleBlock(it) {
+function hitWallBlock(it) {
   run.power -= it.cost;
-  breakBlocks(it.obj, 5);
+  shatter(it.obj, 6, it.chest ? MAT.gold : MAT.wall);
   it.obj.visible = false;
-  run.depth++;
-  if (!run.beatRecord && meta.best > 0 && run.depth > meta.best) {
-    run.beatRecord = true;
-    flashBanner('RECORD SUPERATO!');
-  }
+  run.broken++;
   if (it.chest) {
     const c = Math.round(it.cost * 2 * coinMul());
     run.coins += c;
     popup('+' + fmt(c) + ' 🪙', '#ffd24b');
   }
-  if (run.power <= 0) { run.power = 0; endRun(); }
+  if (!run.beatRecord && meta.best > 0 && run.broken > meta.best) {
+    run.beatRecord = true;
+    flashBanner('RECORD SUPERATO!');
+  }
+  if (run.power <= 0) { run.power = 0; endRun('wall'); }
+  else if (run.broken >= CFG.wallRows) startBossFight();
+}
+
+/* ------------------------------ IL BOSS -------------------------------- */
+/* Sfondato il muro, quello che resta è la forza con cui lo affronti.
+   I due numeri scendono insieme: chi arriva a zero per primo cade. */
+function startBossFight() {
+  state = 'boss';
+  run.bossHp = bossHealth(meta.level);
+  run.clash = Math.max(run.power, run.bossHp) / 1.5;   // ~1.5s di scontro
+
+  heroSprite = labelSprite(fmt(run.power), '#8dff87', 1.0);
+  scene.add(heroSprite);
+  flashBanner('IL CARCERIERE!');
+}
+
+function updateBossFight(dt) {
+  // corsa fino a sotto la torre, poi lo scontro
+  const stopZ = bossZ + 7;
+  if (run.z > stopZ) {
+    run.z -= CFG.speed * dt;
+    run.x = lerp(run.x, 0, 1 - Math.pow(0.004, dt));
+    return;
+  }
+  const step = run.clash * dt;
+  run.power  = Math.max(0, run.power - step);
+  run.bossHp = Math.max(0, run.bossHp - step);
+
+  setLabel(heroSprite, fmt(run.power), '#8dff87');
+  setLabel(bossSprite, fmt(run.bossHp), '#ff8f7a');
+  run.swing = 0.3;
+
+  if (run.bossHp <= 0)      endRun('win');
+  else if (run.power <= 0)  endRun('boss');
 }
 
 /* ------------------------------ HUD ------------------------------------ */
@@ -418,21 +456,23 @@ function renderHud() {
   $('hWeapon').textContent = WEAPONS[run.weapon].name;
   $('hDamage').textContent = fmt(damage());
   $('hCoins').textContent  = fmt(run.coins);
+  $('hWall').textContent   = run.broken + '/' + CFG.wallRows;
 }
 
 /* --------------------------- STATO E CICLO ----------------------------- */
-let state = 'hub';                 // hub | run | finale | over
+let state = 'hub';                 // hub | run | wall | boss | over
 let runT = 0;
 const clock = new THREE.Clock();
 
 function startRun() {
   run.power  = UPGRADES.power.value(meta.up.power);
   run.weapon = meta.up.weapon;
-  run.coins = 0; run.gems = 0; run.depth = 0; run.swing = 0;
-  run.beatRecord = false;
+  run.coins = 0; run.gems = 0; run.broken = 0; run.swing = 0;
+  run.beatRecord = false; run.outcome = '';
   run.buffs = { income: 0, rate: 0, gain: 0 };
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
+  if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
   setWeapon(hero, run.weapon);
   buildRun();
   renderBuffRail(run.buffs);
@@ -442,23 +482,38 @@ function startRun() {
   showScreen(null);
 }
 
-function endRun() {
-  state = 'over';                    // una pausa per vedere dove ci si è fermati
-  const record = run.depth > meta.best;
-  const total  = run.coins + Math.round(run.depth * 6 * coinMul());
+const OUTCOMES = {
+  wall: { title: 'IL MURO TI HA FERMATO', color: '#ff8a6e' },
+  boss: { title: 'IL CARCERIERE HA VINTO', color: '#ff8a6e' },
+  win : { title: 'PRINCIPESSA LIBERATA!',  color: '#ffd24b' }
+};
+
+function endRun(outcome) {
+  state = 'over';
+  run.outcome = outcome;
+
+  const record = run.broken > meta.best;
+  const total  = run.coins + Math.round(run.broken * 6 * coinMul())
+               + (outcome === 'win' ? Math.round(200 * meta.level * coinMul()) : 0);
 
   meta.coins += total;
   meta.gems  += run.gems;
-  meta.level++;
-  meta.last  = run.depth;
+  meta.last  = run.broken;
   meta.lastCoins = total;
   meta.lastRecord = record;
-  if (record) meta.best = run.depth;
+  meta.lastOutcome = outcome;
+  if (record) meta.best = run.broken;
+  if (outcome === 'win') { meta.level++; meta.best = 0; meta.last = 0; }
   writeSave(meta);
 
-  if (record) flashBanner('NUOVO RECORD: ' + run.depth);
-
-  setTimeout(backToHub, record ? 2000 : 1400);
+  if (outcome === 'win') {
+    flashBanner('PRINCIPESSA LIBERATA!');
+    if (boss) boss.userData.falling = true;
+  } else {
+    flashBanner(OUTCOMES[outcome].title);
+    hero.userData.falling = true;
+  }
+  setTimeout(backToHub, outcome === 'win' ? 3400 : 2200);
 }
 
 /* Niente schermata intermedia: si finisce e si è già davanti ai
@@ -467,8 +522,10 @@ function backToHub() {
   state = 'hub';
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
+  hero.userData.falling = false;
+  if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
   setWeapon(hero, meta.up.weapon);
-  buildRun();                        // ricostruisce la pista e i cartelli
+  buildRun();
   renderHub();
   showScreen('hub');
   snapCamera();
@@ -477,29 +534,28 @@ function backToHub() {
 $('playBtn').onclick = () => startRun();
 
 /* -------------------------------- INPUT -------------------------------- */
+const steering = () => state === 'run' || state === 'wall';
 let dragging = false, lastPX = 0;
 addEventListener('pointerdown', e => { dragging = true; lastPX = e.clientX; });
 addEventListener('pointerup',     () => { dragging = false; });
 addEventListener('pointercancel', () => { dragging = false; });
 addEventListener('pointermove', e => {
-  if (!dragging || (state !== 'run' && state !== 'finale')) return;
+  if (!dragging || !steering()) return;
   run.targetX = clamp(run.targetX + (e.clientX - lastPX) * CFG.strafe,
                       -CFG.laneLimit, CFG.laneLimit);
   lastPX = e.clientX;
 });
 addEventListener('keydown', e => {
-  if (state !== 'run' && state !== 'finale') return;
+  if (!steering()) return;
   if (e.key === 'ArrowLeft')  run.targetX = clamp(run.targetX - 1.2, -CFG.laneLimit, CFG.laneLimit);
   if (e.key === 'ArrowRight') run.targetX = clamp(run.targetX + 1.2, -CFG.laneLimit, CFG.laneLimit);
 });
 
 /* --------------------------------- LOOP -------------------------------- */
-const HIT_X = 1.15;         // quanto devi essere vicino in X per toccare qualcosa
+const HIT_X = 1.15;
 
 function update(dt) {
-  const playing = state === 'run' || state === 'finale';
-
-  if (playing) {
+  if (steering()) {
     runT += dt;
     run.z -= CFG.speed * dt;
     run.x = lerp(run.x, run.targetX, 1 - Math.pow(0.0015, dt));
@@ -507,49 +563,64 @@ function update(dt) {
     for (const it of items) {
       if (it.done || run.z > it.z) continue;
       it.done = true;
-      if (Math.abs(run.x - it.x) > HIT_X) continue;     // schivato
-      if (it.kind === 'tower')      hitTower(it);
-      else if (it.kind === 'enemy') hitEnemy(it);
-      else if (it.kind === 'craft') takeCraft(it);
-      else if (it.kind === 'block') hitFinaleBlock(it);
-      else                          takePickup(it);
-      if (state !== 'run' && state !== 'finale') break;
+      if (Math.abs(run.x - it.x) > HIT_X) continue;      // schivato
+      if (it.kind === 'pillar')      hitPillar(it);
+      else if (it.kind === 'enemy')  hitEnemy(it);
+      else if (it.kind === 'forge')  takeForge(it);
+      else if (it.kind === 'block')  hitWallBlock(it);
+      else                           takePickup(it);
+      if (!steering()) break;
     }
 
-    if (state === 'run' && run.z <= finaleStartZ + CFG.finaleGap) state = 'finale';
-
-    // superato l'ultimo blocco senza esaurire la potenza: corsa perfetta
-    if (state === 'finale' && run.z < finaleStartZ - CFG.finaleRows * CFG.finaleGap - 6) endRun();
-
+    if (state === 'run' && run.z <= wallStartZ + CFG.wallGap) state = 'wall';
     renderHud();
-    const p = state === 'finale'
-      ? 1
-      : clamp(run.z / finaleStartZ, 0, 1);
-    $('progress').style.width = p * 100 + '%';
+    $('progress').style.width = clamp(run.z / towerZ, 0, 1) * 100 + '%';
+
+  } else if (state === 'boss') {
+    runT += dt;
+    updateBossFight(dt);
+    renderHud();
   }
 
   /* --- eroe --- */
-  hero.position.set(run.x, playing ? Math.abs(Math.sin(runT * 9)) * 0.09 : 0, run.z);
-  if (playing) animateRun(hero, runT, 0);
-  else animateIdle(hero, runT, 0);
+  const moving = steering() || (state === 'boss' && run.z > bossZ + 7);
+  hero.position.set(run.x, moving ? Math.abs(Math.sin(runT * 9)) * 0.09 : 0, run.z);
+  if (moving) animateRun(hero, runT, 0);
+  else if (state !== 'over') animateIdle(hero, runT, 0);
 
-  // colpo: il braccio armato scatta in avanti
   if (run.swing > 0) {
     run.swing = Math.max(0, run.swing - dt * 3);
     const L = hero.userData.limbs;
     if (L) L.armR.rotation.x = -2.2 * Math.sin(run.swing / 0.35 * Math.PI);
   }
+  if (hero.userData.falling) hero.rotation.x = lerp(hero.rotation.x, 1.4, 1 - Math.pow(0.02, dt));
 
-  shadow.position.set(run.x, 0.03, run.z);
+  shadow.position.set(run.x, 0.04, run.z);
+  if (heroSprite) heroSprite.position.set(run.x, 3.4, run.z);
 
-  /* --- nemici abbattuti e scaglie --- */
+  /* --- boss e principessa --- */
+  if (boss) {
+    if (boss.userData.falling) {
+      boss.rotation.x = lerp(boss.rotation.x, -1.4, 1 - Math.pow(0.02, dt));
+      if (bossSprite) bossSprite.visible = false;
+    } else {
+      animateIdle(boss, runT, 1.3);
+    }
+  }
+  if (tower && tower.princess) {
+    tower.princess.position.y = tower.height + 2.2 + Math.sin(runT * 2) * 0.08;
+    animateIdle(tower.princess, runT, 0.6);
+  }
+
+  /* --- nemici abbattuti, raccolte, scaglie --- */
   for (const it of items) {
     if (it.kind === 'enemy' && it.mob && it.mob.userData.dying) {
       it.mob.rotation.x = lerp(it.mob.rotation.x, 1.5, 1 - Math.pow(0.02, dt));
       it.obj.position.y -= dt * 1.2;
       if (it.obj.position.y < -3) { it.obj.visible = false; it.mob.userData.dying = false; }
-    } else if (!it.done && (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff')) {
-      it.obj.rotation.y += dt * (it.spin || 1.5);
+    } else if (!it.done && it.obj.visible &&
+               (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff')) {
+      it.obj.rotation.y += dt * (it.spin || 1.8);
     } else if (!it.done && it.kind === 'enemy' && it.obj.visible) {
       animateIdle(it.mob, runT, it.z * 0.2);
     }
@@ -564,11 +635,23 @@ function update(dt) {
   }
 
   /* --- camera --- */
-  const menu = state === 'hub';
-  camera.position.x = lerp(camera.position.x, run.x * 0.4, 1 - Math.pow(0.01, dt));
-  camera.position.y = lerp(camera.position.y, menu ? 5.0 : 6.2, 1 - Math.pow(0.02, dt));
-  camera.position.z = lerp(camera.position.z, run.z + (menu ? 13 : 14), 1 - Math.pow(0.005, dt));
-  camera.lookAt(run.x * 0.5, menu ? 1.3 : 1.6, run.z - (menu ? 12 : 24));
+  const menu  = state === 'hub';
+  const duel  = state === 'boss' || state === 'over';
+  const cheer = state === 'over' && run.outcome === 'win';
+
+  if (cheer) {
+    // il premio è vedere chi hai liberato: la camera sale sulla torre
+    camera.position.x = lerp(camera.position.x, 7, 1 - Math.pow(0.06, dt));
+    camera.position.y = lerp(camera.position.y, 22, 1 - Math.pow(0.06, dt));
+    camera.position.z = lerp(camera.position.z, towerZ + 26, 1 - Math.pow(0.06, dt));
+    camera.lookAt(0, tower ? tower.height + 2.6 : 28, towerZ);
+  } else {
+    camera.position.x = lerp(camera.position.x, duel ? run.x + 5 : run.x * 0.4, 1 - Math.pow(0.01, dt));
+    camera.position.y = lerp(camera.position.y, menu ? 5.0 : duel ? 7.4 : 6.2, 1 - Math.pow(0.02, dt));
+    camera.position.z = lerp(camera.position.z, run.z + (menu ? 13 : duel ? 16 : 14), 1 - Math.pow(0.005, dt));
+    camera.lookAt(duel ? run.x * 0.3 : run.x, duel ? 4.0 : menu ? 1.3 : 1.6,
+                  run.z - (menu ? 12 : duel ? 13 : 16));
+  }
 }
 
 /* Tornando al menù la camera è a fondo pista: senza questo salto farebbe
@@ -583,12 +666,13 @@ window.BlockyRun = {
   run, items, meta, CFG, WEAPONS,
   get state() { return state; },
   get damage() { return damage(); },
+  get need() { return towerNeed(meta.level); },
   setPower(n) { run.power = n; renderHud(); },
   moveTo(x) { run.targetX = clamp(x, -CFG.laneLimit, CFG.laneLimit); },
   start() { startRun(); }
 };
 
-camera.position.set(2, 3.6, 8);
+snapCamera();
 renderHub();
 showScreen('hub');
 setWeapon(hero, meta.up.weapon);

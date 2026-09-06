@@ -49,19 +49,26 @@ function renderWallet() {
 
 function renderHub() {
   renderWallet();
-  $('hubLevel').textContent = 'LIVELLO ' + meta.level;
-  $('hubBest').textContent  = meta.best ? 'RECORD ' + meta.best + ' BLOCCHI' : 'NESSUN RECORD';
+  $('hubLevel').textContent = 'TORRE ' + meta.level;
+  $('hubBest').textContent  = meta.best
+    ? 'RECORD ' + meta.best + '/' + CFG.wallRows + ' DEL MURO'
+    : 'TORRE MAI RAGGIUNTA';
 
   /* Alla prima partita servono le regole; dopo serve il risultato.
      Non hanno senso insieme: si scambiano il posto. */
-  const played = meta.last > 0 || meta.best > 0;
-  $('hubRules').classList.toggle('hidden', played);
+  /* Alla prima partita serve la storia; dopo serve il risultato.
+     Non hanno senso insieme: si scambiano il posto. */
+  const played = !!meta.lastOutcome;
+  $('hubStory').classList.toggle('hidden', played);
   $('hubHint').classList.toggle('hidden', played);
   $('lastRun').classList.toggle('hidden', !played);
   if (played) {
-    $('lrDepth').textContent = meta.last;
+    $('lrDepth').textContent = meta.last + '/' + CFG.wallRows;
     $('lrCoins').textContent = '+' + fmt(meta.lastCoins);
     $('lrBadge').classList.toggle('hidden', !meta.lastRecord);
+    const out = OUTCOME_TEXT[meta.lastOutcome] || {};
+    $('lrOut').textContent = out.text || '';
+    $('lrOut').style.color = out.color || '#fff';
   }
 
   for (const key of Object.keys(UPGRADES)) {
@@ -79,6 +86,13 @@ function renderHub() {
 document.querySelectorAll('.up-card').forEach(card => {
   card.addEventListener('click', () => buyUpgrade(card.dataset.key));
 });
+
+/* Come si racconta la fine dell'ultima corsa */
+const OUTCOME_TEXT = {
+  wall: { text: 'FERMATO DAL MURO',      color: '#ff9d8a' },
+  boss: { text: 'SCONFITTO DAL BOSS',    color: '#ff9d8a' },
+  win : { text: 'PRINCIPESSA LIBERATA',  color: '#ffd24b' }
+};
 
 /* --------------------------- COLONNA BONUS ---------------------------- */
 /* I bonus raccolti nella partita in corso, impilati a sinistra. */
