@@ -33,14 +33,14 @@ storia. Salvataggio in `localStorage`.
 
 | | |
 |---|---|
-| 🟢 **Colonna verde** | Il numero è sotto al tuo colpo: la spacchi e prendi `numero × 3` di potenza |
-| 🔴 **Colonna rossa** | Troppo dura: se la prendi perdi il 14% della potenza. Schivala |
+| 🟢 **Cristallo verde** | Il numero è sotto al tuo colpo: lo spacchi e prendi `numero × 3` di potenza |
+| 🔴 **Cristallo rosso** | Troppo duro: se lo prendi perdi il 14% della potenza. Schivalo |
 | 👹 **Nemico** | Due o tre a partita. Lo abbatti per l'oro, oppure ti costa il 22% |
-| 🔨 **Fucina** | Ci passi attraverso e l'arma sale: da Pugni a Lama Rúna |
+| ⚔️ **Arma a terra** | L'oggetto vero — randello, ascia, spada, martello, lama rúnica — che galleggia sulla corsia: la raccogli e sostituisce la tua |
 | ⚡ **Bonus** | Oro, Attacco e Potenza: valgono solo per questa partita |
 
 Il colore del numero è calcolato sul tuo colpo attuale e si aggiorna appena
-l'arma cambia: file che erano rosse diventano verdi dopo una fucina.
+l'arma cambia: file che erano rosse diventano verdi appena raccogli l'arma dopo.
 
 **Seconda metà — spendi.** Oltre la linea a scacchi ci sono **30 blocchi**
 fra te e la torre. Ognuno costa la sua cifra di potenza, i costi crescono, e
@@ -81,7 +81,7 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Storia: principessa rapita, muro da sfondare, boss ai piedi della torre
 - [x] Grafica low-poly liscia con contorni (niente più voxel)
 - [x] Menù con potenziamenti permanenti e salvataggio locale
-- [x] Corsie con colonne da spaccare o schivare, nemici, fucine, bonus
+- [x] Corsie con cristalli da spaccare o schivare, nemici, armi da raccogliere, bonus
 - [x] Muro di 30 blocchi a consumo di potenza, con cartelli del record
 - [x] Duello col boss e camera che sale sulla principessa alla vittoria
 - [ ] Audio e particellari oltre alle scaglie

@@ -15,7 +15,8 @@ const GEO = {
   cone  : new THREE.ConeGeometry(0.5, 1, 16),
   cone6 : new THREE.ConeGeometry(0.5, 1, 6),
   octa  : new THREE.OctahedronGeometry(0.5, 0),
-  disc  : new THREE.CircleGeometry(0.5, 24)
+  disc  : new THREE.CircleGeometry(0.5, 24),
+  ring  : new THREE.TorusGeometry(0.42, 0.06, 8, 28)
 };
 
 const MAT = {};
@@ -50,11 +51,14 @@ function initArt() {
   MAT.gold     = mat(C.gold);
 
   /* verde = ci arrivi, rosso = no. Sono i due colori che il giocatore
-     legge cento volte a partita: stanno qui, non sparsi nel codice. */
-  MAT.good     = mat(0x46bf62, true);
-  MAT.goodDark = mat(0x2f8f47, true);
-  MAT.bad      = mat(0xdf5a48, true);
-  MAT.badDark  = mat(0xa63b2e, true);
+     legge cento volte a partita: stanno qui, non sparsi nel codice.
+     L'emissive li fa leggere come cristalli di energia e non come pietra. */
+  const glow = (color, emissive) =>
+    new THREE.MeshLambertMaterial({ color, emissive, flatShading: true });
+  MAT.good     = glow(0x4ad46a, 0x1a6b30);
+  MAT.goodDark = glow(0x2f9c4a, 0x11491f);
+  MAT.bad      = glow(0xf0604a, 0x7a1e12);
+  MAT.badDark  = glow(0xb8402f, 0x50140c);
 }
 
 /* --------------------------- PIAZZARE FORME --------------------------- */

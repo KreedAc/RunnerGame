@@ -41,16 +41,28 @@ potenziamento.
 naturale di una corsa (più righe, armi migliori). La differenza è quello che i
 potenziamenti devono coprire.
 
-## 3. Il colore è la regola
+## 3. Il colore è la regola, e la forma dice cosa fa
 
-Ogni colonna e ogni nemico mostrano un numero, **verde se il tuo colpo attuale
+Ogni cristallo e ogni nemico mostrano un numero, **verde se il tuo colpo attuale
 ci arriva, rosso se no**. Non è una proprietà dell'oggetto: è una relazione con
 te in questo momento. Passata una fucina, `refreshThreats()` ricolora tutto
 quello che non hai ancora incontrato, e file che erano rosse diventano verdi
 davanti agli occhi.
 
-È il modo più economico per insegnare il gioco senza tutorial, e trasforma la
-fucina da bonus generico a chiave che apre corsie.
+È il modo più economico per insegnare il gioco senza tutorial, e trasforma
+l'arma da bonus generico a chiave che apre corsie.
+
+**Due forme sbagliate, corrette.** Gli ostacoli da spaccare erano colonne
+coniche con una punta in cima: a distanza si leggevano come omini, cioè come
+nemici — l'opposto di quello che sono. Adesso sono grappoli di cristalli su una
+base di roccia, con l'emissive che li fa sembrare energia: si capisce che ti
+danno potenza prima ancora di leggere il numero.
+
+E l'arma non è più un arco da attraversare, un "gate" astratto: è **l'oggetto
+vero**, posato sulla corsia dentro un anello dorato, che ruota e ondeggia.
+Randello, ascia, spada, martello e lama rúnica hanno sagome diverse apposta —
+a terra devi riconoscere da lontano quale stai per prendere, non leggerne il
+nome.
 
 ## 4. Grafica: dal voxel al low-poly liscio
 

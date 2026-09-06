@@ -53,14 +53,16 @@ const C = {
   gownLite : 0xff9ec4
 };
 
-/* Armi: il danno di un colpo. Decide cosa riesci a rompere. */
+/* Armi: il danno di un colpo. Decide cosa riesci a rompere.
+   `shape` conta quanto il danno: l'arma sta a terra da raccogliere e si
+   deve riconoscere a colpo d'occhio quale stai per prendere. */
 const WEAPONS = [
-  { name: 'Pugni',    dmg: 3,   handle: null,     blade: null,     len: 0    },
-  { name: 'Randello', dmg: 7,   handle: 0x8a6a3a, blade: null,     len: 0.8  },
-  { name: 'Ascia',    dmg: 15,  handle: 0x8a6a3a, blade: 0xb9c6d2, len: 0.95 },
-  { name: 'Spada',    dmg: 30,  handle: 0x8a6a3a, blade: 0xdfe8f2, len: 1.15 },
-  { name: 'Martello', dmg: 58,  handle: 0x8a6a3a, blade: 0xffc93c, len: 1.1  },
-  { name: 'Lama Rúna',dmg: 110, handle: 0x8a6a3a, blade: 0x69e8ff, len: 1.25 }
+  { name: 'Pugni',     dmg: 3,   shape: null,     handle: null,     blade: null,     len: 0    },
+  { name: 'Randello',  dmg: 7,   shape: 'club',   handle: 0x8a6a3a, blade: 0x6b4a35, len: 0.85 },
+  { name: 'Ascia',     dmg: 15,  shape: 'axe',    handle: 0x8a6a3a, blade: 0xb9c6d2, len: 1.0  },
+  { name: 'Spada',     dmg: 30,  shape: 'sword',  handle: 0x8a6a3a, blade: 0xdfe8f2, len: 1.2  },
+  { name: 'Martello',  dmg: 58,  shape: 'hammer', handle: 0x8a6a3a, blade: 0xffc93c, len: 1.15 },
+  { name: 'Lama Rúna', dmg: 110, shape: 'sword',  handle: 0x3a2a4a, blade: 0x69e8ff, len: 1.35 }
 ];
 
 /* Bonus raccolti lungo la pista: valgono solo per la partita in corso. */

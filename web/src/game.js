@@ -74,18 +74,27 @@ scene.add(shadow);
 /* --------------------------- OGGETTI DI PISTA -------------------------- */
 const items = [];
 
-/* Colonna da spaccare: il numero dice quanto è dura, il colore se ce la fai. */
-function spawnPillar(x, z, hp) {
+/* Cristallo di energia da spaccare: il numero dice quanto è duro, il
+   colore se ce la fai. Prima era una colonna con una punta in cima e a
+   distanza si leggeva come un omino — ora è chiaramente una fonte di
+   potenza, che è quello che ti dà. */
+function spawnCrystal(x, z, hp) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const h = clamp(2.4 + Math.log10(Math.max(hp, 1)) * 1.1, 2.4, 5.4);
-  const parts = [
-    putOn(g, GEO.cyl8,  MAT.stone, 0, 0,       0, 2.1, 0.5, 2.1),
-    putOn(g, GEO.taper, MAT.stone, 0, 0.5,     0, 1.8, h,   1.8),
-    putOn(g, GEO.octa,  MAT.stone, 0, h + 0.5, 0, 1.1, 1.2, 1.1)
-  ];
+  const h = clamp(2.2 + Math.log10(Math.max(hp, 1)) * 1.05, 2.2, 4.8);
+
+  putOn(g, GEO.cyl8, MAT.rockDark, 0, 0, 0, 2.5, 0.45, 2.5);   // roccia di base
+  putOn(g, GEO.cyl8, MAT.rock,     0, 0.45, 0, 1.9, 0.25, 1.9);
+
+  const parts = [];
+  parts.push(putOn(g, GEO.octa, MAT.good, 0, 0.6, 0, 1.45, h, 1.45));
+  const l = putOn(g, GEO.octa, MAT.goodDark, -0.78, 0.55, 0.3, 0.85, h * 0.55, 0.85);
+  const r = putOn(g, GEO.octa, MAT.goodDark,  0.82, 0.55, -0.25, 0.75, h * 0.45, 0.75);
+  l.rotation.z = 0.34; r.rotation.z = -0.4;
+  parts.push(l, r);
+
   const sprite = labelSprite(fmt(hp), '#ffffff', 0.8);
-  sprite.position.set(0, h + 2.2, 0);
+  sprite.position.set(0, h + 1.6, 0);
   g.add(sprite);
   world.add(g);
   return { obj: g, sprite, parts };
@@ -104,23 +113,36 @@ function spawnEnemy(x, z, hp, kind) {
   return { obj: g, sprite, mob: m };
 }
 
-/* Fucina: ci passi attraverso e l'arma sale di livello. */
-function spawnForge(x, z, tier) {
+/* L'arma successiva, posata sulla corsia. Niente più arco da
+   attraversare: si vede l'oggetto — spada, ascia, martello — e si capisce
+   da solo cosa fa. */
+function spawnWeaponPickup(x, z, tier) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  putOn(g, GEO.cyl,  MAT.stoneDark, -1.2, 0, 0, 0.55, 3.4, 0.55);
-  putOn(g, GEO.cyl,  MAT.stoneDark,  1.2, 0, 0, 0.55, 3.4, 0.55);
-  putOn(g, GEO.box,  MAT.stone,      0,   3.4, 0, 3.2, 0.7, 0.7);
-  putOn(g, GEO.box,  mat(0x2f7de0),  0,   1.6, 0, 2.3, 1.2, 0.18);
-  // incudine
-  putOn(g, GEO.box, MAT.stoneDark, 0, 0, 0, 1.3, 0.5, 0.8);
-  putOn(g, GEO.box, MAT.stoneDark, 0, 0.5, 0, 0.6, 0.4, 0.5);
 
-  const sprite = labelSprite(WEAPONS[tier].name, '#ffffff', 0.6);
-  sprite.position.set(0, 2.2, 0.2);
+  // alone e anello a terra: dicono "raccoglimi"
+  const halo = put(g, GEO.disc, new THREE.MeshBasicMaterial({
+    color: 0xffe9a8, transparent: true, opacity: 0.3 }), 0, 0.06, 0, 2.9);
+  halo.rotation.x = -Math.PI / 2;
+  halo.userData.noOutline = true;
+  const ring = put(g, GEO.ring, MAT.gold, 0, 0.12, 0, 3.6, 3.6, 3.6);
+  ring.rotation.x = -Math.PI / 2;
+
+  const swirl = new THREE.Group();
+  swirl.position.set(0, 2.5, 0);
+  const model = buildWeaponModel(tier);
+  model.scale.setScalar(2.3);
+  model.rotation.z = 0.42;
+  addOutline(model, 0.05);
+  swirl.add(model);
+  g.add(swirl);
+
+  const sprite = labelSprite(WEAPONS[tier].name, '#ffe07a', 0.72);
+  sprite.position.set(0, 5.0, 0);
   g.add(sprite);
+
   world.add(g);
-  return { obj: g, sprite };
+  return { obj: g, sprite, swirl };
 }
 
 /* Raccolte: oro, gemme e i bonus della colonnina di sinistra. */
@@ -199,17 +221,17 @@ function buildRun() {
   for (let i = 0; i < rows; i++) {
     const dmg = WEAPONS[refTier].dmg;
     const lanes = shuffle([0, 1, 2]);
-    const forgeRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
+    const weaponRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
 
-    // corsia 1: la colonna alla tua portata — il guadagno
+    // corsia 1: il cristallo alla tua portata — il guadagno
     const easyHp = Math.max(1, Math.round(dmg * rnd(0.55, 0.95)));
-    items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false },
-                             spawnPillar(CFG.laneX[lanes[0]], z, easyHp)));
+    items.push(Object.assign({ kind: 'crystal', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false },
+                             spawnCrystal(CFG.laneX[lanes[0]], z, easyHp)));
 
-    // corsia 2: la fucina, oppure una minaccia
-    if (forgeRow) {
-      items.push(Object.assign({ kind: 'forge', z, x: CFG.laneX[lanes[1]], tier: refTier + 1, done: false },
-                               spawnForge(CFG.laneX[lanes[1]], z, refTier + 1)));
+    // corsia 2: l'arma da raccogliere, oppure una minaccia
+    if (weaponRow) {
+      items.push(Object.assign({ kind: 'weapon', z, x: CFG.laneX[lanes[1]], tier: refTier + 1, done: false },
+                               spawnWeaponPickup(CFG.laneX[lanes[1]], z, refTier + 1)));
       refTier++;
     } else if (Math.random() < 0.32) {
       const hp = Math.max(1, Math.round(dmg * rnd(0.6, 1.7)));
@@ -217,15 +239,15 @@ function buildRun() {
                                spawnEnemy(CFG.laneX[lanes[1]], z, hp, pick(ENEMY_KINDS))));
     } else {
       const hardHp = Math.round(dmg * rnd(1.4, 2.6));
-      items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false },
-                               spawnPillar(CFG.laneX[lanes[1]], z, hardHp)));
+      items.push(Object.assign({ kind: 'crystal', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false },
+                               spawnCrystal(CFG.laneX[lanes[1]], z, hardHp)));
     }
 
     // corsia 3: spesso libera — è la via di fuga
     if (Math.random() < 0.45) {
       const hardHp = Math.round(dmg * rnd(1.3, 2.4));
-      items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
-                               spawnPillar(CFG.laneX[lanes[2]], z, hardHp)));
+      items.push(Object.assign({ kind: 'crystal', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
+                               spawnCrystal(CFG.laneX[lanes[2]], z, hardHp)));
     }
 
     // raccolte fra una riga e l'altra
@@ -316,7 +338,7 @@ function refreshThreats() {
   const dmg = damage();
   for (const it of items) {
     if (it.done) continue;
-    if (it.kind !== 'pillar' && it.kind !== 'enemy') continue;
+    if (it.kind !== 'crystal' && it.kind !== 'enemy') continue;
     const ok = dmg >= it.hp;
     setLabel(it.sprite, fmt(it.hp), ok ? '#8dff87' : '#ff8a6e');
     if (it.parts) {
@@ -343,7 +365,7 @@ function shatter(group, n, material) {
   }
 }
 
-function hitPillar(it) {
+function hitCrystal(it) {
   const dmg = damage();
   run.swing = 0.35;
   if (dmg >= it.hp) {
@@ -378,10 +400,10 @@ function hitEnemy(it) {
   }
 }
 
-function takeForge(it) {
+function takeWeapon(it) {
   run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
   setWeapon(hero, run.weapon);
-  popup('▲ ' + WEAPONS[run.weapon].name, '#8fc6ff');
+  popup('⚔ ' + WEAPONS[run.weapon].name, '#ffe07a');
   it.obj.visible = false;
   refreshThreats();
 }
@@ -413,8 +435,10 @@ function hitWallBlock(it) {
     run.beatRecord = true;
     flashBanner('RECORD SUPERATO!');
   }
-  if (run.power <= 0) { run.power = 0; endRun('wall'); }
-  else if (run.broken >= CFG.wallRows) startBossFight();
+  /* Prima il muro, poi la potenza: se l'ultimo blocco ti prosciuga fino a
+     zero il muro l'hai comunque sfondato, e a fermarti dev'essere il boss. */
+  if (run.broken >= CFG.wallRows) startBossFight();
+  else if (run.power <= 0) { run.power = 0; endRun('wall'); }
 }
 
 /* ------------------------------ IL BOSS -------------------------------- */
@@ -564,9 +588,9 @@ function update(dt) {
       if (it.done || run.z > it.z) continue;
       it.done = true;
       if (Math.abs(run.x - it.x) > HIT_X) continue;      // schivato
-      if (it.kind === 'pillar')      hitPillar(it);
+      if (it.kind === 'crystal')     hitCrystal(it);
       else if (it.kind === 'enemy')  hitEnemy(it);
-      else if (it.kind === 'forge')  takeForge(it);
+      else if (it.kind === 'weapon') takeWeapon(it);
       else if (it.kind === 'block')  hitWallBlock(it);
       else                           takePickup(it);
       if (!steering()) break;
@@ -618,6 +642,9 @@ function update(dt) {
       it.mob.rotation.x = lerp(it.mob.rotation.x, 1.5, 1 - Math.pow(0.02, dt));
       it.obj.position.y -= dt * 1.2;
       if (it.obj.position.y < -3) { it.obj.visible = false; it.mob.userData.dying = false; }
+    } else if (!it.done && it.swirl) {
+      it.swirl.rotation.y += dt * 1.5;
+      it.swirl.position.y = 2.5 + Math.sin(runT * 2.2) * 0.18;
     } else if (!it.done && it.obj.visible &&
                (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff')) {
       it.obj.rotation.y += dt * (it.spin || 1.8);

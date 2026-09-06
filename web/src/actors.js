@@ -177,18 +177,55 @@ function buildPrincess() {
 }
 
 /* -------------------------------- ARMI --------------------------------- */
-function buildWeapon(tier) {
+/* Il modello nudo, centrato sull'impugnatura: lo usa sia la mano
+   dell'eroe sia l'arma che galleggia sulla corsia in attesa.
+   Ogni sagoma è diversa perché a terra l'arma va riconosciuta da lontano. */
+function buildWeaponModel(tier) {
   const W = WEAPONS[tier];
-  if (!W.len) return null;
+  if (!W.shape) return null;
   const g = new THREE.Group();
-  put(g, GEO.cyl, mat(W.handle), 0, -W.len * 0.28, 0, 0.11, W.len, 0.11);
-  if (W.blade) {
-    put(g, GEO.box, mat(W.blade), 0, W.len * 0.34, 0, 0.15, W.len * 0.66, 0.05);
-    put(g, GEO.box, mat(W.blade), 0, W.len * 0.02, 0, 0.38, 0.10, 0.09);
+  const L = W.len;
+  const steel = mat(W.blade);
+
+  put(g, GEO.cyl, mat(W.handle), 0, -L * 0.30, 0, 0.11, L, 0.11);       // manico
+  put(g, GEO.cyl, mat(0x4a3626), 0, -L * 0.72, 0, 0.15, L * 0.16, 0.15); // pomo
+
+  if (W.shape === 'club') {
+    put(g, GEO.sph, steel, 0, L * 0.34, 0, 0.34, 0.44, 0.34);
+    for (let i = 0; i < 5; i++) {
+      const a = i / 5 * Math.PI * 2;
+      const sp = put(g, GEO.cone6, mat(0xc3ccd6),
+                     Math.cos(a) * 0.17, L * 0.34, Math.sin(a) * 0.17, 0.10, 0.20, 0.10);
+      sp.rotation.z = -Math.cos(a) * 1.2;
+      sp.rotation.x =  Math.sin(a) * 1.2;
+    }
+
+  } else if (W.shape === 'axe') {
+    put(g, GEO.box, steel, 0.20, L * 0.30, 0, 0.42, 0.62, 0.13);        // occhio
+    const edge = put(g, GEO.cone6, steel, 0.52, L * 0.30, 0, 0.66, 0.52, 0.13);
+    edge.rotation.z = -Math.PI / 2;                                      // filo a cuneo
+    put(g, GEO.box, steel, -0.16, L * 0.30, 0, 0.22, 0.30, 0.12);        // becco
+
+  } else if (W.shape === 'hammer') {
+    put(g, GEO.box, steel, 0, L * 0.34, 0, 0.72, 0.40, 0.40);            // testa
+    put(g, GEO.box, mat(0xc3ccd6), 0.38, L * 0.34, 0, 0.10, 0.44, 0.44);
+    put(g, GEO.box, mat(0xc3ccd6), -0.38, L * 0.34, 0, 0.10, 0.44, 0.44);
+
+  } else {                                                               // sword
+    put(g, GEO.box, steel, 0, L * 0.36, 0, 0.17, L * 0.62, 0.09);        // lama
+    const tip = put(g, GEO.cone6, steel, 0, L * 0.70, 0, 0.17, 0.24, 0.09);
+    tip.rotation.y = Math.PI / 4;
+    put(g, GEO.box, steel, 0, L * 0.04, 0, 0.46, 0.11, 0.14);            // guardia
   }
-  g.position.set(0, -0.58, 0.24);
-  g.rotation.x = -1.15;
   return g;
+}
+
+function buildWeapon(tier) {
+  const model = buildWeaponModel(tier);
+  if (!model) return null;
+  model.position.set(0, -0.58, 0.24);
+  model.rotation.x = -1.15;
+  return model;
 }
 
 function setWeapon(actor, tier) {
