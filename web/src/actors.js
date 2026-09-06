@@ -37,9 +37,9 @@ function hollowFaceTex(base, hole) {
    ma con colori nostri, per non ricalcare personaggi esistenti.        */
 const SKINS = {
   hero: {
-    skin: 0xd9a066, hair: 0x4a3423, shirt: 0x2fb5a8, sleeve: 0x2fb5a8,
+    skin: 0xd9a066, hair: 0x6b4a2f, shirt: 0x2fb5a8, sleeve: 0x2fb5a8,
     pants: 0x3a5ba8, shoe: 0x4a4a52,
-    face: () => faceTex(0xd9a066, 0xf2f2f2, 0x3a5ba8, 0x8a5a3a, 0x4a3423)
+    face: () => faceTex(0xd9a066, 0xf2f2f2, 0x3a5ba8, 0x8a5a3a, 0x6b4a2f)
   },
   zombie: {
     skin: 0x5a8a4a, hair: 0x2f4a28, shirt: 0x3a6a86, sleeve: 0x3a6a86,

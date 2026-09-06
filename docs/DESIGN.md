@@ -1,72 +1,66 @@
-# Blocky Squad Run — note di design
+# Blocky Power Run — note di design
 
 ## 1. Il ciclo di gioco
 
-Pista dritta, eventi in sequenza: **gate → arma → gate → mob**, e si ripete.
-In fondo il boss. Tre numeri sull'HUD dicono tutto: quanti sei, che arma hai,
-quanta forza fai. Il boss ne mostra uno solo: quanta ne serve.
+Menù → corsa → finale → bottino → potenziamenti → corsa. Una partita dura
+40-60 secondi ed è divisa in due metà con regole opposte:
 
-Nessun tutorial. Il colore dice cosa fa un gate prima ancora di leggerlo, e
-l'HUD aggiorna la forza nell'istante in cui lo attraversi.
+- **prima metà: accumuli.** Corri su tre corsie e a ogni riga scegli cosa
+  prendere. Spaccare fa salire la potenza, sbagliare la fa scendere.
+- **seconda metà: spendi.** Oltre la linea a scacchi ogni blocco costa
+  potenza. Quanto lontano arrivi è il punteggio.
 
-## 2. Perché tre sistemi e non uno
+È la struttura che rende leggibile la prima metà: mentre corri, il numero
+grande in alto è l'unica cosa che conta, e sai già a cosa servirà.
 
-Con i soli gate matematici la scelta è sempre la stessa: prendi il verde. È
-leggibile ma si esaurisce in trenta secondi.
+## 2. Il colore è la regola
 
-Aggiungendo arma e mob la scelta diventa un compromesso:
+Ogni torre e ogni nemico mostrano un numero. Il numero è **verde se il tuo
+colpo attuale ci arriva, rosso se no** — non è una proprietà dell'oggetto, è
+una relazione con te in questo momento. Quando passi da un banco da lavoro e
+l'arma sale, `refreshThreats()` ricolora tutto quello che non hai ancora
+incontrato: file che erano rosse diventano verdi davanti ai tuoi occhi.
 
-- l'arma non aumenta il numero, ma riduce ciò che i mob ti portano via;
-- i mob costano un numero **assoluto** di omini, quindi pesano tantissimo su una
-  squadra piccola e poco su una grande;
-- la forza finale è il prodotto dei due, quindi né la squadra né l'arma da sole
-  bastano.
+È il modo più economico per insegnare il gioco senza tutorial, e trasforma il
+banco da lavoro da "bonus generico" a "chiave che apre corsie".
 
-Da qui nasce la domanda interessante a metà percorso: *conviene moltiplicarmi
-adesso o migliorare l'arma prima del prossimo gruppo di mob?*
+Le torri cambiano anche materiale (cobblestone verde o rosso), così la lettura
+regge anche a distanza, prima che il numero sia decifrabile.
 
-## 3. La folla: 26 omini e un numero
+## 3. Perché tre corsie e non due
 
-Renderizzare 500 personaggi sarebbe insensato su mobile e non aggiungerebbe
-informazione: oltre una certa densità l'occhio legge "tanti" e basta. Il tetto è
-26 modelli, riusati fra un livello e l'altro (crearli è la parte cara, non
-disegnarli).
+Con due corsie la scelta è binaria e quasi sempre ovvia. Con tre c'è quasi
+sempre una via di fuga neutra: prendere il verde, evitare il rosso, o passare
+in mezzo senza guadagnare né perdere. Le righe sono costruite così:
 
-La formazione usa l'angolo aureo: `angolo = i × 2.39996`, `raggio = 0.44 × √i`.
-Distribuisce senza griglie visibili e senza sovrapposizioni regolari. Il raggio
-è poi moltiplicato per 1.9 lungo Z: la folla è più profonda che larga, perché la
-pista è stretta e una folla larga uscirebbe dai bordi.
+- corsia 1: la torre alla tua portata (il guadagno);
+- corsia 2: il banco da lavoro, oppure un nemico, oppure una torre dura;
+- corsia 3: libera nel 55% dei casi — è l'uscita di sicurezza.
 
-La camera arretra e sale in funzione del raggio della folla, così la squadra
-occupa più o meno sempre la stessa porzione di schermo.
+I nemici sono rari di proposito, due o tre per partita: sono l'eccezione che
+spezza il ritmo, non l'ostacolo di base.
 
 ## 4. Bilanciamento
 
-Il livello si genera in tre passi.
+**Il riferimento.** La pista si genera seguendo un giocatore perfetto e
+tenendo traccia della sua potenza e della sua arma. Gli hp delle torri sono
+calcolati sul colpo che avrebbe *in quel punto*, non su un valore assoluto: una
+torre "facile" vale sempre il 55-95% del colpo, una "dura" l'1.3-2.6×. Così la
+difficoltà resta costante mentre i numeri crescono di ordine di grandezza.
 
-**Passo 1 — riferimento.** Genero gli eventi seguendo un giocatore perfetto,
-tenendo traccia di squadra e arma. Serve a scegliere numeri sensati in loco: un
-gate `+N` calibrato su quanti omini avresti lì, un gruppo di mob con vita pari al
-14–28% della forza del momento.
+**La stima dei bonus.** Il giocatore raccoglie anche i bonus della colonnina,
+che il riferimento non simula. Sperimentalmente valgono circa +50%, quindi
+`expectedPower = refPower × 1.5`.
 
-**Passo 2 — costruzione.** Gli oggetti vengono messi in scena con quei valori.
+**I costi del finale.** `costo(i) = base × (1 + i × 0.42)` con
+`base = expectedPower / 55`. In ogni riga i tre blocchi valgono
+`×0.65`, `×1`, `×1.5` del passo, quindi scegliere bene allunga la corsa di
+qualche blocco. Con questi numeri un giocatore perfetto arriva a ~14 blocchi
+su 36 disponibili: il resto è margine per chi ha comprato i potenziamenti.
 
-**Passo 3 — il boss.** Due riferimenti:
-
-- la **partita perfetta** (sempre il gate migliore, sempre l'arma su);
-- la **mediana di 9 partite simulate all'80% di precisione**.
-
-`vitaBoss = max(mediana80 × 1.3, forzaPerfetta × 0.18)`
-
-Serve prendere il massimo dei due perché con i gate `×6` la forbice fra gioco
-perfetto e gioco mediocre è enorme: la sola mediana renderebbe il boss banale
-per chi gioca bene, la sola partita perfetta lo renderebbe impossibile per
-chiunque.
-
-**Il tetto del 70%.** Un gruppo di mob non può portare via più del 70% della
-squadra. Senza questo tetto un giocatore rimasto indietro veniva annientato a
-metà pista: punizione doppia e frustrante. Ora chi arriva debole lo paga dove
-deve, contro il boss.
+**Le percentuali invece dei valori fissi.** Prendere una torre rossa costa il
+14% della potenza, un nemico il 22%. Un costo fisso sarebbe irrilevante a fine
+corsa e letale all'inizio; una percentuale pesa uguale in ogni momento.
 
 ## 5. Grafica voxel senza asset
 
@@ -87,8 +81,8 @@ Tre dettagli che fanno la differenza:
 Gli arti ruotano attorno a un perno posto in alto (spalla, anca), non attorno al
 proprio centro: è la differenza fra una corsa e un frullatore.
 
-**L'unica cosa non voxel sono i pannelli dei gate**, che restano lisci e
-sfumati. È voluto: sono interfaccia, non mondo, e devono staccare.
+Le etichette 3D adattano il corpo del font alla larghezza del canvas: senza
+questo "Bastone" veniva tagliato a "aston".
 
 ## 6. Verso Android
 
@@ -119,12 +113,13 @@ pubblicazione. Le formule di questo documento si trasferiscono direttamente.
 
 ## 7. Prestazioni
 
-Il conteggio delle mesh è la cosa da tenere d'occhio: circa 600–800 per livello
-(terreno, alberi, case, montagne) più ~180 per la folla. Ogni blocco è una mesh
-separata perché serve la ripetizione della texture per faccia.
+Il conteggio delle mesh è la cosa da tenere d'occhio: circa 600–800 per il mondo
+(terreno, alberi, case, montagne), ~150 per gli oggetti della pista e ~320 per il
+corridoio finale (36 righe × 3 blocchi). Ogni blocco è una mesh separata perché
+serve la ripetizione della texture per faccia.
 
 Se su fascia bassa non regge, in ordine di resa:
-1. ridurre `CFG.maxRunners` da 26 a 16;
+1. ridurre `CFG.finaleRows` da 36 a 24;
 2. diradare `buildTerrain` e `buildProps`;
 3. unire i blocchi statici con `BufferGeometryUtils.mergeBufferGeometries`
    (sta negli examples di three, va aggiunto) usando un atlas al posto dei
@@ -132,11 +127,14 @@ Se su fascia bassa non regge, in ordine di resa:
 
 ## 8. Cosa manca, in ordine di impatto sul feel
 
-1. **Impatti** — particellari sui mob abbattuti, scossa di camera, suono secco.
-   Adesso i mob si stendono e basta.
-2. **Audio** — musica loop e sfx. Sposta la qualità percepita più di qualunque
-   effetto grafico.
-3. **Anteprima degli eventi successivi** sopra al gate corrente, per pianificare.
-4. **Ostacoli oltre ai mob** — muri da sfondare col numero, monete, rampe.
-5. **Progressione** — temi (foresta, neve, nether), salvataggio, valuta, skin.
-6. **Prima esecuzione** — mano animata che spiega lo swipe, livello 1 facile.
+1. **Audio** — musica loop e sfx sull'impatto. Sposta la qualità percepita più
+   di qualunque effetto grafico.
+2. **Impatti più grassi** — scossa di camera, numeri che schizzano dal punto
+   colpito invece che dal centro schermo, rallentamento di un frame.
+3. **Zone** — la pista è sempre la stessa pianura. Neve, deserto e notte
+   cambierebbero solo la palette dei blocchi: il codice è già pronto.
+4. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
+5. **Missioni e valuta premium** — i cristalli si raccolgono ma non si spendono
+   ancora.
+6. **Prima esecuzione** — mano animata che spiega lo swipe, prima riga con solo
+   verde.

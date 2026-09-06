@@ -1,8 +1,9 @@
-# Blocky Squad Run
+# Blocky Power Run
 
-Runner mobile in portrait, grafica voxel. Corri con la tua squadra di omini a
-blocchi, attraversa i gate giusti per moltiplicarti, potenzia l'arma, sopravvivi
-ai mob lungo la pista e a fine livello abbatti il boss.
+Runner mobile in portrait, grafica voxel. Corri lungo tre corsie: scegli cosa
+spaccare e cosa schivare, potenzia l'arma ai banchi da lavoro, raccogli i bonus
+della partita — e al traguardo la potenza accumulata si consuma blocco dopo
+blocco finché regge.
 
 Bozza giocabile, non un gioco finito: serve a fissare look, sistemi e feel prima
 di scegliere la tecnologia definitiva per Android.
@@ -19,54 +20,62 @@ Da telefono: stesso URL sulla rete locale. Si gioca in verticale, trascinando il
 dito a sinistra e a destra. Da desktop funzionano anche le frecce.
 
 Per una copia che si apre con doppio click, senza server:
-`./tools/build-single.sh` → `dist/blocky-squad-run.html`.
+`./tools/build-single.sh` → `dist/blocky-power-run.html`.
 
-## I tre sistemi
+## Come funziona una partita
 
-**Squadra.** Il contatore è il numero di omini. I gate verdi la moltiplicano o la
-ingrossano, i rossi la falciano. In scena se ne disegnano al massimo 26: oltre,
-cresce solo il numero — 26 omini bastano a leggere "tanti", 500 costerebbero
-frame senza aggiungere informazione.
+**Menù iniziale.** Livello, portafoglio, record, e tre potenziamenti permanenti
+comprati con le monete: Potenza iniziale, Arma di partenza, Guadagno. Il
+salvataggio sta in `localStorage`.
 
-**Arma.** Sei livelli, da Pugni a Diamante, ciascuno con un danno per omino. I
-gate blu la migliorano, quelli viola la peggiorano. L'arma è visibile in mano a
-tutta la squadra.
+**La corsa.** Tre corsie, una riga di scelte ogni 30 blocchi:
 
-**Mob.** Gruppi di zombie, scheletri e bomber piazzati sulla pista, ciascuno con
-una vita. Attraversarli costa `vita ÷ danno` omini: con l'arma giusta ne costa
-pochi, a mani nude è un massacro. La perdita è però limitata al 70% della
-squadra, così non si viene annientati a metà percorso — il fallimento è il boss.
+| | |
+|---|---|
+| 🟢 **Torre verde** | Il numero è sotto al tuo colpo: la spacchi e prendi `numero × 3` di potenza |
+| 🔴 **Torre rossa** | Troppo dura: se la prendi perdi il 14% della potenza. Schivala |
+| 👾 **Nemico** | Due o tre per partita. Se il tuo colpo basta lo abbatti e prendi monete, altrimenti ti costa il 22% della potenza |
+| 🔨 **Banco da lavoro** | Ci passi attraverso e l'arma sale di livello: da Pugni a Diamante |
+| ⚡ **Bonus** | Guadagno, Attacco e Potenza: valgono solo per questa partita e si impilano nella colonnina di sinistra |
 
-**Boss.** Alla fine, un bruto con una vita. Vinci se `omini × danno ≥ vita`.
-È il punto in cui i tre sistemi si sommano: tanti omini con un'arma scarsa
-perdono contro pochi omini ben armati, e viceversa.
+Il colore del numero non è decorazione: è calcolato sul tuo colpo attuale e si
+aggiorna appena l'arma cambia. Quello che era rosso diventa verde dopo un banco
+da lavoro.
+
+**Il finale.** Oltre la linea a scacchi comincia un corridoio di blocchi
+numerati. Ogni blocco che sfondi costa il suo numero di potenza, e i costi
+crescono riga dopo riga. Si continua finché la potenza regge: quanti blocchi
+abbatti è il punteggio. Alcuni sono forzieri e pagano monete. Anche qui si
+sceglie la corsia, perché nella stessa riga i costi sono diversi.
 
 ## Struttura
 
 ```
 web/
   index.html          interfaccia, CSS e loader
-  src/core.js         configurazione, utility, texture pixel-art, scena
+  src/core.js         configurazione, armi, potenziamenti, texture, scena, salvataggio
   src/blocks.js       materiali dei blocchi (erba, terra, pietra, legno, foglie…)
   src/world.js        pista, terreno, alberi, case, montagne, nuvole
   src/actors.js       omini a blocchi, volti, armi, animazioni
-  src/game.js         folla, gate, mob, boss, generazione livello, loop
+  src/hub.js          menù iniziale, portafoglio, potenziamenti, schermate
+  src/game.js         corsa, ostacoli, nemici, banchi, finale, ciclo di gioco
   vendor/three.min.js copia locale di three.js (serve al pacchetto offline)
 docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
 tools/build-single.sh genera la demo a file singolo
 ```
 
-Il tuning sta in `CFG` e `WEAPONS` in cima a `core.js`. In console:
-`GateRunner.setCount(500)`, `GateRunner.setWeapon(5)`, `GateRunner.moveTo(-2)`.
+Il tuning sta in `CFG`, `WEAPONS`, `BUFFS` e `UPGRADES` in cima a `core.js`.
+In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.start()`.
 
 ## Stato
 
+- [x] Menù iniziale con potenziamenti permanenti e salvataggio locale
 - [x] Mondo voxel con texture generate a runtime (nessun asset da scaricare)
-- [x] Squadra che si moltiplica, armi, mob, boss
-- [x] Livelli generati proceduralmente con difficoltà auto-tarata
-- [ ] Audio e particellari sugli impatti
-- [ ] Ostacoli oltre ai mob (muri da sfondare, monete, rampe)
-- [ ] Salvataggio, valuta, skin
+- [x] Corsie con ostacoli da rompere o schivare, nemici, banchi da lavoro, bonus
+- [x] Finale a consumo di potenza, con scelta di corsia e forzieri
+- [ ] Audio e particellari oltre alle scaglie
+- [ ] Zone con temi diversi (neve, deserto, notte)
+- [ ] Missioni giornaliere, valuta premium, skin
 - [ ] Build Android (vedi `docs/DESIGN.md`)
 
 ## Nota sulla proprietà intellettuale

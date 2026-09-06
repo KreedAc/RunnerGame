@@ -52,6 +52,15 @@ function initBlocks() {
     blobs(g, S, [0x6e6e6e, 0xa5a5a5, 0x767676], 16, 2, 4);
     tileEdge(g, S, 0.2);
   }));
+  /* cobblestone tinto: dice a colpo d'occhio se una torre è alla tua portata */
+  const cobbleTint = (base, spots, edge) => flatMat(pixelTex(S, g => {
+    speckle(g, S, base, spots, 0.3);
+    blobs(g, S, spots, 16, 2, 4);
+    tileEdge(g, S, edge);
+  }));
+  BLOCK.cobbleGood = cobbleTint(0x5aa34a, [0x4a8c3c, 0x6fbc5c, 0x3f7a34], 0.24);
+  BLOCK.cobbleBad  = cobbleTint(0xa8544a, [0x8f463d, 0xc06a5c, 0x74352e], 0.24);
+
   BLOCK.gravel = flatMat(pixelTex(S, g => {
     speckle(g, S, 0x9d9186, [0x8b8177, 0xb0a598, 0x7d746b, 0xc0b6a8], 0.65);
     tileEdge(g, S, 0.18);

@@ -1,5 +1,6 @@
 /* =====================================================================
-   GAME — folla, gate, mob, boss, livello, loop
+   GAME — la partita: pista a corsie, ostacoli, nemici, banchi di potenza
+   e il finale in cui la potenza accumulata si consuma.
    ===================================================================== */
 
 initBlocks();
@@ -7,15 +8,19 @@ initBlocks();
 /* --------------------------- ETICHETTE 3D ---------------------------- */
 function labelTexture(text, color) {
   const c = document.createElement('canvas');
-  c.width = 512; c.height = 256;
+  c.width = 320; c.height = 160;
   const g = c.getContext('2d');
-  g.font = 'bold 150px system-ui, Arial, sans-serif';
   g.textAlign = 'center'; g.textBaseline = 'middle';
+  let size = 112;                       // rimpicciolisce finché non ci sta
+  do {
+    g.font = 'bold ' + size + 'px system-ui, Arial, sans-serif';
+    size -= 4;
+  } while (g.measureText(text).width > 292 && size > 24);
   g.lineJoin = 'round';
-  g.lineWidth = 28; g.strokeStyle = 'rgba(12,18,30,.8)';
-  g.strokeText(text, 256, 132);
+  g.lineWidth = size * 0.2; g.strokeStyle = 'rgba(12,18,30,.85)';
+  g.strokeText(text, 160, 84);
   g.fillStyle = color || '#ffffff';
-  g.fillText(text, 256, 132);
+  g.fillText(text, 160, 84);
   return new THREE.CanvasTexture(c);
 }
 
@@ -24,283 +29,402 @@ function labelSprite(text, color, size) {
     map: labelTexture(text, color), transparent: true, depthTest: false
   }));
   s.renderOrder = 20;
-  const k = size || 1.6;
+  const k = size || 1.1;
   s.scale.set(k * 2, k, 1);
   return s;
 }
 
-/* ------------------------------ PANNELLI ----------------------------- */
-/* I gate restano "lisci": sono l'unico elemento non voxel della scena,
-   e va bene così — sono interfaccia, non mondo.                         */
-function panelTexture(label, tone) {
-  const W = 384, H = 640;
-  const c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const g = c.getContext('2d');
-  const stops = {
-    good : ['#b6f79b', '#3fd257', '#0c9a37'],
-    bad  : ['#ffc08c', '#f5522b', '#b8180f'],
-    up   : ['#bfe0ff', '#3a8ef0', '#1550b8'],
-    down : ['#d8c6f0', '#7b52c9', '#42267f']
-  }[tone];
-  const grad = g.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, stops[0]); grad.addColorStop(.45, stops[1]); grad.addColorStop(1, stops[2]);
-  g.fillStyle = grad; g.fillRect(0, 0, W, H);
-  g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(0, 0, W, 110);
-
-  let size = 190;
-  g.textAlign = 'center'; g.textBaseline = 'middle';
-  do {
-    g.font = 'bold ' + size + 'px system-ui, Arial, sans-serif';
-    size -= 6;
-  } while (g.measureText(label).width > W * 0.84 && size > 34);
-
-  g.lineJoin = 'round';
-  g.lineWidth = size * 0.16; g.strokeStyle = 'rgba(0,0,0,.30)';
-  g.strokeText(label, W / 2, H * 0.62);
-  g.fillStyle = '#ffffff';
-  g.fillText(label, W / 2, H * 0.62);
-  return new THREE.CanvasTexture(c);
+function setLabel(sprite, text, color) {
+  sprite.material.map.dispose();
+  sprite.material.map = labelTexture(text, color);
 }
 
-function buildPanels(z, labels, tones) {
-  const group = new THREE.Group();
-  group.position.z = z;
-  const half = CFG.trackWidth / 2, w = CFG.trackWidth / labels.length;
-
-  labels.forEach((label, i) => {
-    const p = new THREE.Mesh(
-      new THREE.PlaneGeometry(w - 0.08, 5),
-      new THREE.MeshBasicMaterial({
-        map: panelTexture(label, tones[i]),
-        transparent: true, opacity: 0.92, side: THREE.DoubleSide
-      })
-    );
-    p.position.set(-half + w * (i + 0.5), 2.5, 0);
-    group.add(p);
-  });
-
-  // montanti: blocchi di pietra, coerenti col mondo
-  for (let i = 0; i <= labels.length; i++) {
-    putBlock(group, BLOCK.stone, -half + w * i, 0, 0, 0.4, 6, 0.4);
-  }
-  world.add(group);
-  return group;
-}
-
-/* ------------------------------ OPERAZIONI --------------------------- */
-const OPS = {
-  mul: (c, v) => clamp(c * v, 1, CFG.maxCount),
-  div: (c, v) => Math.max(1, Math.floor(c / v)),
-  add: (c, v) => clamp(c + v, 1, CFG.maxCount),
-  sub: (c, v) => Math.max(1, c - v)
+/* ------------------------- STATO DELLA PARTITA ------------------------ */
+const run = {
+  power: 0, weapon: 0, coins: 0, gems: 0,
+  buffs: { income: 0, rate: 0, gain: 0 },
+  x: 0, targetX: 0, z: 0,
+  depth: 0,                       // blocchi abbattuti nel finale
+  swing: 0
 };
-const apply    = (c, op) => OPS[op.k](c, op.v);
 
-/* Quanto costa un gruppo di mob. Il tetto al 70% evita l'annientamento a
-   metà percorso: chi arriva debole lo paga contro il boss, non qui. */
-const mobLoss = (count, hp, dmg) =>
-  Math.min(Math.ceil(hp / dmg), Math.max(1, Math.floor(count * 0.7)));
-const opLabel  = op => ({ mul: '×', div: '÷', add: '+', sub: '−' })[op.k] + fmt(op.v);
+const damage = () => Math.round(WEAPONS[run.weapon].dmg * (1 + run.buffs.rate * BUFFS.rate.step));
+const gainMul  = () => 1 + run.buffs.gain   * BUFFS.gain.step;
+const coinMul  = () => UPGRADES.income.value(meta.up.income) * (1 + run.buffs.income * BUFFS.income.step);
 
-function makeOps(count) {
-  const r = Math.random();
-  let a, b;
-  if (r < 0.5) {
-    const n = rint(2, 6);
-    a = { k: 'mul', v: n }; b = { k: 'div', v: n };
-  } else if (r < 0.82) {
-    const n = Math.max(5, Math.round(count * rnd(0.4, 1.1) / 5) * 5);
-    a = { k: 'add', v: n }; b = { k: 'sub', v: n };
-  } else {
-    a = { k: 'mul', v: rint(2, 4) };
-    b = { k: 'sub', v: Math.max(5, Math.round(count * rnd(0.3, 0.7) / 5) * 5) };
-  }
-  return Math.random() < 0.5 ? [a, b] : [b, a];
-}
+/* --------------------------------- EROE -------------------------------- */
+const hero = buildActor('hero');
+hero.rotation.y = Math.PI;                 // di spalle: corre verso −Z
+scene.add(hero);
 
-/* ------------------------------- FOLLA -------------------------------- */
-/* Gli omini sono creati una volta sola e riusati: cambiare livello
-   non ricostruisce 26 personaggi.                                       */
-const crowd = {
-  root: new THREE.Group(),
-  runners: [],
-  count: CFG.startCount,
-  weapon: 0,
-  x: 0, targetX: 0, z: 0
-};
-scene.add(crowd.root);
-
-function formationOffset(i) {
-  const a = i * 2.399963;                 // angolo aureo: distribuzione naturale
-  const r = 0.44 * Math.sqrt(i);
-  return { x: Math.cos(a) * r, z: Math.sin(a) * r * 1.9 };
-}
-
-for (let i = 0; i < CFG.maxRunners; i++) {
-  const obj = buildActor('hero');
-  obj.rotation.y = Math.PI;              // di spalle: corre verso −Z
-  const off = formationOffset(i);
-  obj.userData.off = off;
-  obj.userData.phase = i * 1.7;
-  crowd.root.add(obj);
-  crowd.runners.push(obj);
-}
-
-function refreshCrowd() {
-  const visible = Math.min(crowd.count, CFG.maxRunners);
-  crowd.runners.forEach((r, i) => { r.visible = i < visible; });
-  document.getElementById('count').textContent = fmt(crowd.count);
-  document.getElementById('force').textContent = fmt(force());
-  const w = WEAPONS[crowd.weapon];
-  document.getElementById('weapon').textContent = w.name;
-}
-
-const force = () => crowd.count * WEAPONS[crowd.weapon].dmg;
-
-function applyWeapon() {
-  crowd.runners.forEach(r => setWeapon(r, crowd.weapon));
-  refreshCrowd();
-}
-
-/* ombra: un disco che copre tutta la folla */
 const shadow = new THREE.Mesh(
-  new THREE.CircleGeometry(1, 24),
-  new THREE.MeshBasicMaterial({ color: 0x11202c, transparent: true, opacity: 0.22 })
+  new THREE.CircleGeometry(0.75, 20),
+  new THREE.MeshBasicMaterial({ color: 0x11202c, transparent: true, opacity: 0.24 })
 );
 shadow.rotation.x = -Math.PI / 2;
 shadow.position.y = 0.03;
 scene.add(shadow);
 
-/* -------------------------------- MOB --------------------------------- */
-const MOB_TYPES = ['zombie', 'skeleton', 'bomber'];
+/* --------------------------- OGGETTI DI PISTA -------------------------- */
+const items = [];      // tutto ciò che si può incontrare, ordinato per z
 
-function buildMobGroup(z, hp, n, type) {
-  const group = new THREE.Group();
-  group.position.z = z;
-  const mobs = [];
-  for (let i = 0; i < n; i++) {
-    const m = buildActor(type, { arms: type !== 'bomber' });
-    const t = n === 1 ? 0.5 : i / (n - 1);
-    m.position.set(lerp(-2.6, 2.6, t) + rnd(-0.3, 0.3), 0, rnd(-1.4, 1.4));
-    m.rotation.y = rnd(-0.2, 0.2);          // rivolti verso chi arriva
-    m.userData.phase = i * 2.1;
-    group.add(m);
-    mobs.push(m);
+/* Torre da rompere: una colonna di blocchi col suo numero sopra.
+   Verde = la spacchi, rossa = ti rimbalza addosso e perdi potenza. */
+function buildTower(x, z, hp) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const h = clamp(2 + Math.floor(Math.log10(Math.max(hp, 1))), 2, 5);
+  const blocks = [];
+  for (let i = 0; i < h; i++) {
+    const w = 1.7 - i * 0.12;
+    blocks.push(putBlock(g, BLOCK.cobble, 0, i, 0, w, 1, w));
   }
-  const sign = labelSprite('☠ ' + fmt(hp), '#ff8f7a', 1.3);
-  sign.position.set(0, 6.2, 0);
-  group.add(sign);
-
-  world.add(group);
-  return { group, mobs, sign };
-}
-
-/* ------------------------------- LIVELLO ------------------------------ */
-const events = [];
-let level = 1, finishZ = 0, levelLen = 0, bossHp = 0, boss = null;
-
-function buildBoss(z, hp) {
-  const g = buildActor('brute');
-  g.scale.setScalar(3.2);
-  g.position.set(0, 0, z);
+  const sprite = labelSprite(fmt(hp), '#ffffff', 0.8);
+  sprite.position.set(0, h + 0.9, 0);
+  g.add(sprite);
   world.add(g);
-
-  const sign = labelSprite('☠ ' + fmt(hp), '#ffd0c0', 2.2);
-  sign.position.set(0, 7.2, z);
-  world.add(sign);
-
-  // arena: una piattaforma di ossidiana attorno al boss
-  putBlock(world, BLOCK.obsidian, 0, -1, z, CFG.trackWidth + 2, 1, 12);
-  return { obj: g, sign, hp };
+  return { obj: g, sprite, blocks };
 }
 
-function buildLevel() {
+/* Nemico: uno o due per riga, lo schivi o lo abbatti. */
+function buildEnemy(x, z, hp, type) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const m = buildActor(type, { arms: type !== 'bomber' });
+  g.add(m);
+  const sprite = labelSprite(fmt(hp), '#ffffff', 0.75);
+  sprite.position.set(0, 2.7, 0);
+  g.add(sprite);
+  world.add(g);
+  return { obj: g, sprite, mob: m };
+}
+
+/* Banco da lavoro: ci passi attraverso e l'arma sale di livello. */
+function buildCraft(x, z, tier) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  putBlock(g, BLOCK.planks, -1.1, 0, 0, 0.5, 3, 0.5);
+  putBlock(g, BLOCK.planks,  1.1, 0, 0, 0.5, 3, 0.5);
+  putBlock(g, BLOCK.planks,  0,   3, 0, 2.7, 0.6, 0.6);
+
+  const board = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 1.1),
+    new THREE.MeshBasicMaterial({ color: 0x2f7de0, transparent: true, opacity: 0.92 })
+  );
+  board.position.set(0, 2.1, 0.05);
+  g.add(board);
+
+  const sprite = labelSprite(WEAPONS[tier].name, '#ffffff', 0.62);
+  sprite.position.set(0, 2.1, 0.2);
+  g.add(sprite);
+  world.add(g);
+  return { obj: g, sprite };
+}
+
+/* Raccolte: monete, cristalli e i bonus della colonnina di sinistra. */
+function buildPickup(x, z, kind, amount) {
+  const g = new THREE.Group();
+  g.position.set(x, 1.0, z);
+  const color = { coin: 0xffc93c, gem: 0x4fe3d5,
+                  income: 0x6fe07a, rate: 0xffc14d, gain: 0x7cc9ff }[kind];
+  const m = new THREE.Mesh(boxGeo, new THREE.MeshLambertMaterial({ color }));
+  m.scale.set(0.8, 0.8, 0.8);
+  g.add(m);
+
+  if (BUFFS[kind]) {
+    const s = labelSprite('+' + Math.round(BUFFS[kind].step * 100) + '%', '#ffffff', 0.55);
+    s.position.set(0, 1.1, 0);
+    g.add(s);
+  }
+  world.add(g);
+  return { obj: g, spin: rnd(1, 2) };
+}
+
+/* ------------------------------- FINALE -------------------------------- */
+/* Il muro di blocchi numerati: ogni blocco costa potenza. Si va avanti
+   finché la potenza regge, scegliendo di riga in riga il costo minore. */
+function buildFinaleBlock(x, z, cost, chest) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const mat = chest ? BLOCK.planks : BLOCK.obsidian;
+  putBlock(g, mat, 0, 0, 0, 1.7, 1.8, 1.3);
+  if (chest) putBlock(g, BLOCK.brick, 0, 1.8, 0, 1.8, 0.35, 1.4);
+  const sprite = labelSprite(fmt(cost), chest ? '#ffd24b' : '#ffffff', 0.6);
+  sprite.position.set(0, 2.4, 0);
+  g.add(sprite);
+  world.add(g);
+  return { obj: g, sprite };
+}
+
+/* ---------------------------- GENERAZIONE ------------------------------ */
+let rows = 0, finishZ = 0, finaleStartZ = 0, levelLen = 0, expectedPower = 0;
+
+function buildRun() {
   clearWorld();
-  events.length = 0;
-  boss = null;
+  items.length = 0;
 
-  const rows = Math.min(16, 8 + level);
+  rows = Math.min(20, 10 + meta.level);          // mappe lunghe: 10-20 righe
+  let z = CFG.firstRowZ;
 
-  /* Passo 1 — genero gli eventi seguendo un giocatore "perfetto":
-     serve solo a scegliere numeri sensati (quanto vale un gate, quanta
-     vita ha un gruppo di mob a quel punto del percorso).               */
-  let rc = CFG.startCount, rw = 0, z = CFG.firstRowZ;
-  const plan = [];
+  /* riferimento: un giocatore che prende sempre la scelta migliore.
+     Serve a tarare gli hp delle torri e i costi del finale.            */
+  let refPower = UPGRADES.power.value(meta.up.power);
+  let refTier  = meta.up.weapon;
 
   for (let i = 0; i < rows; i++) {
-    // ritmo del percorso: gate, arma, gate, mob — e si ripete
-    const m = i % 4;
-    const kind = m === 1 ? 'weapon' : m === 3 ? 'mobs' : 'gate';
+    const dmg = WEAPONS[refTier].dmg;
+    const lanes = shuffle([0, 1, 2]);
+    const craftRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
 
-    if (kind === 'gate') {
-      const ops = makeOps(rc);
-      plan.push({ kind, z, ops });
-      rc = Math.max(apply(rc, ops[0]), apply(rc, ops[1]));
-    } else if (kind === 'weapon') {
-      plan.push({ kind, z });
-      rw = Math.min(WEAPONS.length - 1, rw + 1);
+    // corsia 1: la torre "buona", quella che riesci a rompere
+    const easyHp = Math.max(1, Math.round(dmg * rnd(0.55, 0.95)));
+    const t = buildTower(CFG.laneX[lanes[0]], z, easyHp);
+    items.push({ kind: 'tower', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false, ...t });
+    refPower += easyHp * 3;
+
+    // corsia 2: il banco da lavoro, oppure una minaccia
+    if (craftRow) {
+      const c = buildCraft(CFG.laneX[lanes[1]], z, refTier + 1);
+      items.push({ kind: 'craft', z, x: CFG.laneX[lanes[1]], tier: refTier + 1, done: false, ...c });
+      refTier++;
+    } else if (Math.random() < 0.32) {
+      const hp = Math.max(1, Math.round(dmg * rnd(0.6, 1.7)));
+      const e = buildEnemy(CFG.laneX[lanes[1]], z, hp, pick(['zombie', 'skeleton', 'bomber']));
+      items.push({ kind: 'enemy', z, x: CFG.laneX[lanes[1]], hp, done: false, ...e });
     } else {
-      const dmg = WEAPONS[rw].dmg;
-      const hp = Math.max(dmg, Math.round(rc * dmg * rnd(0.14, 0.28)));
-      const n = clamp(2 + Math.floor(Math.log10(Math.max(hp, 1))) * 2, 3, 10);
-      plan.push({ kind, z, hp, n, type: pick(MOB_TYPES) });
-      rc = Math.max(1, rc - mobLoss(rc, hp, dmg));
+      const hardHp = Math.round(dmg * rnd(1.4, 2.6));
+      const t2 = buildTower(CFG.laneX[lanes[1]], z, hardHp);
+      items.push({ kind: 'tower', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false, ...t2 });
+    }
+
+    // corsia 3: quasi sempre libera — è la via di fuga
+    if (Math.random() < 0.45) {
+      const hardHp = Math.round(dmg * rnd(1.3, 2.4));
+      const t3 = buildTower(CFG.laneX[lanes[2]], z, hardHp);
+      items.push({ kind: 'tower', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false, ...t3 });
+    }
+
+    // raccolte sparse fra una riga e l'altra
+    const pz = z + CFG.rowSpacing * 0.5;
+    if (i > 0) {
+      if (Math.random() < 0.26) {
+        const kind = pick(['income', 'rate', 'gain']);
+        const p = buildPickup(CFG.laneX[rint(0, 2)], pz, kind);
+        items.push({ kind: 'buff', buff: kind, z: pz, x: p.obj.position.x, done: false, ...p });
+      } else {
+        const lane = CFG.laneX[rint(0, 2)];
+        for (let k = 0; k < 3; k++) {
+          const cz = pz + k * 2.2;
+          const kind = Math.random() < 0.12 ? 'gem' : 'coin';
+          const p = buildPickup(lane, cz, kind);
+          items.push({ kind, z: cz, x: lane, done: false, ...p });
+        }
+      }
     }
     z -= CFG.rowSpacing;
   }
 
-  finishZ  = z - CFG.runOut + CFG.rowSpacing;
-  levelLen = Math.abs(finishZ) + 40;
+  finishZ = z - CFG.runOut + CFG.rowSpacing;
+  finaleStartZ = finishZ - 10;
+  expectedPower = Math.round(refPower * 1.5);   // ~ quello che raccogli davvero
 
-  buildWorld(levelLen);
-
-  /* Passo 2 — costruisco davvero gli oggetti in scena */
-  for (const p of plan) {
-    if (p.kind === 'gate') {
-      const tones = p.ops.map(op => apply(1000, op) > 1000 ? 'good' : 'bad');
-      events.push({
-        kind: 'gate', z: p.z, ops: p.ops, done: false, anim: 0,
-        group: buildPanels(p.z, p.ops.map(opLabel), tones)
-      });
-    } else if (p.kind === 'weapon') {
-      events.push({
-        kind: 'weapon', z: p.z, done: false, anim: 0,
-        group: buildPanels(p.z, ['▲ ARMA', '▼ ARMA'], ['up', 'down'])
-      });
-    } else {
-      const mg = buildMobGroup(p.z, p.hp, p.n, p.type);
-      events.push({ kind: 'mobs', z: p.z, hp: p.hp, done: false, mg });
+  /* il finale: costi crescenti, tre blocchi per riga fra cui scegliere */
+  const base = Math.max(1, Math.round(expectedPower / 55));
+  for (let i = 0; i < CFG.finaleRows; i++) {
+    const fz = finaleStartZ - i * CFG.finaleGap;
+    const step = Math.round(base * (1 + i * 0.42));
+    const costs = shuffle([step, Math.round(step * 1.5), Math.round(step * 0.65)]);
+    for (let l = 0; l < 3; l++) {
+      const chest = Math.random() < 0.12;
+      const b = buildFinaleBlock(CFG.laneX[l], fz, costs[l], chest);
+      items.push({ kind: 'block', z: fz, x: CFG.laneX[l], cost: costs[l],
+                   chest, row: i, done: false, ...b });
     }
   }
 
-  /* Passo 3 — quanto deve valere il boss.
-     Due riferimenti: la partita perfetta (rc, rw del passo 1) e la mediana
-     di 9 partite all'80%. Con i gate ×6 la forbice fra le due è enorme,
-     quindi prendo il più alto: la mediana da sola renderebbe il boss banale. */
-  const perfectForce = rc * WEAPONS[rw].dmg;
-  const runs = [];
-  for (let r = 0; r < 9; r++) {
-    let c = CFG.startCount, w = 0;
-    for (const p of plan) {
-      if (p.kind === 'gate') {
-        const a = apply(c, p.ops[0]), b = apply(c, p.ops[1]);
-        c = Math.random() < 0.8 ? Math.max(a, b) : Math.min(a, b);
-      } else if (p.kind === 'weapon') {
-        w = Math.random() < 0.8 ? Math.min(WEAPONS.length - 1, w + 1) : Math.max(0, w - 1);
-      } else {
-        c = Math.max(1, c - mobLoss(c, p.hp, WEAPONS[w].dmg));
+  levelLen = Math.abs(finaleStartZ - CFG.finaleRows * CFG.finaleGap) + 50;
+  buildWorld(levelLen);
+  buildFinishLine(finishZ);
+  refreshThreats();
+}
+
+/* linea a scacchi + corridoio scuro del finale */
+function buildFinishLine(z) {
+  const tex = pixelTex(16, g => {
+    for (let y = 0; y < 16; y += 8) for (let x = 0; x < 16; x += 8) {
+      g.fillStyle = ((x + y) / 8) % 2 ? '#1c1c22' : '#f4f4f8';
+      g.fillRect(x, y, 8, 8);
+    }
+  });
+  const m = new THREE.Mesh(boxGeo, new THREE.MeshLambertMaterial({ map: tex }));
+  m.position.set(0, 0.02, z);
+  m.scale.set(CFG.trackWidth, 0.1, 2.4);
+  world.add(m);
+
+  putBlock(world, BLOCK.obsidian, 0, -1,
+           z - CFG.finaleRows * CFG.finaleGap / 2 - 6,
+           CFG.trackWidth + 2, 1, CFG.finaleRows * CFG.finaleGap + 24);
+}
+
+/* Colora i numeri di torri e nemici in base a quello che riesci a fare
+   adesso: verde = ci passi sopra, rosso = ti costa potenza. */
+function refreshThreats() {
+  const dmg = damage();
+  for (const it of items) {
+    if (it.done) continue;
+    if (it.kind === 'tower' || it.kind === 'enemy') {
+      const ok = dmg >= it.hp;
+      setLabel(it.sprite, fmt(it.hp), ok ? '#7bf07a' : '#ff8a6e');
+      if (it.blocks) {
+        const mat = ok ? BLOCK.cobbleGood : BLOCK.cobbleBad;
+        it.blocks.forEach((b, i) => {
+          const w = 1.7 - i * 0.12;
+          b.material = repeatMat(mat, w, 1, w);
+        });
       }
     }
-    runs.push(c * WEAPONS[w].dmg);
   }
-  runs.sort((a, b) => a - b);
-  bossHp = Math.max(40, Math.round(Math.max(runs[4] * 1.3, perfectForce * 0.18)));
-  boss = buildBoss(finishZ, bossHp);
-
-  document.getElementById('levelPill').textContent = 'LIVELLO ' + level;
-  document.getElementById('bossPill').textContent = '☠ ' + fmt(bossHp);
 }
+
+/* ------------------------------ RISOLUZIONE ---------------------------- */
+const debris = [];
+
+function breakBlocks(group, n) {
+  // scaglie che schizzano via: bastano pochi cubetti per leggere l'impatto
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(boxGeo, BLOCK.stone);
+    m.scale.setScalar(rnd(0.25, 0.5));
+    m.position.copy(group.position);
+    m.position.y += rnd(0.5, 2.5);
+    m.userData.vel = new THREE.Vector3(rnd(-6, 6), rnd(4, 9), rnd(2, 8));
+    m.userData.life = 1.1;
+    world.add(m);
+    debris.push(m);
+  }
+}
+
+function hitTower(it) {
+  const dmg = damage();
+  run.swing = 0.35;
+  if (dmg >= it.hp) {
+    const gain = Math.round(it.hp * 3 * gainMul());
+    run.power += gain;
+    popup('+' + fmt(gain), '#7bf07a');
+  } else {
+    const loss = Math.max(3, Math.round(run.power * 0.14));
+    run.power = Math.max(0, run.power - loss);
+    popup('−' + fmt(loss), '#ff7a6e');
+  }
+  breakBlocks(it.obj, 7);
+  it.obj.visible = false;
+}
+
+function hitEnemy(it) {
+  const dmg = damage();
+  run.swing = 0.35;
+  if (dmg >= it.hp) {
+    const coins = Math.round(it.hp * 3 * coinMul());
+    run.coins += coins;
+    run.power += Math.round(it.hp * 1.5 * gainMul());
+    popup('+' + fmt(coins) + ' 🪙', '#ffd24b');
+    it.mob.userData.dying = true;
+    it.sprite.visible = false;
+  } else {
+    const loss = Math.max(5, Math.round(run.power * 0.22));
+    run.power = Math.max(0, run.power - loss);
+    popup('−' + fmt(loss), '#ff5a4a');
+    it.obj.visible = false;
+  }
+}
+
+function takeCraft(it) {
+  run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
+  setWeapon(hero, run.weapon);
+  popup('▲ ' + WEAPONS[run.weapon].name, '#8fc6ff');
+  it.obj.visible = false;
+  refreshThreats();
+}
+
+function takePickup(it) {
+  if (it.kind === 'coin') {
+    const c = Math.round(8 * coinMul());
+    run.coins += c;
+  } else if (it.kind === 'gem') {
+    run.gems += 1;
+    popup('+1 💎', '#4fe3d5');
+  } else {
+    run.buffs[it.buff]++;
+    const b = BUFFS[it.buff];
+    popup(b.icon + ' +' + Math.round(b.step * 100) + '%', b.color);
+    renderBuffRail(run.buffs);
+    if (it.buff === 'rate') refreshThreats();
+  }
+  it.obj.visible = false;
+}
+
+function hitFinaleBlock(it) {
+  run.power -= it.cost;
+  breakBlocks(it.obj, 5);
+  it.obj.visible = false;
+  run.depth++;
+  if (it.chest) {
+    const c = Math.round(it.cost * 2 * coinMul());
+    run.coins += c;
+    popup('+' + fmt(c) + ' 🪙', '#ffd24b');
+  }
+  if (run.power <= 0) { run.power = 0; endRun(); }
+}
+
+/* ------------------------------ HUD ------------------------------------ */
+function renderHud() {
+  $('hPower').textContent  = fmt(run.power);
+  $('hWeapon').textContent = WEAPONS[run.weapon].name;
+  $('hDamage').textContent = fmt(damage());
+  $('hCoins').textContent  = fmt(run.coins);
+}
+
+/* --------------------------- STATO E CICLO ----------------------------- */
+let state = 'hub';                 // hub | run | finale | result
+let runT = 0;
+const clock = new THREE.Clock();
+
+function startRun() {
+  run.power  = UPGRADES.power.value(meta.up.power);
+  run.weapon = meta.up.weapon;
+  run.coins = 0; run.gems = 0; run.depth = 0; run.swing = 0;
+  run.buffs = { income: 0, rate: 0, gain: 0 };
+  run.x = 0; run.targetX = 0; run.z = 0;
+  hero.rotation.x = 0;
+  setWeapon(hero, run.weapon);
+  buildRun();
+  renderBuffRail(run.buffs);
+  renderHud();
+  runT = 0;
+  state = 'run';
+  showScreen(null);
+}
+
+function endRun() {
+  state = 'result';
+  const record = run.depth > meta.best;
+  const bonus = Math.round(run.depth * 6 * coinMul());
+  const total = run.coins + bonus;
+  meta.coins += total;
+  meta.gems  += run.gems;
+  meta.level++;
+  if (run.depth > meta.best) meta.best = run.depth;
+  writeSave(meta);
+
+  $('resDepth').textContent = run.depth;
+  $('resInfo').textContent  = 'Bottino ' + fmt(run.coins) + ' + bonus ' + fmt(bonus);
+  $('resCoins').textContent = '+' + fmt(total);
+  $('resTitle').textContent = record ? 'NUOVO RECORD!' : 'FINE CORSA';
+  setTimeout(() => { showScreen('result'); renderWallet(); }, 700);
+}
+
+$('playBtn').onclick   = () => startRun();
+$('againBtn').onclick  = () => startRun();
+$('homeBtn').onclick   = () => { renderHub(); showScreen('hub'); state = 'hub'; buildRun(); };
 
 /* -------------------------------- INPUT -------------------------------- */
 let dragging = false, lastPX = 0;
@@ -308,179 +432,110 @@ addEventListener('pointerdown', e => { dragging = true; lastPX = e.clientX; });
 addEventListener('pointerup',     () => { dragging = false; });
 addEventListener('pointercancel', () => { dragging = false; });
 addEventListener('pointermove', e => {
-  if (!dragging || state !== 'run') return;
-  crowd.targetX = clamp(crowd.targetX + (e.clientX - lastPX) * CFG.strafe,
-                        -CFG.laneLimit, CFG.laneLimit);
+  if (!dragging || (state !== 'run' && state !== 'finale')) return;
+  run.targetX = clamp(run.targetX + (e.clientX - lastPX) * CFG.strafe,
+                      -CFG.laneLimit, CFG.laneLimit);
   lastPX = e.clientX;
 });
 addEventListener('keydown', e => {
-  if (state !== 'run') return;
-  if (e.key === 'ArrowLeft')  crowd.targetX = clamp(crowd.targetX - 0.9, -CFG.laneLimit, CFG.laneLimit);
-  if (e.key === 'ArrowRight') crowd.targetX = clamp(crowd.targetX + 0.9, -CFG.laneLimit, CFG.laneLimit);
+  if (state !== 'run' && state !== 'finale') return;
+  if (e.key === 'ArrowLeft')  run.targetX = clamp(run.targetX - 1.2, -CFG.laneLimit, CFG.laneLimit);
+  if (e.key === 'ArrowRight') run.targetX = clamp(run.targetX + 1.2, -CFG.laneLimit, CFG.laneLimit);
 });
 
-/* -------------------------------- POPUP -------------------------------- */
-function popup(text, color) {
-  const d = document.createElement('div');
-  d.className = 'pop';
-  d.textContent = text;
-  d.style.color = color;
-  document.getElementById('pops').appendChild(d);
-  setTimeout(() => d.remove(), 900);
-}
-
-/* --------------------------- STATO E LOOP ------------------------------ */
-let state = 'menu';              // menu | run | end
-let runT = 0, win = false;
-const clock = new THREE.Clock();
-
-function startLevel(next) {
-  if (next) level++;
-  crowd.count = CFG.startCount;
-  crowd.weapon = 0;
-  crowd.x = 0; crowd.targetX = 0; crowd.z = 0;
-  crowd.runners.forEach(r => { r.rotation.x = 0; r.rotation.y = Math.PI; });
-  buildLevel();
-  applyWeapon();
-  state = 'run'; runT = 0;
-  document.getElementById('menu').classList.add('hidden');
-  document.getElementById('result').classList.add('hidden');
-}
-
-function endLevel(didWin) {
-  state = 'end'; win = didWin;
-  if (boss && boss.sign) boss.sign.visible = false;
-  const r = document.getElementById('result');
-  document.getElementById('resTitle').textContent = didWin ? 'VITTORIA!' : 'SCONFITTA';
-  document.getElementById('resCount').textContent = fmt(force());
-  document.getElementById('resInfo').textContent = didWin
-    ? 'Forza ' + fmt(force()) + ' contro ' + fmt(bossHp)
-    : 'Serviva forza ' + fmt(bossHp);
-  document.getElementById('nextBtn').textContent = didWin ? 'AVANTI' : 'RIPROVA';
-  setTimeout(() => r.classList.remove('hidden'), 900);
-}
-
-document.getElementById('playBtn').onclick = () => startLevel(false);
-document.getElementById('nextBtn').onclick = () => startLevel(win);
-
-/* --- risoluzione degli eventi quando la folla li raggiunge --- */
-function resolveGate(ev) {
-  const op = ev.ops[crowd.x < 0 ? 0 : 1];
-  const before = crowd.count;
-  crowd.count = apply(crowd.count, op);
-  popup(opLabel(op), crowd.count > before ? '#8dff87' : '#ff8a6e');
-  refreshCrowd();
-}
-
-function resolveWeapon(ev) {
-  const up = crowd.x < 0;
-  const next = clamp(crowd.weapon + (up ? 1 : -1), 0, WEAPONS.length - 1);
-  const changed = next !== crowd.weapon;
-  crowd.weapon = next;
-  applyWeapon();
-  popup((up ? '▲ ' : '▼ ') + WEAPONS[next].name, up ? '#8fc6ff' : '#c9a6ff');
-  if (!changed) popup(up ? 'MAX' : 'MIN', '#ffffff');
-}
-
-function resolveMobs(ev) {
-  const dmg = WEAPONS[crowd.weapon].dmg;
-  const loss = mobLoss(crowd.count, ev.hp, dmg);
-  crowd.count -= loss;
-  popup('−' + fmt(loss), '#ff7a6e');
-  ev.mg.mobs.forEach(m => { m.userData.dying = true; });
-  ev.mg.sign.visible = false;
-  if (crowd.count <= 0) { crowd.count = 0; refreshCrowd(); endLevel(false); return; }
-  refreshCrowd();
-}
+/* --------------------------------- LOOP -------------------------------- */
+const HIT_X = 1.15;         // quanto devi essere vicino in X per toccare qualcosa
 
 function update(dt) {
-  if (state === 'run') {
+  const playing = state === 'run' || state === 'finale';
+
+  if (playing) {
     runT += dt;
-    crowd.z -= CFG.speed * dt;
-    crowd.x = lerp(crowd.x, crowd.targetX, 1 - Math.pow(0.001, dt));
+    run.z -= CFG.speed * dt;
+    run.x = lerp(run.x, run.targetX, 1 - Math.pow(0.0015, dt));
 
-    for (const ev of events) {
-      if (!ev.done && crowd.z <= ev.z) {
-        ev.done = true;
-        if (ev.kind === 'gate')       resolveGate(ev);
-        else if (ev.kind === 'weapon') resolveWeapon(ev);
-        else                           resolveMobs(ev);
-        if (state !== 'run') break;
-      }
-      // il gate superato collassa a terra invece di restare in camera
-      if (ev.done && ev.group && ev.group.visible) {
-        ev.anim += dt * 3.5;
-        if (ev.anim >= 1) ev.group.visible = false;
-        else ev.group.scale.set(1, 1 - ev.anim, 1);
-      }
+    for (const it of items) {
+      if (it.done || run.z > it.z) continue;
+      it.done = true;
+      if (Math.abs(run.x - it.x) > HIT_X) continue;     // schivato
+      if (it.kind === 'tower')      hitTower(it);
+      else if (it.kind === 'enemy') hitEnemy(it);
+      else if (it.kind === 'craft') takeCraft(it);
+      else if (it.kind === 'block') hitFinaleBlock(it);
+      else                          takePickup(it);
+      if (state === 'result') break;
     }
 
-    document.getElementById('progress').style.width =
-      clamp(crowd.z / finishZ, 0, 1) * 100 + '%';
+    if (state === 'run' && run.z <= finaleStartZ + CFG.finaleGap) state = 'finale';
 
-    if (crowd.z <= finishZ + 8) endLevel(force() >= bossHp);
+    // superato l'ultimo blocco senza esaurire la potenza: corsa perfetta
+    if (state === 'finale' && run.z < finaleStartZ - CFG.finaleRows * CFG.finaleGap - 6) endRun();
+
+    renderHud();
+    const p = state === 'finale'
+      ? 1
+      : clamp(run.z / finaleStartZ, 0, 1);
+    $('progress').style.width = p * 100 + '%';
   }
 
-  /* --- mob abbattuti: cadono e sprofondano --- */
-  for (const ev of events) {
-    if (ev.kind !== 'mobs') continue;
-    for (const m of ev.mg.mobs) {
-      if (m.userData.dying) {
-        m.rotation.x = lerp(m.rotation.x, 1.5, 1 - Math.pow(0.02, dt));
-        m.position.y -= dt * 0.8;
-        if (m.position.y < -2.5) { m.visible = false; m.userData.dying = false; }
-      } else if (m.visible) {
-        animateIdle(m, runT, m.userData.phase);
-      }
+  /* --- eroe --- */
+  hero.position.set(run.x, playing ? Math.abs(Math.sin(runT * 9)) * 0.09 : 0, run.z);
+  if (playing) animateRun(hero, runT, 0);
+  else animateIdle(hero, runT, 0);
+
+  // colpo: il braccio armato scatta in avanti
+  if (run.swing > 0) {
+    run.swing = Math.max(0, run.swing - dt * 3);
+    const L = hero.userData.limbs;
+    if (L) L.armR.rotation.x = -2.2 * Math.sin(run.swing / 0.35 * Math.PI);
+  }
+
+  shadow.position.set(run.x, 0.03, run.z);
+
+  /* --- nemici abbattuti e scaglie --- */
+  for (const it of items) {
+    if (it.kind === 'enemy' && it.mob && it.mob.userData.dying) {
+      it.mob.rotation.x = lerp(it.mob.rotation.x, 1.5, 1 - Math.pow(0.02, dt));
+      it.obj.position.y -= dt * 1.2;
+      if (it.obj.position.y < -3) { it.obj.visible = false; it.mob.userData.dying = false; }
+    } else if (!it.done && (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff')) {
+      it.obj.rotation.y += dt * (it.spin || 1.5);
+    } else if (!it.done && it.kind === 'enemy' && it.obj.visible) {
+      animateIdle(it.mob, runT, it.z * 0.2);
     }
   }
-
-  /* --- la folla --- */
-  const running = state === 'run';
-  const visible = Math.min(crowd.count, CFG.maxRunners);
-  let radius = 0.6;
-  crowd.runners.forEach((r, i) => {
-    if (!r.visible) return;
-    const off = r.userData.off;
-    radius = Math.max(radius, Math.abs(off.x) + 0.5);
-    r.position.set(off.x, running ? Math.abs(Math.sin(runT * 9 + r.userData.phase)) * 0.09 : 0, off.z);
-    if (running) animateRun(r, runT, r.userData.phase);
-    else if (state === 'menu') animateIdle(r, runT, r.userData.phase);
-  });
-  crowd.root.position.set(crowd.x, 0, crowd.z);
-
-  if (state === 'end') {
-    // il perdente si stende
-    const losers = win ? [boss.obj] : crowd.runners.filter(r => r.visible);
-    for (const l of losers) l.rotation.x = lerp(l.rotation.x, win ? -1.4 : 1.4, 1 - Math.pow(0.02, dt));
+  for (let i = debris.length - 1; i >= 0; i--) {
+    const d = debris[i];
+    d.userData.vel.y -= 26 * dt;
+    d.position.addScaledVector(d.userData.vel, dt);
+    d.rotation.x += dt * 6; d.rotation.z += dt * 5;
+    d.userData.life -= dt;
+    if (d.userData.life <= 0) { world.remove(d); debris.splice(i, 1); }
   }
 
-  shadow.position.set(crowd.x, 0.03, crowd.z);
-  shadow.scale.setScalar(radius + 0.4);
-
-  /* --- camera: si allarga con la folla --- */
-  const shot = state === 'end';
-  const back = 9 + radius * 2.2;
-  camera.position.x = lerp(camera.position.x, shot ? crowd.x + 5.5 : crowd.x * 0.35, 1 - Math.pow(0.01, dt));
-  camera.position.y = lerp(camera.position.y, shot ? 5.2 : 3.4 + radius * 0.7, 1 - Math.pow(0.02, dt));
-  camera.position.z = lerp(camera.position.z, crowd.z + (shot ? 8 : back), 1 - Math.pow(0.005, dt));
-  camera.lookAt(shot ? crowd.x * 0.5 : crowd.x, shot ? 2.2 : 1.9, crowd.z - (shot ? 8 : 16));
+  /* --- camera --- */
+  const menu = state === 'hub' || state === 'result';
+  camera.position.x = lerp(camera.position.x, run.x * 0.4, 1 - Math.pow(0.01, dt));
+  camera.position.y = lerp(camera.position.y, menu ? 5.0 : 6.2, 1 - Math.pow(0.02, dt));
+  camera.position.z = lerp(camera.position.z, run.z + (menu ? 13 : 14), 1 - Math.pow(0.005, dt));
+  camera.lookAt(run.x * 0.5, menu ? 1.3 : 1.6, run.z - (menu ? 12 : 24));
 }
 
-/* hook di debug: GateRunner.setCount(500), .setWeapon(5) */
-window.GateRunner = {
-  crowd, events, CFG, WEAPONS,
+/* hook di debug */
+window.BlockyRun = {
+  run, items, meta, CFG, WEAPONS,
   get state() { return state; },
-  get bossHp() { return bossHp; },
-  get force() { return force(); },
-  setCount(n) { crowd.count = n; refreshCrowd(); },
-  setWeapon(t) { crowd.weapon = clamp(t, 0, WEAPONS.length - 1); applyWeapon(); },
-  moveTo(x) { crowd.targetX = clamp(x, -CFG.laneLimit, CFG.laneLimit); }
+  get damage() { return damage(); },
+  setPower(n) { run.power = n; renderHud(); },
+  moveTo(x) { run.targetX = clamp(x, -CFG.laneLimit, CFG.laneLimit); },
+  start() { startRun(); }
 };
 
-camera.position.set(0, 5.4, 12);
-buildLevel();
-applyWeapon();
+camera.position.set(2, 3.6, 8);
+renderHub();
+showScreen('hub');
+setWeapon(hero, meta.up.weapon);
+buildRun();
 
 (function loop() {
   requestAnimationFrame(loop);
