@@ -1,55 +1,77 @@
-# Gate Runner
+# Blocky Squad Run
 
-Runner mobile in portrait ispirato a *Tall Man Run*: corri, scegli il gate giusto
-(`×` `÷` `+` `−`), cresci, e a fine livello devi essere più grande del boss.
+Runner mobile in portrait, grafica voxel. Corri con la tua squadra di omini a
+blocchi, attraversa i gate giusti per moltiplicarti, potenzia l'arma, sopravvivi
+ai mob lungo la pista e a fine livello abbatti il boss.
 
-Questa è la **bozza grafica**: un prototipo giocabile, non ancora un gioco finito.
-Serve a fissare look, inquadratura, ritmo e feel dei comandi prima di scegliere
-la tecnologia definitiva per Android.
+Bozza giocabile, non un gioco finito: serve a fissare look, sistemi e feel prima
+di scegliere la tecnologia definitiva per Android.
 
 ## Provarlo
 
 ```bash
-# serve un web server: il gioco carica game.js e three.js come file separati
+# serve un web server: il gioco carica i sorgenti come file separati
 cd web && python3 -m http.server 8080
 # poi apri http://localhost:8080  (in DevTools attiva la vista mobile, es. Pixel 5)
 ```
 
-Su telefono: apri lo stesso URL dalla rete locale. Il gioco è pensato in
-verticale, si trascina il dito a sinistra/destra. Da desktop funzionano anche le
-frecce.
+Da telefono: stesso URL sulla rete locale. Si gioca in verticale, trascinando il
+dito a sinistra e a destra. Da desktop funzionano anche le frecce.
 
-## Cosa c'è
+Per una copia che si apre con doppio click, senza server:
+`./tools/build-single.sh` → `dist/blocky-squad-run.html`.
 
-| | |
-|---|---|
-| Rendering | three.js r128, look voxel/low-poly, palette satura |
-| Pista | generata proceduralmente ad ogni livello (pista, prato, case, alberi, nuvole, skyline) |
-| Gate | coppie di pannelli `×N ÷N`, `+N −N`, `×N −N`; verde = migliora, rosso = peggiora |
-| Crescita | altezza logaritmica sul contatore, così 10 e 100.000 stanno entrambi in scena |
-| Boss | omone rosso a fine pista, con il numero da battere sopra la testa |
-| Difficoltà | il target del boss è tarato simulando un giocatore che azzecca l'80% dei gate |
-| UI | HUD (livello, contatore, target, barra), schermate menu / vittoria / sconfitta |
+## I tre sistemi
+
+**Squadra.** Il contatore è il numero di omini. I gate verdi la moltiplicano o la
+ingrossano, i rossi la falciano. In scena se ne disegnano al massimo 26: oltre,
+cresce solo il numero — 26 omini bastano a leggere "tanti", 500 costerebbero
+frame senza aggiungere informazione.
+
+**Arma.** Sei livelli, da Pugni a Diamante, ciascuno con un danno per omino. I
+gate blu la migliorano, quelli viola la peggiorano. L'arma è visibile in mano a
+tutta la squadra.
+
+**Mob.** Gruppi di zombie, scheletri e bomber piazzati sulla pista, ciascuno con
+una vita. Attraversarli costa `vita ÷ danno` omini: con l'arma giusta ne costa
+pochi, a mani nude è un massacro. La perdita è però limitata al 70% della
+squadra, così non si viene annientati a metà percorso — il fallimento è il boss.
+
+**Boss.** Alla fine, un bruto con una vita. Vinci se `omini × danno ≥ vita`.
+È il punto in cui i tre sistemi si sommano: tanti omini con un'arma scarsa
+perdono contro pochi omini ben armati, e viceversa.
 
 ## Struttura
 
 ```
 web/
-  index.html          markup + CSS dell'interfaccia + loader
-  game.js             tutto il gioco (CONFIG · UTIL · TEXTURES · MONDO · PLAYER · GATE · LOOP)
-  vendor/three.min.js copia locale di three.js (serve per il pacchetto offline)
-docs/
-  DESIGN.md           scelte di design e roadmap verso Android
+  index.html          interfaccia, CSS e loader
+  src/core.js         configurazione, utility, texture pixel-art, scena
+  src/blocks.js       materiali dei blocchi (erba, terra, pietra, legno, foglie…)
+  src/world.js        pista, terreno, alberi, case, montagne, nuvole
+  src/actors.js       omini a blocchi, volti, armi, animazioni
+  src/game.js         folla, gate, mob, boss, generazione livello, loop
+  vendor/three.min.js copia locale di three.js (serve al pacchetto offline)
+docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
+tools/build-single.sh genera la demo a file singolo
 ```
 
-Il tuning sta quasi tutto in `CFG` in cima a `game.js`: velocità, larghezza
-pista, distanza tra i gate, palette. `window.GateRunner` è esposto in console
-per provare le cose al volo (`GateRunner.setCount(50000)`).
+Il tuning sta in `CFG` e `WEAPONS` in cima a `core.js`. In console:
+`GateRunner.setCount(500)`, `GateRunner.setWeapon(5)`, `GateRunner.moveTo(-2)`.
 
 ## Stato
 
-- [x] Bozza grafica giocabile nel browser
-- [ ] Audio, particellari, feedback all'attraversamento
-- [ ] Ostacoli e raccolte oltre ai gate
-- [ ] Progressione dei livelli e salvataggio
+- [x] Mondo voxel con texture generate a runtime (nessun asset da scaricare)
+- [x] Squadra che si moltiplica, armi, mob, boss
+- [x] Livelli generati proceduralmente con difficoltà auto-tarata
+- [ ] Audio e particellari sugli impatti
+- [ ] Ostacoli oltre ai mob (muri da sfondare, monete, rampe)
+- [ ] Salvataggio, valuta, skin
 - [ ] Build Android (vedi `docs/DESIGN.md`)
+
+## Nota sulla proprietà intellettuale
+
+Lo stile voxel a blocchi non è protetto, ma personaggi e creature riconoscibili
+di Minecraft sì. Qui i personaggi hanno proporzioni e volti di quel linguaggio
+visivo ma palette e nomi originali. Per una pubblicazione vera conviene
+allontanarsi ancora: colori, silhouette dei mob e nome del gioco.
