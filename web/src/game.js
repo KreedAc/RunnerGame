@@ -54,8 +54,9 @@ const run = {
 };
 
 const damage  = () => Math.round(WEAPONS[run.weapon].dmg * (1 + run.buffs.rate * BUFFS.rate.step));
-const gainMul = () => 1 + run.buffs.gain * BUFFS.gain.step;
-const coinMul = () => UPGRADES.income.value(meta.up.income) * (1 + run.buffs.income * BUFFS.income.step);
+const gainMul = () => (1 + run.buffs.gain * BUFFS.gain.step) * runeMul(meta.runes);
+const coinMul = () => UPGRADES.income.value(meta.up.income) *
+                     (1 + run.buffs.income * BUFFS.income.step) * runeMul(meta.runes);
 
 /* --------------------------------- EROE -------------------------------- */
 const hero = buildHero();
@@ -64,40 +65,47 @@ scene.add(hero);
 
 const shadow = new THREE.Mesh(
   GEO.disc,
-  new THREE.MeshBasicMaterial({ color: 0x1b2a3a, transparent: true, opacity: 0.2 })
+  new THREE.MeshBasicMaterial({ color: 0x1b2a3a, transparent: true, opacity: 0.16 })
 );
 shadow.rotation.x = -Math.PI / 2;
 shadow.position.y = 0.04;
-shadow.scale.setScalar(1.8);
+shadow.scale.setScalar(1.25);
 scene.add(shadow);
 
 /* --------------------------- OGGETTI DI PISTA -------------------------- */
 const items = [];
 
-/* Cristallo di energia da spaccare: il numero dice quanto è duro, il
-   colore se ce la fai. Prima era una colonna con una punta in cima e a
-   distanza si leggeva come un omino — ora è chiaramente una fonte di
-   potenza, che è quello che ti dà. */
-function spawnCrystal(x, z, hp) {
+/* Torre di mattoni da spaccare: il numero dice quanto è dura, il colore
+   se ce la fai. È tornata a essere una costruzione — un cristallo sembrava
+   un premio da raccogliere, un cono con la punta sembrava un omino. */
+function spawnPillar(x, z, hp) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const h = clamp(2.2 + Math.log10(Math.max(hp, 1)) * 1.05, 2.2, 4.8);
-
-  putOn(g, GEO.cyl8, MAT.rockDark, 0, 0, 0, 2.5, 0.45, 2.5);   // roccia di base
-  putOn(g, GEO.cyl8, MAT.rock,     0, 0.45, 0, 1.9, 0.25, 1.9);
-
+  const courses = clamp(2 + Math.round(Math.log10(Math.max(hp, 1)) * 1.3), 2, 5);
   const parts = [];
-  parts.push(putOn(g, GEO.octa, MAT.good, 0, 0.6, 0, 1.45, h, 1.45));
-  const l = putOn(g, GEO.octa, MAT.goodDark, -0.78, 0.55, 0.3, 0.85, h * 0.55, 0.85);
-  const r = putOn(g, GEO.octa, MAT.goodDark,  0.82, 0.55, -0.25, 0.75, h * 0.45, 0.75);
-  l.rotation.z = 0.34; r.rotation.z = -0.4;
-  parts.push(l, r);
 
-  const sprite = labelSprite(fmt(hp), '#ffffff', 0.8);
-  sprite.position.set(0, h + 1.6, 0);
+  for (let i = 0; i < courses; i++) {
+    const r = 2.15 - i * 0.09;
+    parts.push(putOn(g, GEO.cyl12, MAT.good,     0, i * 0.92,        0, r, 0.92, r));
+    parts.push(putOn(g, GEO.cyl12, MAT.goodDark, 0, i * 0.92 + 0.86, 0, r + 0.08, 0.14, r + 0.08));
+  }
+  // coronamento con le merlature: dice "costruzione" anche in silhouette
+  const top = courses * 0.92;
+  const rt = 2.15 - (courses - 1) * 0.09 + 0.12;
+  parts.push(putOn(g, GEO.cyl12, MAT.goodLite, 0, top, 0, rt, 0.30, rt));
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2;
+    parts.push(putOn(g, GEO.box, MAT.goodLite,
+                     Math.sin(a) * rt * 0.42, top + 0.30, Math.cos(a) * rt * 0.42,
+                     0.40, 0.34, 0.40));
+  }
+
+  const sprite = labelSprite(fmt(hp), '#ffffff', 0.82);
+  sprite.position.set(0, top + 1.9, 0);
   g.add(sprite);
+  castShadows(g);
   world.add(g);
-  return { obj: g, sprite, parts };
+  return { obj: g, sprite, parts, courses };
 }
 
 /* Nemico appostato sulla corsia: lo abbatti per l'oro, o ti costa potenza. */
@@ -171,11 +179,12 @@ function spawnPickup(x, z, kind) {
 function spawnWallBlock(x, z, cost, chest) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  putOn(g, GEO.box, chest ? MAT.chest : MAT.wall, 0, 0, 0, 1.9, 1.6, 1.5);
+  putOn(g, GEO.box, chest ? MAT.chestWood : MAT.wallBrick, 0, 0, 0, 1.9, 1.6, 1.5);
   putOn(g, GEO.box, chest ? MAT.gold : MAT.wallDark, 0, 1.6, 0, 2.05, 0.3, 1.6);
   const sprite = labelSprite(fmt(cost), chest ? '#ffd24b' : '#ffffff', 0.58);
   sprite.position.set(0, 2.5, 0);
   g.add(sprite);
+  castShadows(g);
   world.add(g);
   return { obj: g, sprite };
 }
@@ -210,6 +219,8 @@ let rows = 0, wallStartZ = 0, towerZ = 0, bossZ = 0, levelLen = 0;
 let tower = null, boss = null, bossSprite = null, heroSprite = null;
 
 function buildRun() {
+  applyTheme(themeFor(meta.level));   // la zona cambia ad ogni torre
+  initArt();
   clearWorld();
   items.length = 0;
   tower = null; boss = null; bossSprite = null; heroSprite = null;
@@ -223,10 +234,10 @@ function buildRun() {
     const lanes = shuffle([0, 1, 2]);
     const weaponRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
 
-    // corsia 1: il cristallo alla tua portata — il guadagno
+    // corsia 1: la torre alla tua portata — il guadagno
     const easyHp = Math.max(1, Math.round(dmg * rnd(0.55, 0.95)));
-    items.push(Object.assign({ kind: 'crystal', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false },
-                             spawnCrystal(CFG.laneX[lanes[0]], z, easyHp)));
+    items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[0]], hp: easyHp, done: false },
+                             spawnPillar(CFG.laneX[lanes[0]], z, easyHp)));
 
     // corsia 2: l'arma da raccogliere, oppure una minaccia
     if (weaponRow) {
@@ -239,15 +250,15 @@ function buildRun() {
                                spawnEnemy(CFG.laneX[lanes[1]], z, hp, pick(ENEMY_KINDS))));
     } else {
       const hardHp = Math.round(dmg * rnd(1.4, 2.6));
-      items.push(Object.assign({ kind: 'crystal', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false },
-                               spawnCrystal(CFG.laneX[lanes[1]], z, hardHp)));
+      items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false },
+                               spawnPillar(CFG.laneX[lanes[1]], z, hardHp)));
     }
 
     // corsia 3: spesso libera — è la via di fuga
     if (Math.random() < 0.45) {
       const hardHp = Math.round(dmg * rnd(1.3, 2.4));
-      items.push(Object.assign({ kind: 'crystal', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
-                               spawnCrystal(CFG.laneX[lanes[2]], z, hardHp)));
+      items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
+                               spawnPillar(CFG.laneX[lanes[2]], z, hardHp)));
     }
 
     // raccolte fra una riga e l'altra
@@ -338,13 +349,17 @@ function refreshThreats() {
   const dmg = damage();
   for (const it of items) {
     if (it.done) continue;
-    if (it.kind !== 'crystal' && it.kind !== 'enemy') continue;
+    if (it.kind !== 'pillar' && it.kind !== 'enemy') continue;
     const ok = dmg >= it.hp;
     setLabel(it.sprite, fmt(it.hp), ok ? '#8dff87' : '#ff8a6e');
     if (it.parts) {
-      it.parts[0].material = ok ? MAT.goodDark : MAT.badDark;
-      it.parts[1].material = ok ? MAT.good : MAT.bad;
-      it.parts[2].material = ok ? MAT.goodDark : MAT.badDark;
+      const body = ok ? MAT.good : MAT.bad;
+      const band = ok ? MAT.goodDark : MAT.badDark;
+      const lite = ok ? MAT.goodLite : MAT.badLite;
+      const n = it.courses * 2;
+      it.parts.forEach((m, i) => {
+        m.material = i >= n ? lite : (i % 2 ? band : body);
+      });
     }
   }
 }
@@ -365,7 +380,7 @@ function shatter(group, n, material) {
   }
 }
 
-function hitCrystal(it) {
+function hitPillar(it) {
   const dmg = damage();
   run.swing = 0.35;
   if (dmg >= it.hp) {
@@ -527,7 +542,11 @@ function endRun(outcome) {
   meta.lastRecord = record;
   meta.lastOutcome = outcome;
   if (record) meta.best = run.broken;
-  if (outcome === 'win') { meta.level++; meta.best = 0; meta.last = 0; }
+  if (outcome === 'win') {
+    meta.level++;
+    meta.bestLevel = Math.max(meta.bestLevel || 1, meta.level);
+    meta.best = 0; meta.last = 0;
+  }
   writeSave(meta);
 
   if (outcome === 'win') {
@@ -556,6 +575,14 @@ function backToHub() {
 }
 
 $('playBtn').onclick = () => startRun();
+
+/* La rinascita cambia zona e potenziamenti: il mondo va ricostruito. */
+rebirthHook = () => {
+  run.x = 0; run.targetX = 0; run.z = 0;
+  setWeapon(hero, meta.up.weapon);
+  buildRun();
+  snapCamera();
+};
 
 /* -------------------------------- INPUT -------------------------------- */
 const steering = () => state === 'run' || state === 'wall';
@@ -588,7 +615,7 @@ function update(dt) {
       if (it.done || run.z > it.z) continue;
       it.done = true;
       if (Math.abs(run.x - it.x) > HIT_X) continue;      // schivato
-      if (it.kind === 'crystal')     hitCrystal(it);
+      if (it.kind === 'pillar')      hitPillar(it);
       else if (it.kind === 'enemy')  hitEnemy(it);
       else if (it.kind === 'weapon') takeWeapon(it);
       else if (it.kind === 'block')  hitWallBlock(it);
@@ -620,6 +647,7 @@ function update(dt) {
   if (hero.userData.falling) hero.rotation.x = lerp(hero.rotation.x, 1.4, 1 - Math.pow(0.02, dt));
 
   shadow.position.set(run.x, 0.04, run.z);
+  moveSun(run.x, run.z);
   if (heroSprite) heroSprite.position.set(run.x, 3.4, run.z);
 
   /* --- boss e principessa --- */

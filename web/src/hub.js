@@ -45,14 +45,66 @@ function buyUpgrade(key) {
 function renderWallet() {
   $('hubCoins').textContent = fmt(meta.coins);
   $('hubGems').textContent  = fmt(meta.gems);
+  $('hubRunes').textContent = fmt(meta.runes);
+  $('runePill').classList.toggle('hidden', meta.runes === 0);
+}
+
+/* ------------------------------ RINASCITA ------------------------------ */
+/* Azzera i potenziamenti e riporta alla prima torre, ma le rune restano e
+   valgono +25% su potenza e oro per sempre. È l'unica uscita quando le
+   torri crescono più in fretta di quanto il denaro possa comprare. */
+let rebirthHook = null;      // lo riempie game.js: deve ricostruire il mondo
+let rebirthArmed = false;
+
+function renderRebirth() {
+  const gain = runeGain(meta.level);
+  const card = $('rebirthCard');
+  card.classList.toggle('hidden', gain < 1);
+  if (gain < 1) { rebirthArmed = false; }
+  $('rbGain').textContent = '+' + gain;
+  $('rbBonus').textContent = '×' + runeMul(meta.runes + gain).toFixed(2);
+  card.classList.toggle('ready', meta.lastOutcome === 'win');
+  card.classList.toggle('armed', rebirthArmed);
+  $('rbNote').textContent = rebirthArmed
+    ? 'TOCCA ANCORA PER CONFERMARE'
+    : 'Riparti dalla Torre 1 · potenziamenti azzerati';
+}
+
+function tapRebirth() {
+  if (runeGain(meta.level) < 1) return;
+  if (!rebirthArmed) {                    // due tocchi: azzera tutto, non si torna indietro
+    rebirthArmed = true;
+    renderRebirth();
+    setTimeout(() => { if (rebirthArmed) { rebirthArmed = false; renderRebirth(); } }, 6000);
+    return;
+  }
+  const gain = runeGain(meta.level);
+  meta.runes += gain;
+  meta.rebirths++;
+  meta.coins = 0;
+  meta.up = { power: 0, weapon: 0, income: 0 };
+  meta.level = 1;
+  meta.best = 0; meta.last = 0; meta.lastCoins = 0;
+  meta.lastRecord = false; meta.lastOutcome = '';
+  rebirthArmed = false;
+  writeSave(meta);
+  flashBanner('+' + gain + ' RUNE');
+  if (rebirthHook) rebirthHook();
+  renderHub();
 }
 
 function renderHub() {
   renderWallet();
   $('hubLevel').textContent = 'TORRE ' + meta.level;
-  $('hubBest').textContent  = meta.best
-    ? 'RECORD ' + meta.best + '/' + CFG.wallRows + ' DEL MURO'
-    : 'TORRE MAI RAGGIUNTA';
+  $('hubZone').textContent  = themeFor(meta.level).name;
+  /* Una riga sola sotto al titolo, in ordine di importanza: le rune se
+     ci sono, altrimenti quanto lontano sei arrivato. */
+  $('hubBest').textContent = meta.runes
+    ? meta.runes + ' RUNE · ×' + runeMul(meta.runes).toFixed(2) + ' POTENZA E ORO'
+    : (meta.bestLevel > 1 ? 'TORRE PIÙ ALTA: ' + meta.bestLevel
+      : meta.best ? 'RECORD ' + meta.best + '/' + CFG.wallRows + ' DEL MURO'
+                  : 'NESSUNA TORRE ANCORA CONQUISTATA');
+  renderRebirth();
 
   /* Alla prima partita servono le regole; dopo serve il risultato.
      Non hanno senso insieme: si scambiano il posto. */
@@ -86,6 +138,7 @@ function renderHub() {
 document.querySelectorAll('.up-card').forEach(card => {
   card.addEventListener('click', () => buyUpgrade(card.dataset.key));
 });
+$('rebirthCard').addEventListener('click', tapRebirth);
 
 /* Come si racconta la fine dell'ultima corsa */
 const OUTCOME_TEXT = {

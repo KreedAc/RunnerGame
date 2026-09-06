@@ -52,11 +52,14 @@ davanti agli occhi.
 È il modo più economico per insegnare il gioco senza tutorial, e trasforma
 l'arma da bonus generico a chiave che apre corsie.
 
-**Due forme sbagliate, corrette.** Gli ostacoli da spaccare erano colonne
-coniche con una punta in cima: a distanza si leggevano come omini, cioè come
-nemici — l'opposto di quello che sono. Adesso sono grappoli di cristalli su una
-base di roccia, con l'emissive che li fa sembrare energia: si capisce che ti
-danno potenza prima ancora di leggere il numero.
+**La forma giusta al terzo tentativo.** Gli ostacoli da spaccare sono passati
+per tre versioni. Prima erano colonne coniche con una punta in cima: a distanza
+si leggevano come omini, cioè come nemici — l'opposto di quello che sono. Poi
+grappoli di cristalli, che però sembravano un premio da raccogliere, non
+qualcosa da sfondare. Adesso sono **torri di mattoni con le merlature**: una
+costruzione, che è esattamente quello che sono. La muratura viene da una sola
+texture in scala di grigi colorata dal materiale, quindi verde e rossa costano
+un materiale l'una.
 
 E l'arma non è più un arco da attraversare, un "gate" astratto: è **l'oggetto
 vero**, posato sulla corsia dentro un anello dorato, che ruota e ondeggia.
@@ -73,6 +76,13 @@ Il look a blocchi è stato abbandonato. Cosa è cambiato davvero:
 - **`flatShading` sul paesaggio.** Rocce, guglie di ghiaccio, pini e cristalli
   sono coni e sfere a poche facce con le sfaccettature visibili. I personaggi
   restano lisci: il contrasto fra i due li stacca dallo sfondo.
+- **Ombre proiettate.** Una luce direzionale con riquadro d'ombra stretto
+  (±26 unità) che **insegue l'eroe**: senza inseguirlo le ombre sparirebbero
+  dopo venti metri. È il singolo cambiamento che ha alzato di più la resa.
+- **Ombre proiettate.** Una luce direzionale con riquadro d'ombra stretto
+  (±26 unità) che **insegue l'eroe**: senza inseguirlo le ombre sparirebbero
+  dopo venti metri. È il singolo cambiamento che ha alzato di più la resa, e si
+  spegne con `CFG.shadows = false` se una fascia bassa non regge.
 - **Contorni sui personaggi** (`addOutline`). Guscio rovesciato: una copia di
   ogni mesh, ingrandita di 0.1 e disegnata solo dalle facce interne. È quello
   che dà il bordo scuro dei giochi cartoon senza post-processing, e costa solo
@@ -93,7 +103,40 @@ Il tetto è stato alzato e ristretto apposta: nella prima versione la
 principessa spariva sotto la falda, ed è l'unica cosa che il giocatore vuole
 vedere quando vince.
 
-## 6. Niente schermata di fine partita
+## 6. La rinascita, e perché serve
+
+I potenziamenti si comprano con l'oro e crescono col **logaritmo** del denaro
+accumulato; le torri crescono del **62% l'una**. Fatta la matematica, il tetto
+arriva presto: anche partendo con l'arma migliore e prendendo tutte le corsie
+giuste, la potenza massima di una corsa sta attorno alle 5.500 unità, cioè la
+sesta o settima torre. Da lì in poi non c'è acquisto che colmi la differenza.
+
+La rinascita è l'uscita da quel vicolo. Si torna alla Torre 1 con oro e
+potenziamenti azzerati, ma si incassano tante **rune** quante sono le torri già
+superate, e ogni runa vale `+25%` su potenza e oro **per sempre**. Le rune si
+sommano fra una rinascita e l'altra, quindi ogni giro parte da più in alto e il
+tetto si sposta di due o tre torri per volta.
+
+Due attriti voluti:
+
+- La carta compare **solo dopo aver superato almeno una torre**, e pulsa quando
+  l'ultima corsa è stata una vittoria: è lì che la scelta ha senso.
+- Serve **toccare due volte**. Azzerare i potenziamenti è irreversibile, e un
+  tocco solo, in un gioco che si gioca col pollice, è troppo poco.
+
+## 7. Le zone
+
+Ogni torre cambia mondo: Valle Gelata, Bosco Rosso, Dune d'Ossa, Notte di Rúna.
+Cambiano cielo (sfumatura ridisegnata su canvas), nebbia, luce ambientale,
+intensità del sole, terreno, rilievi, alberi, montagne e colore delle nuvole.
+Le regole e la pista non cambiano di una virgola.
+
+Costa poco perché la palette del mondo sta tutta in `THEMES` dentro `core.js` e
+`initArt()` riassegna i materiali ad ogni costruzione di livello: aggiungere una
+zona è aggiungere dodici numeri a una lista. I personaggi restano fuori dal
+tema — l'eroe dev'essere sempre lo stesso, ovunque si trovi.
+
+## 8. Niente schermata di fine partita
 
 Era un passaggio a vuoto: leggevi un numero, premevi un bottone, e solo allora
 arrivavi dove si spende. Adesso la corsa finisce, si resta fermi un attimo a
@@ -102,7 +145,7 @@ riepilogo al posto della storia e i potenziamenti sotto al pollice.
 
 Un tap in meno per ciclo, e il ciclo è quello che si ripete cento volte.
 
-## 7. I cartelli
+## 9. I cartelli
 
 Due striscioni attraversano il muro alla riga corrispondente: azzurro
 sull'ultima corsa, dorato sul record. Si vedono da lontano, quindi la corsa ha
@@ -111,7 +154,7 @@ un bersaglio intermedio anche quando la torre è ancora fuori portata.
 `markerZ(d) = wallStartZ − (d − 0.5) × wallGap`, cioè subito dopo l'ultimo
 blocco abbattuto.
 
-## 8. Verso Android
+## 10. Verso Android
 
 ### A. WebView (Capacitor) — la più veloce
 Il prototipo diventa un `.apk` senza riscrivere niente: `npx cap init`,
@@ -138,12 +181,15 @@ povero di Unity.
 Restare su A finché il gameplay non convince, poi portare in Unity per la
 pubblicazione. Le formule di questo documento si trasferiscono direttamente.
 
-## 9. Prestazioni
+## 11. Prestazioni
 
 Il conteggio delle mesh è la cosa da tenere d'occhio: circa 600–800 per il mondo
 (terreno, alberi, case, montagne), ~150 per gli oggetti della pista e ~270 per il
 muro (30 righe × 3 blocchi) e ~80 per la torre. I contorni raddoppiano le mesh
 dei soli personaggi.
+
+Le ombre proiettate sono la voce più cara: si spengono con `CFG.shadows = false`
+in cima a `core.js` e il gioco resta identico, solo più piatto.
 
 Se su fascia bassa non regge, in ordine di resa:
 1. ridurre `CFG.wallRows` da 30 a 20;
@@ -152,14 +198,12 @@ Se su fascia bassa non regge, in ordine di resa:
    (sta negli examples di three, va aggiunto): con i colori piatti è molto
    più semplice di prima, basta raggruppare per materiale.
 
-## 10. Cosa manca, in ordine di impatto sul feel
+## 12. Cosa manca, in ordine di impatto sul feel
 
 1. **Audio** — musica loop e sfx sull'impatto. Sposta la qualità percepita più
    di qualunque effetto grafico.
 2. **Impatti più grassi** — scossa di camera, numeri che schizzano dal punto
    colpito invece che dal centro schermo, rallentamento di un frame.
-3. **Torri a tema** — la valle è sempre la stessa. Deserto, vulcano e notte
-   cambierebbero solo la palette `C` in cima a `core.js`: il codice è già pronto.
 4. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
 5. **Missioni e valuta premium** — i cristalli si raccolgono ma non si spendono
    ancora.

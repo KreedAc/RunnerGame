@@ -127,6 +127,34 @@
   .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
   .play-wrap{display:flex;justify-content:center;margin-bottom:14px}
 
+  /* la carta della rinascita: sta fra il risultato e i potenziamenti,
+     perché è la scelta che si fa quando i potenziamenti non bastano più */
+  .rebirth-card{display:block;width:100%;max-width:340px;margin:0 auto 12px;
+    padding:12px 16px 10px;border-radius:20px;cursor:pointer;font-family:inherit;
+    color:#fff;text-align:center;border:2px solid rgba(190,150,255,.5);
+    background:linear-gradient(180deg,#5b3f8f,#38265c);
+    box-shadow:0 5px 0 rgba(20,10,40,.65);
+    transition:transform .08s,box-shadow .08s,filter .2s}
+  .rebirth-card:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(20,10,40,.65)}
+  .rebirth-card:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  .rebirth-card.ready{animation:rbPulse 1.8s ease-in-out infinite}
+  .rebirth-card.armed{border-color:#ffd970;
+    background:linear-gradient(180deg,#8a5fbf,#5b3f8f);animation:none}
+  @keyframes rbPulse{
+    0%,100%{box-shadow:0 5px 0 rgba(20,10,40,.65),0 0 0 0 rgba(190,150,255,.5)}
+    50%{box-shadow:0 5px 0 rgba(20,10,40,.65),0 0 0 10px rgba(190,150,255,0)}
+  }
+  .rb-head{font-size:12px;font-weight:900;letter-spacing:1.6px;opacity:.85}
+  .rb-row{display:flex;align-items:baseline;justify-content:center;gap:6px;
+    flex-wrap:wrap;margin-top:4px}
+  .rb-gain{font-size:26px;font-weight:900;color:#e2c4ff;font-variant-numeric:tabular-nums}
+  .rb-bonus{font-size:22px;font-weight:900;color:#ffd970;font-variant-numeric:tabular-nums}
+  .rb-lbl{font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.62}
+  .rb-sep{width:2px;height:16px;background:rgba(255,255,255,.22);border-radius:2px;
+    align-self:center;margin:0 4px}
+  .rb-note{margin-top:5px;font-size:10.5px;font-weight:800;letter-spacing:.9px;opacity:.72}
+  .rebirth-card.armed .rb-note{opacity:1;color:#ffd970}
+
   /* le tre carte di potenziamento */
   #upgrades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .up-card{display:flex;flex-direction:column;align-items:center;gap:5px;
@@ -177,6 +205,7 @@
     <div class="wallet">
       <div class="coin-pill">🪙 <span id="hubCoins">0</span></div>
       <div class="coin-pill">💎 <span id="hubGems">0</span></div>
+      <div class="coin-pill hidden" id="runePill">🔮 <span id="hubRunes">0</span></div>
     </div>
   </div>
 
@@ -188,7 +217,7 @@
 
   <div class="story" id="hubStory">
     Il carceriere ha rinchiuso la principessa in cima alla torre.
-    Spacca i cristalli <b>verdi</b> per farti potenza, schiva i <b>rossi</b>,
+    Spacca le torri <b>verdi</b> per farti potenza, schiva le <b>rosse</b>,
     raccogli le <b>armi</b> che trovi sulla corsia — poi sfonda i
     <b>30 blocchi</b> del muro. Quello che ti resta è la forza con cui
     affronti il boss.
@@ -206,6 +235,18 @@
 
   <div class="hint" id="hubHint"><span class="swipe"></span> trascina per cambiare corsia</div>
   <div class="spacer"></div>
+
+  <button class="rebirth-card hidden" id="rebirthCard">
+    <div class="rb-head">🔮 RINASCITA</div>
+    <div class="rb-row">
+      <span class="rb-gain" id="rbGain">+0</span>
+      <span class="rb-lbl">RUNE</span>
+      <span class="rb-sep"></span>
+      <span class="rb-bonus" id="rbBonus">×1.00</span>
+      <span class="rb-lbl">POTENZA E ORO</span>
+    </div>
+    <div class="rb-note" id="rbNote">Riparti dalla Torre 1 · potenziamenti azzerati</div>
+  </button>
 
   <div class="play-wrap"><button class="btn" id="playBtn">ALL'ASSALTO</button></div>
 
