@@ -10,6 +10,13 @@ prima di scegliere la tecnologia definitiva per Android.
 
 ## Provarlo
 
+**Online:** <https://kreedac.github.io/RunnerGame/> — funziona da telefono e da
+desktop, senza installare niente. (Va acceso una volta sola in
+Impostazioni → Pages del repository: *Deploy from a branch*, ramo
+`claude/android-runner-game-ue4kw2`, cartella `/ (root)`.)
+
+**In locale:**
+
 ```bash
 # serve un web server: il gioco carica i sorgenti come file separati
 cd web && python3 -m http.server 8080
