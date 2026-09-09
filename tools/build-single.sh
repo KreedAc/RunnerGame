@@ -3,6 +3,11 @@
 # Serve per pubblicare/condividere una demo che si apre senza web server.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Prima si marca la build: la marca finisce nella query dei <script> di
+# web/index.html e nell'angolo del menu, e cambia ad ogni costruzione.
+# In CI si passa il commit con BUILD_MARK.
+"$(dirname "$0")/stamp.sh" ${BUILD_MARK:+"$BUILD_MARK"} > /dev/null
+
 mkdir -p dist
 OUT=dist/torre-di-ghiaccio.html
 

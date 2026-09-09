@@ -140,6 +140,24 @@ Effetto collaterale da sistemare: con la pista inquadrata più stretta l'eroe è
 cresciuto, e nel menù finiva dietro al bottone ALL'ASSALTO. La camera del menù
 è arretrata da 13 a 16,5 unità.
 
+## 2e. La cache del telefono
+
+GitHub Pages serve tutto con dieci minuti di validità e non permette di
+cambiare gli header. Su un telefono succedeva di peggio che vedere la versione
+vecchia: `index.html` poteva arrivare nuovo e i sei sorgenti no — o metà e
+metà, ognuno con la sua scadenza. Un miscuglio che non è mai esistito.
+
+Quindi i sorgenti si chiedono con una **marca in coda**: `src/core.js?v=260909-2343`.
+Cambiando l'indirizzo la cache non c'entra più, e i sei file arrivano sempre
+dalla stessa build. `tools/stamp.sh` la scrive in `web/index.html` — data e ora
+in locale, il commit in CI — e `build-single.sh` la richiama da solo, così non
+esiste una costruzione senza marca. three.js resta fuori: non cambia mai, e
+tenerlo in cache è il motivo per cui la seconda apertura è istantanea.
+
+La stessa marca è stampata in fondo al menù. Serve a rispondere alla domanda
+che altrimenti non ha risposta guardando lo schermo: *è la versione nuova o
+una copia vecchia?*
+
 ## 3. Il colore è la regola, e la forma dice cosa fa
 
 Ogni cristallo e ogni nemico mostrano un numero, **verde se il tuo colpo attuale

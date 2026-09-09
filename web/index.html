@@ -185,6 +185,11 @@
   .reset-btn.armed{color:#ffb4a2;border-color:rgba(255,120,90,.75);
     background:rgba(120,30,20,.45)}
 
+  /* la marca della build: serve a sapere, guardando il telefono, se la
+     pagina che hai davanti è quella appena pubblicata o una in cache */
+  .build-tag{margin-top:10px;text-align:center;font-size:9.5px;font-weight:700;
+    letter-spacing:1.1px;color:rgba(255,255,255,.3);font-variant-numeric:tabular-nums}
+
   @media (prefers-reduced-motion:reduce){
     .swipe::after,.pop{animation:none}
     #banner.show{animation:none;opacity:1}
@@ -284,14 +289,23 @@
   </div>
 
   <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
+  <div class="build-tag" id="buildTag"></div>
 </div>
 
+<!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
+     e sta prima di three.js perché finisca anche nel file singolo. -->
+<script>window.BUILD = '260909-2343';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
 (function () {
+  /* I sorgenti si chiedono con la marca della build in coda: GitHub Pages
+     li tiene in cache dieci minuti, e senza questo un telefono può
+     ritrovarsi con metà file nuovi e metà vecchi — che è peggio che
+     averli tutti vecchi. Cambiando l'indirizzo, la cache non c'entra più. */
   const FILES = ['src/core.js', 'src/art.js', 'src/world.js',
-                 'src/actors.js', 'src/hub.js', 'src/game.js'];
+                 'src/actors.js', 'src/hub.js', 'src/game.js']
+                .map(f => f + '?v=' + window.BUILD);
   function load(src, cb) {
     const s = document.createElement('script');
     s.src = src;

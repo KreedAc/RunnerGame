@@ -180,6 +180,7 @@ document.querySelectorAll('.up-card').forEach(card => {
 });
 $('rebirthCard').addEventListener('click', tapRebirth);
 $('resetBtn').addEventListener('click', tapReset);
+$('buildTag').textContent = 'BUILD ' + (window.BUILD || 'dev');
 
 /* Come si racconta la fine dell'ultima corsa */
 const OUTCOME_TEXT = {

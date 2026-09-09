@@ -1,0 +1,52 @@
+# Ad ogni push: marca la build, ricostruisce il file singolo e pubblica
+# su GitHub Pages. Serve perché il telefono non resti con la versione
+# vecchia in cache — la marca cambia l'indirizzo dei sorgenti.
+name: Pubblica su GitHub Pages
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# una pubblicazione alla volta; se ne arriva un'altra, vince la più recente
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  pubblica:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Marca la build col commit e costruisci il file singolo
+        env:
+          BUILD_MARK: ${{ github.sha }}
+        run: |
+          chmod +x tools/stamp.sh tools/build-single.sh
+          BUILD_MARK="${BUILD_MARK:0:7}" tools/build-single.sh
+
+      - name: Prepara il sito
+        run: |
+          mkdir -p _site/dist
+          cp index.html .nojekyll _site/
+          cp -r web _site/
+          cp dist/torre-di-ghiaccio.html _site/dist/
+          echo "--- pubblicato:"
+          find _site -type f | sort
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

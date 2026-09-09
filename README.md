@@ -11,9 +11,12 @@ prima di scegliere la tecnologia definitiva per Android.
 ## Provarlo
 
 **Online:** <https://kreedac.github.io/RunnerGame/> — funziona da telefono e da
-desktop, senza installare niente. (Va acceso una volta sola in
-Impostazioni → Pages del repository: *Deploy from a branch*, ramo
-`claude/android-runner-game-ue4kw2`, cartella `/ (root)`.)
+desktop, senza installare niente. Si ripubblica da sola ad ogni push
+(`.github/workflows/pages.yml`); perché sia il workflow a pubblicare, in
+Impostazioni → Pages va scelto *Source: GitHub Actions*.
+
+In fondo al menù c'è la **marca della build**: se dopo un push il telefono
+mostra ancora quella vecchia, sta servendo una copia in cache.
 
 **In locale:**
 
@@ -95,7 +98,9 @@ web/
   src/game.js         corsa, ostacoli, muro, duello col boss, ciclo di gioco
   vendor/three.min.js copia locale di three.js (serve al pacchetto offline)
 docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
-tools/build-single.sh genera la demo a file singolo
+tools/build-single.sh genera la demo a file singolo (marca la build)
+tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
+.github/workflows/    pubblicazione automatica su GitHub Pages ad ogni push
 ```
 
 Tutto il tuning sta in cima a `core.js`: `CFG` (30 blocchi del muro, velocità,
