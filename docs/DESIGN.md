@@ -112,6 +112,34 @@ dalla nona torre in poi non si farebbe più in tempo a scegliere la corsia, il
 percorso ottimo diventerebbe irraggiungibile e il bilanciamento — che su quel
 percorso è costruito — salterebbe.
 
+## 2d. La stessa inquadratura su ogni schermo
+
+Il FOV di three.js è **verticale**: tenendolo fisso a 48°, la larghezza di
+mondo inquadrata dipende dalla forma dello schermo. Le tre corsie, larghe 8
+unità, occupavano il 117% della larghezza sul telaio su cui è stato disegnato
+il gioco (420×900), il 102% su un telefono in browser — la barra degli
+indirizzi accorcia la pagina — e il 73% su un tablet. Stessa scena, ma vista
+piccola e lontana, con le corsie più vicine fra loro.
+
+Quindi si fa il contrario: si fissa la **larghezza** inquadrata e si ricava il
+FOV verticale, `fov = 2·atan(K / aspect)`, limitato fra 28° e 58°. Su uno
+schermo più alto si vede più strada davanti, mai una pista più stretta. Adesso
+la larghezza è 6,8 unità ovunque.
+
+**E il controllo va con l'inquadratura.** Il trascinamento convertiva i pixel
+in unità di mondo con una costante fissa (0,055): 44 px per cambiare corsia,
+qualunque fosse il telefono. Su uno schermo dove la corsia è larga 126 px
+invece di 147 lo stesso dito ne attraversa di più, e il gioco sembra
+nervosissimo. Adesso il passo si misura in **fette di schermo**:
+`pixel × worldPerPixel() × 2,0`. Una corsia costa il **20,6% della larghezza**
+su qualunque dispositivo — misurato trascinando davvero il puntatore su quattro
+formati, da 360×800 a 768×1024 — dove prima era il 10% su un telefono e il 12%
+su un altro.
+
+Effetto collaterale da sistemare: con la pista inquadrata più stretta l'eroe è
+cresciuto, e nel menù finiva dietro al bottone ALL'ASSALTO. La camera del menù
+è arretrata da 13 a 16,5 unità.
+
 ## 3. Il colore è la regola, e la forma dice cosa fa
 
 Ogni cristallo e ogni nemico mostrano un numero, **verde se il tuo colpo attuale

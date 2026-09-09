@@ -615,7 +615,11 @@ addEventListener('pointerup',     () => { dragging = false; });
 addEventListener('pointercancel', () => { dragging = false; });
 addEventListener('pointermove', e => {
   if (!dragging || !steering()) return;
-  run.targetX = clamp(run.targetX + (e.clientX - lastPX) * CFG.strafe,
+  /* Il passo si misura in fette di schermo, non in pixel: un pixel vale
+     mondi diversi su schermi diversi, e con la conversione fissa di prima
+     lo stesso trascinamento attraversava più corsie su un telefono che
+     su un altro. */
+  run.targetX = clamp(run.targetX + (e.clientX - lastPX) * worldPerPixel() * CFG.strafe,
                       -CFG.laneLimit, CFG.laneLimit);
   lastPX = e.clientX;
 });
@@ -746,8 +750,11 @@ function update(dt) {
     camera.lookAt(0, tower ? tower.height + 2.6 : 28, towerZ);
   } else {
     camera.position.x = lerp(camera.position.x, duel ? run.x + 5 : run.x * 0.4, 1 - Math.pow(0.01, dt));
-    camera.position.y = lerp(camera.position.y, menu ? 5.0 : duel ? 7.4 : 6.2, 1 - Math.pow(0.02, dt));
-    camera.position.z = lerp(camera.position.z, run.z + (menu ? 13 : duel ? 16 : 14), 1 - Math.pow(0.005, dt));
+    camera.position.y = lerp(camera.position.y, menu ? 5.6 : duel ? 7.4 : 6.2, 1 - Math.pow(0.02, dt));
+    /* Nel menù la camera sta più indietro: con l'inquadratura a larghezza
+       costante l'eroe è cresciuto, e da 13 unità finiva dietro al bottone
+       ALL'ASSALTO. */
+    camera.position.z = lerp(camera.position.z, run.z + (menu ? 16.5 : duel ? 16 : 14), 1 - Math.pow(0.005, dt));
     camera.lookAt(duel ? run.x * 0.3 : run.x, duel ? 4.0 : menu ? 1.3 : 1.6,
                   run.z - (menu ? 12 : duel ? 13 : 16));
   }
@@ -756,13 +763,13 @@ function update(dt) {
 /* Tornando al menù la camera è a fondo pista: senza questo salto farebbe
    tutta la strada al contrario in dissolvenza. */
 function snapCamera() {
-  camera.position.set(0, 5.0, 13);
+  camera.position.set(0, 5.6, 16.5);
   camera.lookAt(0, 1.3, -12);
 }
 
 /* hook di debug */
 window.BlockyRun = {
-  run, items, meta, CFG, WEAPONS,
+  run, items, meta, CFG, WEAPONS, camera,
   get state() { return state; },
   get damage() { return damage(); },
   get need() { return towerNeed(meta.level); },

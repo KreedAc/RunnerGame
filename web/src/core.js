@@ -13,7 +13,7 @@ const CFG = {
   rowSpacing : 30,
   firstRowZ  : -42,
   runOut     : 46,               // dall'ultima riga al muro della torre
-  strafe     : 0.055,            // px trascinati -> unità di mondo
+  strafe     : 2.0,              // quanto corre l'eroe rispetto al dito
 
   wallRows   : 30,               // quanti blocchi separano dalla torre
   wallGap    : 4.5,
@@ -303,8 +303,35 @@ function applyTheme(theme) {
   sun.intensity  = theme.sunI;
 }
 
+/* ------------------------- INQUADRATURA COSTANTE ----------------------
+   Il FOV di three.js è verticale: tenendolo fisso, la larghezza di mondo
+   inquadrata dipende dalla forma dello schermo. Tre corsie larghe 8 unità
+   occupavano il 117% della larghezza sul telaio su cui è stato disegnato
+   il gioco, il 102% su un telefono in browser (la barra degli indirizzi
+   accorcia la pagina) e il 73% su un tablet: la stessa scena si vedeva
+   piccola e lontana, e le corsie più vicine fra loro.
+
+   Quindi si fissa la larghezza e si ricava il FOV verticale. Su schermi
+   più alti si vede più strada, mai una pista più stretta. */
+const FRAME_FOV    = 48;      // il FOV verticale del telaio di riferimento…
+const FRAME_ASPECT = 0.467;   // …che è un telefono in verticale, 420×900
+const FRAME_K = Math.tan(FRAME_FOV * Math.PI / 360) * FRAME_ASPECT;
+
+/* Distanza tipica della camera dall'eroe: serve solo a convertire pixel in
+   unità di mondo, non vale la pena inseguirne il valore esatto. */
+const CAM_DIST = 14;
+
+/* Quanto mondo vale un pixel all'altezza dell'eroe. Il controllo ci si
+   basa: trascinare il dito di una certa fetta di schermo deve spostare
+   l'eroe della stessa fetta, su qualunque telefono. */
+function worldPerPixel() {
+  const visH = 2 * Math.tan(camera.fov * Math.PI / 360) * CAM_DIST;
+  return visH * camera.aspect / innerWidth;
+}
+
 function resize() {
   camera.aspect = innerWidth / innerHeight;
+  camera.fov = clamp(2 * Math.atan(FRAME_K / camera.aspect) * 180 / Math.PI, 28, 58);
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 }

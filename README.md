@@ -24,7 +24,8 @@ cd web && python3 -m http.server 8080
 ```
 
 Da telefono: stesso URL sulla rete locale. Si gioca in verticale, trascinando
-il dito a sinistra e a destra. Da desktop funzionano anche le frecce.
+il dito a sinistra e a destra — una corsia costa il 20,6% della larghezza dello
+schermo, uguale su ogni dispositivo. Da desktop funzionano anche le frecce.
 
 Per una copia che si apre con doppio click, senza server:
 `./tools/build-single.sh` → `dist/torre-di-ghiaccio.html`.
