@@ -158,6 +158,62 @@ La stessa marca è stampata in fondo al menù. Serve a rispondere alla domanda
 che altrimenti non ha risposta guardando lo schermo: *è la versione nuova o
 una copia vecchia?*
 
+## 2f. Il tag che mancava
+
+Sul telefono l'interfaccia usciva minuscola: scritte, pillole della HUD e
+soprattutto le carte dei potenziamenti. La causa era un tag assente in
+`web/index.html`, che cominciava direttamente con `<title>`:
+
+```html
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+```
+
+Senza, un browser mobile impagina a **980 px virtuali** e poi rimpicciolisce
+tutto per farlo entrare nello schermo. Misurato con l'emulazione mobile:
+`innerWidth` 981 su uno schermo da 412, `document.compatMode` a `BackCompat`
+(quirks mode, perché mancava anche il doctype), carte larghe 312 px disegnate
+e poi schiacciate a 131. Ogni cosa 2,4 volte più piccola del dovuto.
+
+Non si era mai visto prima perché l'**artifact** di Claude avvolge la pagina in
+un `<head>` proprio, viewport compreso: lì era sempre stato giusto. Ed è
+invisibile anche in Playwright con una finestra normale — serve
+`isMobile: true`, altrimenti la larghezza della finestra fa da viewport e il
+tag non serve a niente.
+
+Da qui una regola per le prove: **una pagina mobile va provata in emulazione
+mobile**, non solo ridimensionando la finestra.
+
+## 2g. L'eroe nella fascia libera
+
+Nel menù l'eroe finiva dietro al bottone ALL'ASSALTO. Non esiste una posizione
+fissa della camera che vada bene: la fascia libera fra il riepilogo e il
+bottone cambia con l'altezza dello schermo, e cambia anche fra la prima
+partita (c'è la storia, lunga) e le successive (c'è il riepilogo, corto), e
+ancora quando compare la carta della rinascita.
+
+Quindi il gioco la misura. `aimMenuCamera()` legge la fascia dal DOM, arretra
+la camera quanto basta perché l'eroe ci stia dentro (fra 16,5 e 34 unità) e
+poi cerca per bisezione l'inclinazione che lo mette al centro. Sono una
+ventina di proiezioni di un punto, una volta sola all'apertura del menù.
+
+Su schermi molto corti con la carta della rinascita aperta la fascia si riduce
+a una quindicina di pixel: lì nessuna camera basta, e l'eroe resta **centrato**
+dietro alle carte — se sborda in modo simmetrico sopra e sotto sembra che stia
+dietro apposta, mentre un bottone appoggiato sulla faccia sembra un errore.
+
+## 2h. Novanta numeri sovrapposti
+
+Le etichette sono disegnate sopra a tutto (`depthTest: false`) perché un numero
+non finisca mai dietro alla colonna che descrive. Il rovescio è che non si
+nascondono neanche fra loro: dalla linea a scacchi si vedevano tutti e novanta
+i numeri del muro impilati in una macchia illeggibile.
+
+Adesso svaniscono con la distanza, e il muro prima degli altri — le sue righe
+stanno a 4,5 unità l'una dall'altra e contano solo quelle su cui stai per
+decidere (piene fino a 16 unità, sparite a 34), mentre le colonne della pista,
+distanti 30, vanno viste da lontano per avere il tempo di scegliere la corsia
+(42 e 78). Dalla linea a scacchi si leggono 21 etichette invece di 90.
+
 ## 3. Il colore è la regola, e la forma dice cosa fa
 
 Ogni cristallo e ogni nemico mostrano un numero, **verde se il tuo colpo attuale

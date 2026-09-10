@@ -1,3 +1,13 @@
+<!doctype html>
+<meta charset="utf-8">
+<!-- Senza questo un browser mobile impagina a 980 px virtuali e poi
+     rimpicciolisce tutto per farlo entrare nello schermo: su un telefono
+     da 412 px l'interfaccia usciva 2,4 volte più piccola del dovuto, e la
+     scena 3D con lei. L'artifact non lo mostrava perché il suo
+     contenitore aggiunge un <head> proprio, viewport compreso. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1a2b">
+<meta name="color-scheme" content="dark">
 <title>Torre di Ghiaccio</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -155,23 +165,33 @@
   .rb-note{margin-top:5px;font-size:10.5px;font-weight:800;letter-spacing:.9px;opacity:.72}
   .rebirth-card.armed .rb-note{opacity:1;color:#ffd970}
 
-  /* le tre carte di potenziamento */
-  #upgrades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .up-card{display:flex;flex-direction:column;align-items:center;gap:5px;
-    padding:11px 6px 9px;border-radius:18px;cursor:pointer;font-family:inherit;
+  /* Le tre carte di potenziamento. Sono il cuore del gioco — è lì che si
+     spende l'oro — e invece erano l'elemento più piccolo dello schermo:
+     un pollice ci arrivava, un occhio no. */
+  #upgrades{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .up-card{display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:13px 6px 11px;border-radius:20px;cursor:pointer;font-family:inherit;
     background:linear-gradient(180deg,#3f5a7a,#26374d);
     border:2px solid rgba(255,255,255,.3);
     box-shadow:0 5px 0 rgba(9,18,30,.6);color:#fff;
     transition:transform .08s,box-shadow .08s,filter .12s}
   .up-card:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(9,18,30,.6)}
-  .up-card.locked{filter:grayscale(.6) brightness(.68);cursor:default}
+  /* Non comprabile: si spegne, ma il costo resta acceso — è il numero che
+     dice quanto manca, spegnerlo nasconde proprio l'informazione utile. */
+  .up-card.locked{filter:grayscale(.55) brightness(.72);cursor:default}
+  .up-card.locked .up-cost{filter:saturate(1.6) brightness(1.25)}
   .up-card:focus-visible{outline:3px solid #fff;outline-offset:2px}
-  .up-name{font-size:12px;font-weight:900;letter-spacing:.8px}
-  .up-level{font-size:10px;opacity:.62;font-weight:800}
-  .up-value{font-size:19px;font-weight:900;color:#8fe3ff;font-variant-numeric:tabular-nums}
-  .up-cost{margin-top:2px;padding:3px 12px;border-radius:99px;font-size:13px;font-weight:900;
-    background:linear-gradient(180deg,#ffd970,#f5a91d);color:#3a2000;
+  .up-name{font-size:13px;font-weight:900;letter-spacing:1px}
+  .up-level{font-size:10.5px;opacity:.55;font-weight:800;letter-spacing:.4px}
+  .up-value{margin-top:3px;font-size:23px;line-height:1.1;font-weight:900;color:#8fe3ff;
     font-variant-numeric:tabular-nums}
+  /* il nome dell'arma è una parola, non un numero: "Lama Rúna" a 23px
+     andrebbe a capo dentro una carta larga un terzo di schermo */
+  .up-card[data-key="weapon"] .up-value{font-size:17px}
+  .up-cost{margin-top:7px;padding:5px 15px;border-radius:99px;font-size:15px;font-weight:900;
+    background:linear-gradient(180deg,#ffd970,#f5a91d);color:#3a2000;
+    box-shadow:0 3px 0 rgba(150,90,0,.55);
+    font-variant-numeric:tabular-nums;white-space:nowrap}
 
   /* ricomincia da capo: sta in fondo, lontano dal pollice che gioca, e
      chiede due tocchi — cancella tutto e non si torna indietro */
@@ -294,7 +314,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260909-2343';</script>
+<script>window.BUILD = '260910-0003';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

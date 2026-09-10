@@ -13,6 +13,9 @@ const $ = id => document.getElementById(id);
 function showScreen(name) {
   $('hub').classList.toggle('hidden', name !== 'hub');
   $('hud').classList.toggle('hidden', name !== null);
+  /* la camera del menù si punta sulla fascia lasciata libera dal menù
+     stesso, quindi va rifatto ogni volta che il menù compare */
+  if (name === 'hub' && typeof aimMenuCamera === 'function') aimMenuCamera();
 }
 
 /* --------------------------- POTENZIAMENTI --------------------------- */
@@ -173,6 +176,10 @@ function renderHub() {
     card.classList.toggle('locked', maxed || !afford);
     card.disabled = maxed || !afford;
   }
+
+  /* per ultimo: la camera si punta sulla fascia libera, che dipende da
+     tutto quello che il menù ha appena deciso di mostrare */
+  if (typeof aimMenuCamera === 'function') aimMenuCamera();
 }
 
 document.querySelectorAll('.up-card').forEach(card => {

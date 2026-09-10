@@ -381,6 +381,36 @@ function refreshThreats() {
   }
 }
 
+/* --------------------------- LEGGIBILITÀ ------------------------------
+   Le etichette sono disegnate sopra a tutto (`depthTest: false`), così un
+   numero non finisce mai dietro alla colonna che descrive. Il rovescio è
+   che non si nascondono neanche fra loro: dalla linea a scacchi si
+   vedevano tutti e novanta i numeri del muro impilati in una macchia.
+
+   Quindi svaniscono con la distanza. Il muro prima degli altri: le sue
+   righe stanno a 4,5 unità l'una dall'altra e contano solo quelle su cui
+   stai per decidere, mentre le colonne della pista, distanti 30, vanno
+   viste da lontano per avere il tempo di scegliere la corsia. */
+const LABEL_RANGE = {
+  block  : { near: 16, far: 34 },
+  default: { near: 42, far: 78 }
+};
+
+function fadeLabels() {
+  for (const it of items) {
+    const s = it.sprite;
+    if (!s || it.done || !it.obj.visible) continue;
+    const r = LABEL_RANGE[it.kind] || LABEL_RANGE.default;
+    const d = run.z - it.z;                    // >0: ancora davanti a noi
+    const a = d < 0 ? 0
+            : d < r.near ? 1
+            : d > r.far  ? 0
+            : 1 - (d - r.near) / (r.far - r.near);
+    s.visible = a > 0.02;
+    s.material.opacity = a;
+  }
+}
+
 /* ------------------------------ RISOLUZIONE ---------------------------- */
 const debris = [];
 
@@ -712,6 +742,8 @@ function update(dt) {
     animateIdle(tower.princess, runT, 0.6);
   }
 
+  fadeLabels();
+
   /* --- nemici abbattuti, raccolte, scaglie --- */
   for (const it of items) {
     if (it.kind === 'enemy' && it.mob && it.mob.userData.dying) {
@@ -750,21 +782,76 @@ function update(dt) {
     camera.lookAt(0, tower ? tower.height + 2.6 : 28, towerZ);
   } else {
     camera.position.x = lerp(camera.position.x, duel ? run.x + 5 : run.x * 0.4, 1 - Math.pow(0.01, dt));
-    camera.position.y = lerp(camera.position.y, menu ? 5.6 : duel ? 7.4 : 6.2, 1 - Math.pow(0.02, dt));
+    camera.position.y = lerp(camera.position.y, menu ? MENU_CAM_Y : duel ? 7.4 : 6.2, 1 - Math.pow(0.02, dt));
     /* Nel menù la camera sta più indietro: con l'inquadratura a larghezza
        costante l'eroe è cresciuto, e da 13 unità finiva dietro al bottone
        ALL'ASSALTO. */
-    camera.position.z = lerp(camera.position.z, run.z + (menu ? 16.5 : duel ? 16 : 14), 1 - Math.pow(0.005, dt));
-    camera.lookAt(duel ? run.x * 0.3 : run.x, duel ? 4.0 : menu ? 1.3 : 1.6,
+    camera.position.z = lerp(camera.position.z, run.z + (menu ? menuCamZ : duel ? 16 : 14), 1 - Math.pow(0.005, dt));
+    camera.lookAt(duel ? run.x * 0.3 : run.x, duel ? 4.0 : menu ? menuLookY : 1.6,
                   run.z - (menu ? 12 : duel ? 13 : 16));
   }
 }
 
+/* ------------------- L'EROE NELLA FASCIA LIBERA -----------------------
+   Nel menù l'eroe finiva dietro al bottone ALL'ASSALTO. La fascia libera
+   fra il riepilogo e il bottone non è sempre la stessa — cambia con
+   l'altezza dello schermo, e cambia anche fra la prima partita (c'è la
+   storia, lunga) e le successive (c'è il riepilogo, corto) — quindi non
+   esiste una posizione fissa della camera che vada bene sempre.
+
+   Allora la si misura: si prende la fascia dal DOM e si cerca per
+   bisezione l'inclinazione che mette l'eroe nel mezzo. Dodici proiezioni
+   di un punto, una volta sola all'apertura del menù. */
+const MENU_CAM_Y   = 5.6;
+const MENU_CAM_Z   = 16.5;    // la distanza più ravvicinata…
+const MENU_CAM_ZFAR = 34;     // …e quanto si può arretrare per farlo stare
+let menuLookY = 1.3;
+let menuCamZ  = MENU_CAM_Z;
+
+function aimMenuCamera() {
+  if ($('hub').classList.contains('hidden')) return;
+  const alto  = $('lastRun').classList.contains('hidden') ? $('hubHint') : $('lastRun');
+  const basso = $('rebirthCard').classList.contains('hidden') ? $('playBtn') : $('rebirthCard');
+  const a = alto.getBoundingClientRect().bottom;
+  const b = basso.getBoundingClientRect().top;
+  if (!(b > a)) return;                       // niente fascia: si lascia com'è
+
+  const punto = new THREE.Vector3();
+  /* dove finisce sullo schermo un punto dell'eroe, con una certa camera */
+  const proietta = (y, look, z) => {
+    camera.position.set(0, MENU_CAM_Y, run.z + z);
+    camera.lookAt(0, look, run.z - 12);
+    camera.updateMatrixWorld();
+    punto.set(0, y, run.z).project(camera);
+    return (1 - (punto.y + 1) / 2) * innerHeight;
+  };
+
+  /* Prima la taglia: alla distanza minima l'eroe può essere più alto
+     della fascia — allora si arretra, quanto basta e non di più. */
+  const altoQuanto = z => proietta(0, menuLookY, z) - proietta(3.3, menuLookY, z);
+  const serve = (b - a) * 0.82;
+  menuCamZ = clamp(MENU_CAM_Z * altoQuanto(MENU_CAM_Z) / serve,
+                   MENU_CAM_Z, MENU_CAM_ZFAR);
+
+  /* poi la mira: si cerca l'inclinazione che lo mette al centro della
+     fascia. Alzare il punto guardato inclina la camera in su, e l'eroe
+     scende: la funzione è monotona, quindi basta una bisezione. */
+  const bersaglio = (a + b) / 2;
+  let lo = -9, hi = 7;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    if (proietta(1.7, mid, menuCamZ) < bersaglio) lo = mid; else hi = mid;
+  }
+  menuLookY = (lo + hi) / 2;
+  snapCamera();
+}
+addEventListener('resize', aimMenuCamera);
+
 /* Tornando al menù la camera è a fondo pista: senza questo salto farebbe
    tutta la strada al contrario in dissolvenza. */
 function snapCamera() {
-  camera.position.set(0, 5.6, 16.5);
-  camera.lookAt(0, 1.3, -12);
+  camera.position.set(0, MENU_CAM_Y, run.z + menuCamZ);
+  camera.lookAt(0, menuLookY, run.z - 12);
 }
 
 /* hook di debug */
