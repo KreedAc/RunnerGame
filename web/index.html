@@ -205,6 +205,39 @@
   .reset-btn.armed{color:#ffb4a2;border-color:rgba(255,120,90,.75);
     background:rgba(120,30,20,.45)}
 
+  /* ========================= SECONDA OCCASIONE =======================
+     Compare nel momento in cui la corsa finirebbe: il muro ti ha fermato
+     a due blocchi dalla torre, o il carceriere ti ha piegato. È lì che i
+     diamanti hanno un senso, e il tempo che scorre fa parte della scelta. */
+  .revive{position:fixed;inset:0;z-index:5;display:flex;align-items:center;
+    justify-content:center;padding:20px;background:rgba(8,16,28,.72)}
+  .rv-card{width:100%;max-width:330px;padding:20px 18px 14px;border-radius:24px;
+    text-align:center;color:#fff;border:2px solid rgba(120,230,255,.45);
+    background:linear-gradient(180deg,#1d4668,#122a44);
+    box-shadow:0 10px 0 rgba(6,14,24,.7),0 18px 40px rgba(0,0,0,.5)}
+  .rv-head{font-size:19px;font-weight:900;letter-spacing:1.4px;color:#8fe3ff}
+  .rv-why{margin-top:5px;font-size:11.5px;font-weight:800;letter-spacing:1.1px;opacity:.7}
+  .rv-go{display:flex;flex-direction:column;align-items:center;gap:2px;
+    width:100%;margin-top:15px;padding:13px 10px;border:none;border-radius:20px;
+    cursor:pointer;font-family:inherit;color:#0d2a12;
+    background:linear-gradient(180deg,#8ef2a0,#2fbd63);
+    box-shadow:0 6px 0 #1c7a3f;transition:transform .08s,box-shadow .08s}
+  .rv-go:active{transform:translateY(4px);box-shadow:0 2px 0 #1c7a3f}
+  .rv-go .rv-what{font-size:18px;font-weight:900;letter-spacing:.6px}
+  .rv-go .rv-gain{font-size:12px;font-weight:800;opacity:.75}
+  .rv-cost{display:inline-block;margin-bottom:3px;padding:3px 13px;border-radius:99px;
+    background:rgba(10,40,20,.35);font-size:14px;font-weight:900}
+  /* la barra che si svuota: dice che la scelta ha una fine */
+  .rv-bar{height:6px;margin:12px 4px 0;border-radius:99px;overflow:hidden;
+    background:rgba(255,255,255,.15)}
+  .rv-bar i{display:block;height:100%;width:100%;border-radius:99px;
+    background:linear-gradient(90deg,#8fe3ff,#ffd24b)}
+  .rv-no{margin-top:9px;padding:7px 16px;border-radius:99px;cursor:pointer;
+    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1.1px;
+    color:rgba(255,255,255,.55);background:transparent;
+    border:2px solid rgba(255,255,255,.16)}
+  .rv-left{margin-top:8px;font-size:10.5px;font-weight:800;letter-spacing:1px;opacity:.45}
+
   /* la marca della build: serve a sapere, guardando il telefono, se la
      pagina che hai davanti è quella appena pubblicata o una in cache */
   .build-tag{margin-top:10px;text-align:center;font-size:9.5px;font-weight:700;
@@ -234,6 +267,22 @@
 </div>
 <div id="pops"></div>
 <div id="banner"></div>
+
+<!-- seconda occasione: appare al posto della sconfitta, se hai i diamanti -->
+<div class="revive hidden" id="revive">
+  <div class="rv-card">
+    <div class="rv-head" id="rvHead">TI MANCAVA POCO</div>
+    <div class="rv-why" id="rvWhy"></div>
+    <button class="rv-go" id="rvGo">
+      <span class="rv-cost" id="rvCost">💎 5</span>
+      <span class="rv-what">SECONDA OCCASIONE</span>
+      <span class="rv-gain" id="rvGain"></span>
+    </button>
+    <div class="rv-bar"><i id="rvBar"></i></div>
+    <button class="rv-no" id="rvNo">LASCIA PERDERE</button>
+    <div class="rv-left" id="rvLeft"></div>
+  </div>
+</div>
 
 <!-- ============================== MENÙ ============================== -->
 <div id="hub">
@@ -314,7 +363,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260910-0003';</script>
+<script>window.BUILD = '260910-0019';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

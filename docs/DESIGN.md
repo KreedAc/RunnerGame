@@ -315,6 +315,36 @@ dal pollice che preme ALL'ASSALTO; chiede **due tocchi**, perché non si torna
 indietro; e **non compare affatto** finché non c'è qualcosa da cancellare, così
 la prima schermata resta pulita.
 
+## 6c. I diamanti, e cosa comprano
+
+I diamanti si raccoglievano dalla prima versione e non si spendevano mai: un
+numero nella barra che promette qualcosa e non mantiene è peggio che non
+averlo. Adesso comprano la **seconda occasione**.
+
+Compare nel momento in cui la corsa finirebbe — fermato dal muro a due blocchi
+dalla torre, o piegato dal carceriere — e restituisce **metà della potenza con
+cui avevi iniziato la fase in cui sei caduto**, non metà di quella che ti
+serviva. La differenza conta: è un aiuto a chi c'era quasi, non un modo per
+comprare una torre fuori portata. Nel duello si riprende con il boss già
+ferito dove l'avevi lasciato, quindi vinci lo scontro ripreso solo se eri
+arrivato oltre i due terzi.
+
+Tre vincoli tengono la cosa onesta:
+
+- **una volta per corsa**, così non si compra una torre a rate;
+- **costa 5 diamanti** contro un raccolto di uno o due a partita — un lusso
+  ogni tre o quattro corse, non un'abitudine;
+- **si paga prima con i diamanti raccolti adesso**, poi con quelli in cassa:
+  quello che hai appena trovato è ancora tuo anche se la corsa finisce male.
+
+Il titolo del pannello dice *TI MANCAVA POCO* solo se è vero (oltre il
+ventiquattresimo blocco); altrimenti dice *CORSA FINITA*. Dirlo a chi si è
+fermato al quinto è una presa in giro, e si vede subito.
+
+C'è anche un motivo che guarda avanti: in un gioco pubblicato questo è
+esattamente il punto dove si mette la pubblicità con premio. Il prototipo si
+porta dietro già la struttura giusta.
+
 ## 7. Le zone
 
 Ogni torre cambia mondo: Valle Gelata, Bosco Rosso, Dune d'Ossa, Notte di Rúna.

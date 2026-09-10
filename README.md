@@ -82,6 +82,11 @@ scendono insieme, chi arriva a zero cade. Se vinci, la camera sale sul
 balcone e la principessa è libera — torre successiva, più dura e più veloce
 (la corsa accelera da 15 a 21 con le torri; solo il muro resta al suo ritmo).
 
+**La seconda occasione.** Quando il muro ti ferma o il carceriere ti piega,
+se hai **5 diamanti** puoi ripartire da lì con metà della potenza con cui
+avevi iniziato quella fase. Una volta sola per corsa, e hai sette secondi per
+decidere.
+
 **I cartelli.** Piantati di traverso al muro segnano dove sei arrivato: uno
 azzurro sull'ultima corsa, uno dorato sul record.
 
@@ -122,5 +127,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Muro di 30 blocchi a consumo di potenza, con cartelli del record
 - [x] Duello col boss e camera che sale sulla principessa alla vittoria
 - [ ] Audio e particellari oltre alle scaglie
-- [ ] Missioni, valuta premium, skin
+- [x] Diamanti spendibili: la seconda occasione
+- [ ] Missioni e skin dell'eroe (palette e pezzi, non modelli nuovi)
 - [ ] Build Android (vedi `docs/DESIGN.md`)

@@ -52,7 +52,9 @@ const run = {
   beatRecord: false,
   swing: 0,
   unit: 1,                 // il passo della torre in corso (vedi trackUnit)
-  speed: CFG.speed
+  speed: CFG.speed,
+  phaseStart: 0,           // potenza all'inizio del muro / del duello
+  revived: false           // la seconda occasione vale una volta per corsa
 };
 
 /* Il colpo è un multiplo del passo della torre, come le colonne che deve
@@ -511,6 +513,7 @@ function hitWallBlock(it) {
    I due numeri scendono insieme: chi arriva a zero per primo cade. */
 function startBossFight() {
   state = 'boss';
+  run.phaseStart = run.power;            // per la seconda occasione
   run.bossHp = bossHealth(meta.level);
   run.clash = Math.max(run.power, run.bossHp) / 1.5;   // ~1.5s di scontro
 
@@ -558,6 +561,7 @@ function startRun() {
   run.weapon = meta.up.weapon;
   run.coins = 0; run.gems = 0; run.broken = 0; run.swing = 0;
   run.beatRecord = false; run.outcome = '';
+  run.phaseStart = 0; run.revived = false;
   run.buffs = { income: 0, rate: 0, gain: 0 };
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
@@ -577,7 +581,88 @@ const OUTCOMES = {
   win : { title: 'PRINCIPESSA LIBERATA!',  color: '#ffd24b' }
 };
 
+/* ------------------------ SECONDA OCCASIONE ---------------------------
+   I diamanti si raccoglievano e non si spendevano mai: un numero che
+   promette qualcosa e non mantiene. Adesso comprano l'unica cosa che in
+   questo gioco si desidera davvero — un altro tentativo *dentro la stessa
+   corsa*, nel momento in cui ti fermi a due blocchi dalla torre.
+
+   Restituisce metà della potenza con cui avevi iniziato la fase in cui sei
+   caduto, non metà di quella che ti serviva: così è un aiuto a chi c'era
+   quasi, non un modo per comprare una torre fuori portata. Una volta sola
+   per corsa. */
+const REVIVE_COST    = 5;
+const REVIVE_SHARE   = 0.5;
+const REVIVE_SECONDS = 7;
+
+const gemsAvailable = () => meta.gems + run.gems;
+
+/* si pagano prima con quelli raccolti adesso, poi con quelli in cassa */
+function spendGems(n) {
+  const daCorsa = Math.min(run.gems, n);
+  run.gems -= daCorsa;
+  meta.gems -= (n - daCorsa);
+}
+
+let reviveRAF = 0;
+
+function canRevive(outcome) {
+  return (outcome === 'wall' || outcome === 'boss') &&
+         !run.revived && gemsAvailable() >= REVIVE_COST;
+}
+
+function offerRevive(outcome) {
+  state = 'offer';
+  const torna = Math.max(1, Math.round(run.phaseStart * REVIVE_SHARE));
+  /* "ti mancava poco" solo se è vero: dirlo a chi si è fermato al quinto
+     blocco è una presa in giro, e si vede subito */
+  const vicino = outcome === 'wall' ? run.broken >= CFG.wallRows - 6
+                                    : run.bossHp <= run.phaseStart;
+  $('rvHead').textContent = vicino ? 'TI MANCAVA POCO' : 'CORSA FINITA';
+  $('rvWhy').textContent = outcome === 'wall'
+    ? 'FERMATO DAL MURO A ' + run.broken + '/' + CFG.wallRows
+    : 'IL CARCERIERE TI HA PIEGATO';
+  $('rvCost').textContent = '💎 ' + REVIVE_COST;
+  $('rvGain').textContent = '+' + fmt(torna) + ' potenza, e riparti da qui';
+  $('rvLeft').textContent = 'ne hai ' + gemsAvailable();
+  $('revive').classList.remove('hidden');
+
+  const fine = performance.now() + REVIVE_SECONDS * 1000;
+  cancelAnimationFrame(reviveRAF);
+  (function conta() {
+    const resta = (fine - performance.now()) / (REVIVE_SECONDS * 1000);
+    if (state !== 'offer') return;
+    if (resta <= 0) { closeRevive(); finishRun(outcome); return; }
+    $('rvBar').style.width = (resta * 100) + '%';
+    reviveRAF = requestAnimationFrame(conta);
+  })();
+
+  $('rvGo').onclick = () => { closeRevive(); doRevive(outcome); };
+  $('rvNo').onclick = () => { closeRevive(); finishRun(outcome); };
+}
+
+function closeRevive() {
+  cancelAnimationFrame(reviveRAF);
+  $('revive').classList.add('hidden');
+}
+
+function doRevive(outcome) {
+  spendGems(REVIVE_COST);
+  run.revived = true;
+  run.power = Math.max(1, Math.round(run.phaseStart * REVIVE_SHARE));
+  flashBanner('SECONDA OCCASIONE!');
+  renderHud();
+  /* si riprende esattamente da dove si era caduti: davanti al muro col
+     conto dei blocchi intatto, o nel duello con il boss già ferito */
+  state = outcome === 'wall' ? 'wall' : 'boss';
+}
+
 function endRun(outcome) {
+  if (canRevive(outcome)) { offerRevive(outcome); return; }
+  finishRun(outcome);
+}
+
+function finishRun(outcome) {
   state = 'over';
   run.outcome = outcome;
 
@@ -697,7 +782,10 @@ function update(dt) {
       if (!steering()) break;
     }
 
-    if (state === 'run' && run.z <= wallStartZ + wallGap) state = 'wall';
+    if (state === 'run' && run.z <= wallStartZ + wallGap) {
+      state = 'wall';
+      run.phaseStart = run.power;        // per la seconda occasione
+    }
     /* Se per qualsiasi motivo si arriva ai piedi della torre senza aver
        consumato il muro, lo scontro parte comunque: nessuna corsa deve
        poter oltrepassare il boss senza affrontarlo. */
