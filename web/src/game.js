@@ -649,6 +649,7 @@ function closeRevive() {
 function doRevive(outcome) {
   spendGems(REVIVE_COST);
   run.revived = true;
+  meta.towerRevived = 1;          // il diario lo segna con un asterisco
   run.power = Math.max(1, Math.round(run.phaseStart * REVIVE_SHARE));
   flashBanner('SECONDA OCCASIONE!');
   renderHud();
@@ -666,6 +667,9 @@ function finishRun(outcome) {
   state = 'over';
   run.outcome = outcome;
 
+  /* il diario: ogni corsa è un tentativo sulla torre corrente */
+  meta.tries = (meta.tries || 0) + 1;
+
   const record = run.broken > meta.best;
   /* Il premio della vittoria era 200×torre: da solo pagava i potenziamenti
      della torre successiva, che cadeva al primo tentativo. */
@@ -680,6 +684,10 @@ function finishRun(outcome) {
   meta.lastOutcome = outcome;
   if (record) meta.best = run.broken;
   if (outcome === 'win') {
+    meta.diary = meta.diary || [];
+    meta.diary.push({ l: meta.level, t: meta.tries, r: meta.towerRevived ? 1 : 0 });
+    if (meta.diary.length > 30) meta.diary.shift();
+    meta.tries = 0; meta.towerRevived = 0;
     meta.level++;
     meta.bestLevel = Math.max(meta.bestLevel || 1, meta.level);
     meta.best = 0; meta.last = 0;

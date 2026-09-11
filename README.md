@@ -87,6 +87,10 @@ se hai **5 diamanti** puoi ripartire da lì con metà della potenza con cui
 avevi iniziato quella fase. Una volta sola per corsa, e hai sette secondi per
 decidere.
 
+**Il diario.** In fondo al menù, quanti tentativi è costata ogni torre —
+`T1 3 · T2 1 · T3 2*`, dove l'asterisco segna dove hai usato la seconda
+occasione. Serve a tarare la difficoltà su una partita vera.
+
 **I cartelli.** Piantati di traverso al muro segnano dove sei arrivato: uno
 azzurro sull'ultima corsa, uno dorato sul record.
 

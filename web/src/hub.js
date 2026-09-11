@@ -89,6 +89,7 @@ function tapRebirth() {
   meta.level = 1;
   meta.best = 0; meta.last = 0; meta.lastCoins = 0;
   meta.lastRecord = false; meta.lastOutcome = '';
+  meta.diary = []; meta.tries = 0; meta.towerRevived = 0;   // nuova salita, diario nuovo
   rebirthArmed = false;
   writeSave(meta);
   flashBanner('+' + gain + ' RUNE');
@@ -135,6 +136,25 @@ function tapReset() {
   renderHub();
 }
 
+/* ------------------------------ DIARIO --------------------------------
+   Quanti tentativi è costata ogni torre. Non serve al gioco: serve a
+   tarare la difficoltà su una partita vera invece che sul simulatore,
+   senza chiedere a nessuno di tenere il conto a mente. */
+function renderDiary() {
+  const storia = meta.diary || [];
+  const inCorso = meta.tries || 0;
+  const box = $('diary');
+  box.classList.toggle('hidden', !storia.length && !inCorso);
+
+  const chip = (l, t, r, ora) =>
+    '<span class="dy-chip' + (ora ? ' now' : '') + '">T' + l + ' <b>' + t + '</b>' +
+    (r ? '<i>*</i>' : '') + '</span>';
+
+  $('dyRow').innerHTML =
+    storia.map(e => chip(e.l, e.t, e.r, false)).join('') +
+    (inCorso ? chip(meta.level, inCorso, meta.towerRevived, true) : '');
+}
+
 function renderHub() {
   renderWallet();
   $('hubLevel').textContent = 'TORRE ' + meta.level;
@@ -148,6 +168,7 @@ function renderHub() {
                   : 'NESSUNA TORRE ANCORA CONQUISTATA');
   renderRebirth();
   renderReset();
+  renderDiary();
 
   /* Alla prima partita servono le regole; dopo serve il risultato.
      Non hanno senso insieme: si scambiano il posto. */

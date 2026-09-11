@@ -205,6 +205,12 @@ function defaultSave() {
     best: 0,          // blocchi del muro sfondati, record sulla torre corrente
     last: 0,          // e quelli dell'ultima corsa
     lastCoins: 0, lastRecord: false, lastOutcome: '',
+    /* il diario della salita: quanti tentativi è costata ogni torre.
+       Serve a tarare la difficoltà su una partita vera invece che sul
+       simulatore, senza chiedere a nessuno di tenere il conto a mente. */
+    tries: 0,            // tentativi sulla torre corrente
+    towerRevived: 0,     // su questa torre hai usato la seconda occasione?
+    diary: [],           // { l: torre, t: tentativi, r: seconda occasione }
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

@@ -238,6 +238,23 @@
     border:2px solid rgba(255,255,255,.16)}
   .rv-left{margin-top:8px;font-size:10.5px;font-weight:800;letter-spacing:1px;opacity:.45}
 
+  /* Il diario della salita: quanti tentativi è costata ogni torre.
+     È fatto per essere fotografato — una riga sola, numeri grandi
+     abbastanza da leggersi in uno screenshot. */
+  .diary{margin-top:12px}
+  .dy-lbl{text-align:center;font-size:9.5px;font-weight:800;letter-spacing:1.4px;
+    color:rgba(255,255,255,.35)}
+  .dy-row{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin-top:5px}
+  .dy-chip{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:800;
+    background:rgba(16,32,52,.62);border:2px solid rgba(255,255,255,.12);
+    color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
+  .dy-chip b{color:#8fe3ff;font-size:12.5px}
+  /* la torre in corso: quella che stai ancora provando */
+  .dy-chip.now{border-color:rgba(255,210,75,.55);background:rgba(60,45,16,.5)}
+  .dy-chip.now b{color:#ffd24b}
+  /* l'asterisco dice che lì hai usato la seconda occasione */
+  .dy-chip i{font-style:normal;color:#7ce0a0}
+
   /* la marca della build: serve a sapere, guardando il telefono, se la
      pagina che hai davanti è quella appena pubblicata o una in cache */
   .build-tag{margin-top:10px;text-align:center;font-size:9.5px;font-weight:700;
@@ -358,12 +375,16 @@
   </div>
 
   <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
+  <div class="diary hidden" id="diary">
+    <div class="dy-lbl">TENTATIVI PER TORRE</div>
+    <div class="dy-row" id="dyRow"></div>
+  </div>
   <div class="build-tag" id="buildTag"></div>
 </div>
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260910-0019';</script>
+<script>window.BUILD = '260911-2338';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

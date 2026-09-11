@@ -345,7 +345,20 @@ C'è anche un motivo che guarda avanti: in un gioco pubblicato questo è
 esattamente il punto dove si mette la pubblicità con premio. Il prototipo si
 porta dietro già la struttura giusta.
 
-## 7. Le zone
+## 6d. Il diario della salita
+
+Il simulatore dice una cosa, un pollice su un telefono ne dice un'altra — e
+finora l'unico modo di confrontarle era chiedere a qualcuno di tenere il conto
+a mente mentre gioca, che è il modo migliore per avere un dato sbagliato.
+
+Adesso lo conta il gioco: `meta.tries` sale ad ogni corsa, e alla vittoria
+finisce nel diario insieme al numero della torre e a un asterisco se lì è
+stata usata la seconda occasione. In fondo al menù diventa una riga di
+pastiglie — `T1 3 · T2 1 · T3 2*` — fatta apposta per essere fotografata:
+una riga sola, numeri abbastanza grandi da leggersi in uno screenshot.
+
+La rinascita lo azzera: è una salita nuova, e mescolarla alla precedente
+renderebbe il dato inutile proprio quando serve.
 
 Ogni torre cambia mondo: Valle Gelata, Bosco Rosso, Dune d'Ossa, Notte di Rúna.
 Cambiano cielo (sfumatura ridisegnata su canvas), nebbia, luce ambientale,
