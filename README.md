@@ -105,11 +105,13 @@ comprare, uno per rimettersi quello che hai già.
 `T1 3 · T2 1 · T3 2*`, dove l'asterisco segna dove hai usato la seconda
 occasione. Serve a tarare la difficoltà su una partita vera.
 
-**I colpi.** Ogni impatto scuote la camera in proporzione a quanto è grosso —
-un blocco del muro appena, una colonna sbagliata parecchio, il carceriere che
-cade tutto — ferma il tempo per qualche centesimo e fa partire il numero dal
-punto colpito invece che dal centro dello schermo. Chi ha chiesto meno
-movimento al sistema operativo non ha né scossa né fermo-immagine.
+**I colpi.** Ogni impatto dà uno strappo alla camera in proporzione a quanto è
+grosso — un blocco del muro appena, una colonna sbagliata parecchio, il
+carceriere che cade tutto — fa partire il numero dal punto colpito invece che
+dal centro dello schermo e manda in aria sedici schegge di due taglie. Il
+tempo non si ferma mai mentre corri: solo sul colpo che stende il carceriere.
+Chi ha chiesto meno movimento al sistema operativo non ha né strappo né
+fermo-immagine.
 
 **I cartelli.** Piantati di traverso al muro segnano dove sei arrivato: uno
 azzurro sull'ultima corsa, uno dorato sul record.

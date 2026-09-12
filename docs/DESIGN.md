@@ -551,14 +551,14 @@ gioco *sapeva* la differenza, il giocatore no.
 
 Tre cose, nessuna delle quali cambia una regola:
 
-1. **La camera trema.** `impatto(forza, fermo)` alza una riserva di scossa da
-   0 a 1 che cala da sola; ogni fotogramma ne esce uno scostamento casuale
-   proporzionale al *quadrato* di quel che resta, così parte forte e smette
-   in fretta invece di sfumare per un secondo. La forza è tarata sull'evento:
-   0,16 per un blocco del muro (ce ne sono trenta di fila, e una scossa piena
-   trenta volte è nausea), 0,34 per una colonna verde, 0,62 per una rossa —
-   sbagliare deve farsi sentire più che indovinare — e 1 quando il carceriere
-   cade.
+1. **La camera dà uno strappo.** `impatto(forza, fermo)` alza una riserva di
+   scossa da 0 a 1 che cala da sola; ogni fotogramma ne esce uno scostamento
+   casuale proporzionale al *quadrato* di quel che resta, così parte forte e
+   smette in fretta invece di sfumare per un secondo. La forza è tarata
+   sull'evento: 0,3 per un blocco del muro (ce ne sono trenta di fila, e una
+   scossa piena trenta volte è nausea), 0,7 per una colonna verde, 0,95 per
+   una rossa — sbagliare deve farsi sentire più che indovinare — e 1,2 quando
+   il carceriere cade.
 
    Il punto delicato: la posizione della camera è **interpolata** verso il suo
    bersaglio, non riscritta. Uno scostamento sommato lì dentro non sparisce,
@@ -574,15 +574,45 @@ Tre cose, nessuna delle quali cambia una regola:
    colpito e ne ricava una percentuale, tenuta lontana dai bordi perché un
    numero mezzo fuori è un numero non letto.
 
-3. **Un fermo-immagine di qualche centesimo.** Il trucco più vecchio del
-   genere: il tempo di gioco quasi si ferma per 20–140 ms e il colpo sembra
-   pesare. Si conta in tempo vero e si spende sul tempo di gioco, così
-   l'attesa finisce anche a dieci fotogrammi al secondo.
+3. **Le schegge.** Un pezzo che vola ha una direzione e una velocità, cioè
+   racconta da solo quanto è stato forte il colpo, mentre un numero è solo un
+   numero: sedici pezzi per colonna, e uno su quattro grosso e lento mentre
+   gli altri schizzano — è la differenza di taglia che fa sembrare una cosa
+   rotta invece di una manciata di coriandoli. Un tetto a 150 schegge vive
+   evita che una fila fitta accumuli costo.
 
 Chi ha chiesto **meno movimento** al sistema operativo non ha né scossa né
 fermo-immagine: `prefers-reduced-motion` si legge una volta all'avvio e
 `impatto()` esce subito. Le scosse di camera sono la prima cosa che dà la
 nausea, e su un telefono in mano non è un dettaglio teorico.
+
+### E perché il fermo-immagine è durato un giorno
+
+C'era anche un **fermo-immagine**: il tempo di gioco quasi fermo per 20–140 ms
+a ogni colpo, il trucco più vecchio del genere. La prima cosa detta da chi ha
+giocato è stata *"sembra che lagghi"*, e aveva ragione — ed era misurabile:
+
+| | prima | adesso |
+|---|---|---|
+| tempo fermo su colonna verde | 50 ms a 1/10 di velocità (≈3 fotogrammi) | niente |
+| strappo di camera | 0,098 unità su 11 di schermo = **0,9%** | 0,29 = **2,7%** |
+| inclinazione | 0,2° | 1,4° |
+| schegge | 8 | 16, di due taglie |
+
+Il peggio dei due mondi: si sentiva il fermo e non si vedeva il colpo. E il
+fermo-immagine rallentava anche le schegge, cioè l'unica parte che già
+funzionava.
+
+Il fermo-immagine è un trucco da picchiaduro, e là funziona perché il colpo è
+un evento isolato con la sua rincorsa: il tempo che si ferma lo sottolinea. In
+un runner il mondo scorre sempre, e fermarlo non legge come pugno, legge come
+fotogramma perso. È rimasto in un posto solo — il colpo che stende il
+carceriere, dove la corsa è già ferma e il blocco si legge per quello che è.
+
+La lezione generale: **l'ampiezza di una scossa va letta in percentuale di
+schermo, non in unità di mondo.** La camera ne inquadra circa 11 in altezza,
+quindi 0,1 unità è lo 0,9% e non si vede. Un impatto solido sta fra l'1% e il
+3%; il 5% è una punizione, l'8% è una cosa che succede una volta.
 
 La prova del fumo adesso guarda anche questo: registra ogni numero che
 compare e pretende che abbia una posizione finita e dentro lo schermo — una

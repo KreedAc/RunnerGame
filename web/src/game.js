@@ -449,17 +449,29 @@ function fadeLabels() {
 
 /* ------------------------------ IMPATTI --------------------------------
    Un colpo che vale mille punti e un colpo che ne vale dieci si vedevano
-   uguali: stesso numero al centro dello schermo, stessa camera ferma. Tre
-   cose piccole, e nessuna cambia una regola:
+   uguali: stesso numero al centro dello schermo, stessa camera ferma.
 
-   - la camera trema, con forza proporzionale a quanto è grosso il colpo;
    - il numero parte dal punto colpito invece che dal centro dello schermo,
      così si vede *cosa* hai preso e non solo che hai preso qualcosa;
-   - un fermo-immagine di qualche centesimo, che è il trucco più vecchio del
-     genere: il tempo si ferma un istante e il colpo sembra pesare.
+   - la camera dà uno strappo, corto e forte;
+   - le schegge, che sono la parte che si legge meglio di tutte.
 
-   Chi ha chiesto meno movimento al sistema operativo non ne ha nessuna: le
-   scosse di camera sono la prima cosa che dà la nausea. */
+   **Niente fermo-immagine durante la corsa.** C'era, e la prima cosa detta
+   da chi ha giocato è stata "sembra che lagghi". Aveva ragione, ed era
+   misurabile: fermare il tempo per 50 ms a un decimo di velocità sono tre
+   fotogrammi quasi immobili, mentre la scossa spostava la camera di 0,098
+   unità su ~13 di schermo, cioè lo 0,7% — si sentiva il fermo e non si
+   vedeva il colpo. Il peggio dei due mondi.
+
+   Il fermo-immagine è un trucco da picchiaduro: là il colpo è un evento
+   isolato, con la sua rincorsa, e il tempo che si ferma lo sottolinea. In
+   un runner il mondo scorre sempre: fermarlo non legge come pugno, legge
+   come fotogramma perso — e in più rallenta le schegge, che sono la cosa
+   che funziona. Resta solo sul colpo che stende il carceriere, dove la
+   corsa è già ferma e il fermo si legge per quello che è.
+
+   Chi ha chiesto meno movimento al sistema operativo non ha nessuna delle
+   due: le scosse di camera sono la prima cosa che dà la nausea. */
 const MENO_MOTO = (() => {
   try { return matchMedia('(prefers-reduced-motion: reduce)').matches; }
   catch (e) { return false; }
@@ -487,14 +499,22 @@ function scossaVia() {
   scossaOff.set(0, 0, 0);
 }
 
+/* Ampiezza e durata vanno lette in percentuale di schermo, non in unità:
+   la camera inquadra circa 13 unità in altezza, quindi 0,1 unità è lo 0,7%
+   e non si vede. Una colonna verde adesso strappa di 0,36 unità — il 2,8%
+   — e finisce in 130 ms. Corto e forte: è quello che il pollice legge come
+   impatto, mentre lungo e debole legge come camera ballerina. */
+const SCOSSA_CALO = 4.5;                     // al secondo: 0.6 dura ~130 ms
+const SCOSSA_AMP  = 0.75;                    // unità di mondo al colpo pieno
+
 function scossaMetti(dt) {
   if (scossa <= 0) return;
-  scossa = Math.max(0, scossa - dt * 2.6);
-  const q = scossa * scossa;                 // quadratico: smette in fretta
-  scossaOff.set((Math.random() * 2 - 1) * q * 0.85,
-                (Math.random() * 2 - 1) * q * 0.55, 0);
+  scossa = Math.max(0, scossa - dt * SCOSSA_CALO);
+  const q = scossa * scossa;                 // quadratico: parte forte, molla subito
+  scossaOff.set((Math.random() * 2 - 1) * q * SCOSSA_AMP,
+                (Math.random() * 2 - 1) * q * SCOSSA_AMP * 0.6, 0);
   camera.position.add(scossaOff);
-  camera.rotation.z += (Math.random() * 2 - 1) * q * 0.03;
+  camera.rotation.z += (Math.random() * 2 - 1) * q * 0.05;
 }
 
 /* Dove finisce sullo schermo un punto del mondo, in percentuale. Si tiene
@@ -511,14 +531,36 @@ function puntoSchermo(obj, alto) {
 /* ------------------------------ RISOLUZIONE ---------------------------- */
 const debris = [];
 
+/* Le schegge sono la parte che si legge meglio: un pezzo che vola ha una
+   direzione e una velocità, cioè racconta da solo quanto è stato forte il
+   colpo — mentre un numero è solo un numero. Quindi è qui che va messa
+   l'energia, non nel fermare il tempo.
+
+   Una scheggia su quattro è un pezzo grosso e lento, le altre sono schizzi
+   piccoli e veloci: la differenza di taglia è quello che fa sembrare una
+   cosa rotta invece di una manciata di coriandoli. */
+const DEBRIS_MAX = 150;      // oltre, le piu' vecchie spariscono
+
 function shatter(group, n, material) {
+  /* Sedici pezzi per colonna sono tanti apposta, ma su una fila fitta
+     potrebbero accumularsi — e sarebbe beffardo aggiungere costo proprio
+     mentre si toglie il fermo-immagine per non sembrare lenti. */
+  while (debris.length + n > DEBRIS_MAX) {
+    world.remove(debris.shift());
+  }
   for (let i = 0; i < n; i++) {
+    const grosso = i % 4 === 0;
     const m = new THREE.Mesh(GEO.octa, material || MAT.stone);
-    m.scale.setScalar(rnd(0.3, 0.65));
+    m.scale.set(rnd(0.3, 0.7) * (grosso ? 1.9 : 1),
+                rnd(0.3, 0.7) * (grosso ? 1.5 : 1),
+                rnd(0.3, 0.7) * (grosso ? 1.9 : 1));
+    m.rotation.set(rnd(0, 3), rnd(0, 3), rnd(0, 3));
     m.position.copy(group.position);
-    m.position.y += rnd(0.6, 2.6);
-    m.userData.vel = new THREE.Vector3(rnd(-7, 7), rnd(5, 10), rnd(2, 9));
-    m.userData.life = 1.1;
+    m.position.y += rnd(0.5, 3.0);
+    const v = grosso ? 0.6 : 1;              // i pezzi grossi non schizzano
+    m.userData.vel = new THREE.Vector3(rnd(-13, 13) * v, rnd(7, 15) * v, rnd(1, 14) * v);
+    m.userData.gira = new THREE.Vector3(rnd(-9, 9), rnd(-9, 9), rnd(-9, 9));
+    m.userData.life = rnd(0.9, 1.4);
     world.add(m);
     debris.push(m);
   }
@@ -532,8 +574,8 @@ function hitPillar(it) {
     const gain = Math.round(it.hp * 3 * gainMul());
     run.power += gain;
     popup('+' + fmt(gain), '#8dff87', dove);
-    impatto(0.34, 0.05);
-    shatter(it.obj, 8, MAT.good);
+    impatto(0.7);
+    shatter(it.obj, 16, MAT.good);
   } else {
     /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
        incontrano più spesso, e il prezzo dev'essere abbastanza alto da
@@ -541,8 +583,8 @@ function hitPillar(it) {
     const loss = Math.max(3, Math.round(run.power * 0.18));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff7a6e', dove);
-    impatto(0.62, 0.09);              // sbagliare deve farsi sentire di più
-    shatter(it.obj, 8, MAT.bad);
+    impatto(0.95);                    // sbagliare deve farsi sentire di più
+    shatter(it.obj, 16, MAT.bad);
   }
   it.obj.visible = false;
 }
@@ -556,14 +598,14 @@ function hitEnemy(it) {
     run.coins += coins;
     run.power += Math.round(it.hp * 1.5 * gainMul());
     popup('+' + fmt(coins) + ' 🪙', '#ffd24b', dove);
-    impatto(0.42, 0.06);
+    impatto(0.7);
     it.mob.userData.dying = true;
     it.sprite.visible = false;
   } else {
     const loss = Math.max(5, Math.round(run.power * 0.22));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff5a4a', dove);
-    impatto(0.7, 0.1);
+    impatto(0.95);
     it.obj.visible = false;
   }
 }
@@ -572,7 +614,7 @@ function takeWeapon(it) {
   run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
   setWeapon(hero, run.weapon);
   popup('⚔ ' + weaponName(run.weapon), '#ffe07a', puntoSchermo(it.obj, 2.6));
-  impatto(0.3, 0.07);                 // l'arma nuova è un momento, non un dettaglio
+  impatto(0.45);                      // l'arma nuova è un momento, non un dettaglio
   it.obj.visible = false;
   refreshThreats();
 }
@@ -597,12 +639,12 @@ function takePickup(it) {
 function hitWallBlock(it) {
   const dove = puntoSchermo(it.obj, 1.5);
   run.power -= it.cost;
-  shatter(it.obj, 6, it.chest ? MAT.gold : MAT.wall);
+  shatter(it.obj, it.chest ? 14 : 9, it.chest ? MAT.gold : MAT.wall);
   it.obj.visible = false;
   run.broken++;
   /* Trenta blocchi di fila: qui la scossa va tenuta bassa, altrimenti il
      muro diventa un frullatore. Lo scrigno è l'eccezione, è raro. */
-  impatto(it.chest ? 0.38 : 0.16, it.chest ? 0.05 : 0.02);
+  impatto(it.chest ? 0.55 : 0.3);
   if (it.chest) {
     const c = Math.round(it.loot * coinMul());
     run.coins += c;
@@ -651,8 +693,11 @@ function updateBossFight(dt) {
      scossa a ogni fotogramma */
   if (!MENO_MOTO) scossa = Math.max(scossa, 0.3);
 
-  if (run.bossHp <= 0)      { impatto(1, 0.14); endRun('win'); }
-  else if (run.power <= 0)  { impatto(1, 0.14); endRun('boss'); }
+  /* L'unico fermo-immagine rimasto: qui non si sta correndo, si sta
+     scambiando colpi da fermi, e il tempo che si blocca sull'ultimo si
+     legge per quello che è. */
+  if (run.bossHp <= 0)      { impatto(1.2, 0.12); endRun('win'); }
+  else if (run.power <= 0)  { impatto(1.2, 0.12); endRun('boss'); }
 }
 
 /* ------------------------------ HUD ------------------------------------ */
@@ -1019,7 +1064,9 @@ function update(dt) {
     const d = debris[i];
     d.userData.vel.y -= 26 * dt;
     d.position.addScaledVector(d.userData.vel, dt);
-    d.rotation.x += dt * 6; d.rotation.z += dt * 5;
+    d.rotation.x += dt * d.userData.gira.x;
+    d.rotation.y += dt * d.userData.gira.y;
+    d.rotation.z += dt * d.userData.gira.z;
     d.userData.life -= dt;
     if (d.userData.life <= 0) { world.remove(d); debris.splice(i, 1); }
   }
