@@ -85,7 +85,8 @@ colano i fiumi di lava e tre vulcani fumano lungo il percorso, nel Cielo
 Spezzato metà del paesaggio non tocca terra.
 
 **Il boss.** Sfondati tutti e trenta, ai piedi della torre ti aspetta il
-carceriere. Quello che ti resta è la forza con cui lo affronti: i due numeri
+carceriere della zona — il Signore del Vulcano, il Mangiacenere, il Re di
+Vetro: stessa stazza e stessa mazza, colori e nome del posto. Quello che ti resta è la forza con cui lo affronti: i due numeri
 scendono insieme, chi arriva a zero cade. Se vinci, la camera sale sul
 balcone e la principessa è libera — torre successiva, più dura e più veloce
 (la corsa accelera da 15 a 21 con le torri; solo il muro resta al suo ritmo).
@@ -105,13 +106,12 @@ comprare, uno per rimettersi quello che hai già.
 `T1 3 · T2 1 · T3 2*`, dove l'asterisco segna dove hai usato la seconda
 occasione. Serve a tarare la difficoltà su una partita vera.
 
-**I colpi.** Ogni impatto dà uno strappo alla camera in proporzione a quanto è
-grosso — un blocco del muro appena, una colonna sbagliata parecchio, il
-carceriere che cade tutto — fa partire il numero dal punto colpito invece che
-dal centro dello schermo e manda in aria sedici schegge di due taglie. Il
-tempo non si ferma mai mentre corri: solo sul colpo che stende il carceriere.
-Chi ha chiesto meno movimento al sistema operativo non ha né strappo né
-fermo-immagine.
+**I colpi.** Ogni impatto dà uno strappo alla camera — un rinculo in una
+direzione sola, non un tremolio: in un runner una scossa che cambia verso ad
+ogni fotogramma si legge come lag, non come colpo. Il numero parte dal punto
+colpito e sedici schegge di due taglie volano via. Il tempo non si ferma mai
+mentre corri: solo sul colpo che stende il carceriere. Chi ha chiesto meno
+movimento al sistema operativo non ha né strappo né fermo-immagine.
 
 **I cartelli.** Piantati di traverso al muro segnano dove sei arrivato: uno
 azzurro sull'ultima corsa, uno dorato sul record.
@@ -133,6 +133,7 @@ docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
 tools/sim.js          simulatore dell'economia: quanti tentativi costa ogni torre
 tools/smoke.js        gioca una corsa e controlla che nessun numero impazzisca
 tools/skins.js        compra, indossa e salva un aspetto: il giro dei diamanti
+tools/misura-home.js  quanti pixel serve il menù e chi se li prende
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
 .github/workflows/    pubblicazione automatica su GitHub Pages ad ogni push

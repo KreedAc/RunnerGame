@@ -477,14 +477,25 @@ const MENO_MOTO = (() => {
   catch (e) { return false; }
 })();
 
-let scossa = 0;                     // 0..1, quanto sta tremando adesso
+let scossa = 0;                     // quanto è ancora vivo lo strappo
 let fermo  = 0;                     // secondi di fermo-immagine da consumare
+let rollio = 1;                     // da che parte si inclina, questa volta
 const scossaOff = new THREE.Vector3();
+const scossaDir = new THREE.Vector3();
 
+/* Uno strappo per volta, e lo detta il colpo più forte: due scosse sommate
+   si annullano a vicenda e tornano a essere rumore. */
 function impatto(forza, stop) {
   if (MENO_MOTO) return;
-  scossa = Math.min(1, scossa + forza);
-  fermo  = Math.max(fermo, stop || 0);
+  if (forza >= scossa) {
+    scossa = forza;
+    /* Una direzione sola, scelta adesso: in giù soprattutto — è il verso in
+       cui un colpo affonda — con una spinta all'indietro e un po' di lato.
+       Vedi sotto perché la direzione conta più dell'ampiezza. */
+    scossaDir.set(rnd(-0.5, 0.5), -1, 0.38).normalize();
+    rollio = Math.random() < 0.5 ? -1 : 1;
+  }
+  fermo = Math.max(fermo, stop || 0);
 }
 
 /* La scossa è uno scostamento della camera, non una posizione: la posizione
@@ -499,22 +510,32 @@ function scossaVia() {
   scossaOff.set(0, 0, 0);
 }
 
-/* Ampiezza e durata vanno lette in percentuale di schermo, non in unità:
-   la camera inquadra circa 13 unità in altezza, quindi 0,1 unità è lo 0,7%
-   e non si vede. Una colonna verde adesso strappa di 0,36 unità — il 2,8%
-   — e finisce in 130 ms. Corto e forte: è quello che il pollice legge come
-   impatto, mentre lungo e debole legge come camera ballerina. */
-const SCOSSA_CALO = 4.5;                     // al secondo: 0.6 dura ~130 ms
-const SCOSSA_AMP  = 0.75;                    // unità di mondo al colpo pieno
+/* La forma conta più dell'ampiezza.
+
+   La prima versione tirava a caso la camera ad ogni fotogramma. Sembrava
+   che il gioco perdesse fotogrammi, e per un motivo preciso: in un runner
+   il mondo scorre sempre nella stessa direzione, e uno scostamento che
+   cambia verso sessanta volte al secondo rompe quella continuità — l'occhio
+   non legge "colpo", legge "il telefono non ce la fa". Alzare l'ampiezza
+   peggiorava le cose invece di migliorarle.
+
+   Adesso è un colpo solo: una direzione scelta all'impatto, l'ampiezza che
+   scende col quadrato di quel che resta, e la camera che torna al suo posto
+   senza mai invertire. È un rinculo, e si legge come tale anche a un decimo
+   dell'ampiezza di prima.
+
+   In percentuale di schermo (la camera ne inquadra ~11 unità in altezza):
+   colonna verde ~1,1%, colonna rossa ~2,6%, carceriere ~5%. */
+const SCOSSA_CALO = 4.5;                     // al secondo: 0.55 dura ~120 ms
+const SCOSSA_AMP  = 0.55;                    // unità di mondo al colpo pieno
 
 function scossaMetti(dt) {
   if (scossa <= 0) return;
   scossa = Math.max(0, scossa - dt * SCOSSA_CALO);
-  const q = scossa * scossa;                 // quadratico: parte forte, molla subito
-  scossaOff.set((Math.random() * 2 - 1) * q * SCOSSA_AMP,
-                (Math.random() * 2 - 1) * q * SCOSSA_AMP * 0.6, 0);
+  const q = scossa * scossa;                 // parte forte, molla subito
+  scossaOff.copy(scossaDir).multiplyScalar(q * SCOSSA_AMP);
   camera.position.add(scossaOff);
-  camera.rotation.z += (Math.random() * 2 - 1) * q * 0.05;
+  camera.rotation.z += rollio * q * 0.04;
 }
 
 /* Dove finisce sullo schermo un punto del mondo, in percentuale. Si tiene
@@ -574,7 +595,7 @@ function hitPillar(it) {
     const gain = Math.round(it.hp * 3 * gainMul());
     run.power += gain;
     popup('+' + fmt(gain), '#8dff87', dove);
-    impatto(0.7);
+    impatto(0.55);
     shatter(it.obj, 16, MAT.good);
   } else {
     /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
@@ -583,7 +604,7 @@ function hitPillar(it) {
     const loss = Math.max(3, Math.round(run.power * 0.18));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff7a6e', dove);
-    impatto(0.95);                    // sbagliare deve farsi sentire di più
+    impatto(0.8);                     // sbagliare deve farsi sentire di più
     shatter(it.obj, 16, MAT.bad);
   }
   it.obj.visible = false;
@@ -598,14 +619,14 @@ function hitEnemy(it) {
     run.coins += coins;
     run.power += Math.round(it.hp * 1.5 * gainMul());
     popup('+' + fmt(coins) + ' 🪙', '#ffd24b', dove);
-    impatto(0.7);
+    impatto(0.6);
     it.mob.userData.dying = true;
     it.sprite.visible = false;
   } else {
     const loss = Math.max(5, Math.round(run.power * 0.22));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff5a4a', dove);
-    impatto(0.95);
+    impatto(0.8);
     it.obj.visible = false;
   }
 }
@@ -614,7 +635,7 @@ function takeWeapon(it) {
   run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
   setWeapon(hero, run.weapon);
   popup('⚔ ' + weaponName(run.weapon), '#ffe07a', puntoSchermo(it.obj, 2.6));
-  impatto(0.45);                      // l'arma nuova è un momento, non un dettaglio
+  impatto(0.4);                       // l'arma nuova è un momento, non un dettaglio
   it.obj.visible = false;
   refreshThreats();
 }
@@ -644,7 +665,7 @@ function hitWallBlock(it) {
   run.broken++;
   /* Trenta blocchi di fila: qui la scossa va tenuta bassa, altrimenti il
      muro diventa un frullatore. Lo scrigno è l'eccezione, è raro. */
-  impatto(it.chest ? 0.55 : 0.3);
+  impatto(it.chest ? 0.45 : 0.22);
   if (it.chest) {
     const c = Math.round(it.loot * coinMul());
     run.coins += c;
@@ -652,7 +673,7 @@ function hitWallBlock(it) {
   }
   if (!run.beatRecord && meta.best > 0 && run.broken > meta.best) {
     run.beatRecord = true;
-    flashBanner(t('run.record'));
+    flashBanner(t('run.record'), 'good');
   }
   /* Prima il muro, poi la potenza: se l'ultimo blocco ti prosciuga fino a
      zero il muro l'hai comunque sfondato, e a fermarti dev'essere il boss. */
@@ -671,7 +692,7 @@ function startBossFight() {
 
   heroSprite = labelSprite(fmt(run.power), '#8dff87', 1.0);
   scene.add(heroSprite);
-  flashBanner(t('run.jailer'));
+  flashBanner(t(themeFor(meta.level).bossKey), 'bad');
 }
 
 function updateBossFight(dt) {
@@ -691,13 +712,13 @@ function updateBossFight(dt) {
   run.swing = 0.3;
   /* lo scontro dura un secondo e mezzo: un rombo basso e costante, non una
      scossa a ogni fotogramma */
-  if (!MENO_MOTO) scossa = Math.max(scossa, 0.3);
+  if (!MENO_MOTO && scossa < 0.22) { scossa = 0.22; scossaDir.set(0, -1, 0.2).normalize(); }
 
   /* L'unico fermo-immagine rimasto: qui non si sta correndo, si sta
      scambiando colpi da fermi, e il tempo che si blocca sull'ultimo si
      legge per quello che è. */
-  if (run.bossHp <= 0)      { impatto(1.2, 0.12); endRun('win'); }
-  else if (run.power <= 0)  { impatto(1.2, 0.12); endRun('boss'); }
+  if (run.bossHp <= 0)      { impatto(1.1, 0.12); endRun('win'); }
+  else if (run.power <= 0)  { impatto(1.1, 0.12); endRun('boss'); }
 }
 
 /* ------------------------------ HUD ------------------------------------ */
@@ -840,7 +861,7 @@ function doRevive(outcome) {
   run.revived = true;
   meta.towerRevived = 1;          // il diario lo segna con un asterisco
   run.power = reviveAmount();
-  flashBanner(t('rv.taken'));
+  flashBanner(t('rv.taken'), 'good');
   renderHud();
   /* si riprende esattamente da dove si era caduti: davanti al muro col
      conto dei blocchi intatto, o nel duello con il boss già ferito */
@@ -884,10 +905,10 @@ function finishRun(outcome) {
   writeSave(meta);
 
   if (outcome === 'win') {
-    flashBanner(t('run.freedBig'));
+    flashBanner(t('run.freedBig'), 'good');
     if (boss) boss.userData.falling = true;
   } else {
-    flashBanner(t(OUTCOMES[outcome]));
+    flashBanner(t(OUTCOMES[outcome]), 'bad');
     hero.userData.falling = true;
   }
   setTimeout(backToHub, outcome === 'win' ? 3400 : 2200);

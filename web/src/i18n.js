@@ -121,7 +121,17 @@ const STRINGS = {
     'z.lava'      : 'BOCCA DI FUOCO',
     'z.ash'       : 'PALUDE DI CENERE',
     'z.glass'     : 'FORESTA DI VETRO',
-    'z.sky'       : 'CIELO SPEZZATO'
+    'z.sky'       : 'CIELO SPEZZATO',
+
+    /* --- il carceriere, uno per zona --- */
+    'bs.ice'      : 'IL GUARDIANO DEL GELO!',
+    'bs.wood'     : 'IL SIGNORE DEL BOSCO!',
+    'bs.bone'     : 'IL RE D\'OSSA!',
+    'bs.rune'     : 'L\'OMBRA DI RÚNA!',
+    'bs.lava'     : 'IL SIGNORE DEL VULCANO!',
+    'bs.ash'      : 'IL MANGIACENERE!',
+    'bs.glass'    : 'IL RE DI VETRO!',
+    'bs.sky'      : 'IL SIGNORE DEL TUONO!'
   },
 
   en: {
@@ -212,7 +222,16 @@ const STRINGS = {
     'z.lava'      : 'MOUTH OF FIRE',
     'z.ash'       : 'ASH MARSH',
     'z.glass'     : 'GLASS FOREST',
-    'z.sky'       : 'BROKEN SKY'
+    'z.sky'       : 'BROKEN SKY',
+
+    'bs.ice'      : 'THE FROST WARDEN!',
+    'bs.wood'     : 'THE LORD OF THE WOODS!',
+    'bs.bone'     : 'THE BONE KING!',
+    'bs.rune'     : 'THE SHADE OF RÚNA!',
+    'bs.lava'     : 'THE VOLCANO LORD!',
+    'bs.ash'      : 'THE ASH EATER!',
+    'bs.glass'    : 'THE GLASS KING!',
+    'bs.sky'      : 'THE THUNDER LORD!'
   }
 };
 

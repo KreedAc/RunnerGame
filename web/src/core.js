@@ -61,6 +61,7 @@ const THEMES = [
     slab: 0x5cc0dc, slabDark: 0x3690b0,
     rock: 0x77899a, rockDark: 0x556474,
     tree: 0x25795c, trunk: 0x6b4a35, snowy: true,
+    boss: 0x4e79a8, bossDark: 0x2f5580, bossKey: 'bs.ice',
     cloud: 0xffffff, hemiSky: 0xffffff, hemiI: 0.72, sunI: 0.72 },
 
   { key: 'z.wood',
@@ -69,6 +70,7 @@ const THEMES = [
     slab: 0x9c6b3c, slabDark: 0x744d2a,
     rock: 0x8a6a52, rockDark: 0x63483a,
     tree: 0xc4522e, trunk: 0x5c3b26, snowy: false,
+    boss: 0xb35a2a, bossDark: 0x7a3716, bossKey: 'bs.wood',
     cloud: 0xffe6c4, hemiSky: 0xfff0d8, hemiI: 0.74, sunI: 0.66 },
 
   { key: 'z.bone',
@@ -77,6 +79,7 @@ const THEMES = [
     slab: 0xdcc48c, slabDark: 0xb59c64,
     rock: 0xc4b08a, rockDark: 0x998a68,
     tree: 0x7a9448, trunk: 0x6b5334, snowy: false,
+    boss: 0xa2925f, bossDark: 0x6f6238, bossKey: 'bs.bone',
     cloud: 0xfff6e0, hemiSky: 0xfffaf0, hemiI: 0.78, sunI: 0.7 },
 
   { key: 'z.rune',
@@ -85,6 +88,7 @@ const THEMES = [
     slab: 0x3a3268, slabDark: 0x272248,
     rock: 0x4c4470, rockDark: 0x352f52,
     tree: 0x2c6a72, trunk: 0x3a2f4a, snowy: false,
+    boss: 0x6a4ba8, bossDark: 0x422c74, bossKey: 'bs.rune',
     cloud: 0x9d92d8, hemiSky: 0xa8b8ff, hemiI: 0.5, sunI: 0.34 },
 
   /* Il vulcano è l'unica zona che aggiunge roba al mondo invece di
@@ -98,6 +102,7 @@ const THEMES = [
     slab: 0x3d3034, slabDark: 0x261e22,
     rock: 0x4e3c3a, rockDark: 0x2c2223,
     tree: 0x5a2a1e, trunk: 0x2b1d18, snowy: false,
+    boss: 0x9c2c18, bossDark: 0x5e140c, bossKey: 'bs.lava',
     cloud: 0x8a4028, hemiSky: 0xff9a5a, hemiI: 0.52, sunI: 0.42,
     lava: 0xff5a1e, lavaHot: 0xffc23c },
 
@@ -107,6 +112,7 @@ const THEMES = [
     slab: 0x4a4f47, slabDark: 0x32362f,
     rock: 0x565a50, rockDark: 0x3b3f36,
     tree: 0x6d7a4a, trunk: 0x2f2a22, snowy: false,
+    boss: 0x5f6b4e, bossDark: 0x3a4330, bossKey: 'bs.ash',
     cloud: 0xb4b8ac, hemiSky: 0xd4d8cc, hemiI: 0.62, sunI: 0.44 },
 
   { key: 'z.glass',
@@ -115,6 +121,7 @@ const THEMES = [
     slab: 0x9a9cd8, slabDark: 0x6a6aa8,
     rock: 0xaeb4de, rockDark: 0x7b80b4,
     tree: 0x58d8e0, trunk: 0x7e8ea8, snowy: false,
+    boss: 0x6a80d0, bossDark: 0x42549c, bossKey: 'bs.glass',
     cloud: 0xf0e4ff, hemiSky: 0xe8f4ff, hemiI: 0.8, sunI: 0.66 },
 
   { key: 'z.sky',
@@ -123,6 +130,7 @@ const THEMES = [
     slab: 0x8d7a62, slabDark: 0x64543f,
     rock: 0x9a8a72, rockDark: 0x6d5f4c,
     tree: 0x3f8a4e, trunk: 0x5c4430, snowy: false,
+    boss: 0x3f7fd0, bossDark: 0x275a9c, bossKey: 'bs.sky',
     cloud: 0xffffff, hemiSky: 0xffffff, hemiI: 0.85, sunI: 0.78,
     floating: true }
 ];
@@ -433,6 +441,10 @@ function applyTheme(theme) {
   C.tree = theme.tree; C.trunk = theme.trunk;
   C.snowy = theme.snowy;
   C.cloud = theme.cloud;
+  /* Anche il carceriere è del posto: stessa stazza e stessa mazza, colori
+     e nome della zona. È l'unico avversario del gioco, e vederlo sempre
+     identico faceva sembrare uguali anche le otto torri. */
+  C.boss = theme.boss; C.bossDark = theme.bossDark;
   /* i due campi facoltativi: vanno spenti, non solo accesi, altrimenti la
      zona dopo si porta dietro il vulcano di quella prima */
   C.lava = theme.lava || 0;

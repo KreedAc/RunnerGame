@@ -90,7 +90,7 @@ function tapRebirth() {
   meta.diary = []; meta.tries = 0; meta.towerRevived = 0;   // nuova salita, diario nuovo
   rebirthArmed = false;
   writeSave(meta);
-  flashBanner(t('rb.done', gain));
+  flashBanner(t('rb.done', gain), 'good');
   if (rebuildHook) rebuildHook();
   renderHub();
 }
@@ -275,14 +275,14 @@ function tapSkin(i) {
   if (skinArmed !== i) { skinArmed = i; renderSkins(); return; }   // primo tocco: il prezzo
 
   const s = SKINS[i];
-  if (meta.gems < s.gems) { flashBanner(t('sk.need', s.gems - meta.gems)); return; }
+  if (meta.gems < s.gems) { flashBanner(t('sk.need', s.gems - meta.gems), 'bad'); return; }
   meta.gems -= s.gems;
   meta.skins = (meta.skins || []).concat(i);
   meta.skin = i;
   skinArmed = -1;
   writeSave(meta);
   if (skinHook) skinHook();
-  flashBanner(t('sk.bought', t(s.key)));
+  flashBanner(t('sk.bought', t(s.key)), 'good');
   renderHub();
 }
 
@@ -306,12 +306,13 @@ function renderBuffRail(buffs) {
   }
 }
 
-/* Striscione a tutto schermo per i momenti che contano (record superato) */
+/* La targa dei momenti che contano. `tono` è 'good', 'bad' o niente: il
+   colore dice com'è andata prima ancora che si legga la scritta. */
 let bannerTimer = 0;
-function flashBanner(text) {
+function flashBanner(text, tono) {
   const el = $('banner');
-  el.textContent = text;
-  el.classList.remove('show');
+  el.querySelector('b').textContent = text;
+  el.className = tono || '';
   void el.offsetWidth;               // forza il riavvio dell'animazione
   el.classList.add('show');
   clearTimeout(bannerTimer);

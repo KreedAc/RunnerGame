@@ -551,14 +551,17 @@ gioco *sapeva* la differenza, il giocatore no.
 
 Tre cose, nessuna delle quali cambia una regola:
 
-1. **La camera dà uno strappo.** `impatto(forza, fermo)` alza una riserva di
-   scossa da 0 a 1 che cala da sola; ogni fotogramma ne esce uno scostamento
-   casuale proporzionale al *quadrato* di quel che resta, così parte forte e
-   smette in fretta invece di sfumare per un secondo. La forza è tarata
-   sull'evento: 0,3 per un blocco del muro (ce ne sono trenta di fila, e una
-   scossa piena trenta volte è nausea), 0,7 per una colonna verde, 0,95 per
-   una rossa — sbagliare deve farsi sentire più che indovinare — e 1,2 quando
-   il carceriere cade.
+1. **La camera dà uno strappo.** `impatto(forza, fermo)` carica una riserva
+   che cala da sola; l'ampiezza scende col *quadrato* di quel che resta, così
+   parte forte e molla subito. La forza è tarata sull'evento: 0,22 per un
+   blocco del muro (ce ne sono trenta di fila, e una scossa piena trenta
+   volte è nausea), 0,55 per una colonna verde, 0,8 per una rossa —
+   sbagliare deve farsi sentire più che indovinare — e 1,1 quando il
+   carceriere cade.
+
+   **La direzione è scelta una volta sola, all'impatto**, e non cambia più
+   finché lo strappo non si esaurisce: in giù soprattutto, con una spinta
+   all'indietro e un po' di lato. Perché conta, vedi sotto.
 
    Il punto delicato: la posizione della camera è **interpolata** verso il suo
    bersaglio, non riscritta. Uno scostamento sommato lì dentro non sparisce,
@@ -585,6 +588,32 @@ Chi ha chiesto **meno movimento** al sistema operativo non ha né scossa né
 fermo-immagine: `prefers-reduced-motion` si legge una volta all'avvio e
 `impatto()` esce subito. Le scosse di camera sono la prima cosa che dà la
 nausea, e su un telefono in mano non è un dettaglio teorico.
+
+### La forma dello strappo conta più dell'ampiezza
+
+Tolto il fermo-immagine, restava una scossa **casuale ad ogni fotogramma**, e
+alla prova del telefono la risposta è stata di nuovo *"sembra che lagghi"* —
+stavolta senza nessun fermo in mezzo. Il motivo è che in un runner il mondo
+scorre sempre nella stessa direzione, e uno scostamento che cambia verso
+sessanta volte al secondo rompe quella continuità: l'occhio non legge "colpo",
+legge "il telefono non ce la fa". Alzare l'ampiezza — che era la reazione
+istintiva, e quella che avevo fatto — peggiora le cose invece di migliorarle,
+perché rende il disturbo più grosso, non più leggibile.
+
+La correzione non è un numero ma una forma: **una direzione sola, scelta
+all'impatto, e la camera che torna al suo posto senza mai invertire.** È un
+rinculo, e si legge come tale a **meno della metà** dell'ampiezza di prima:
+
+| | casuale | rinculo |
+|---|---|---|
+| colonna verde | 2,7% di schermo | 1,2% |
+| colonna rossa | 5,2% | 2,8% |
+| carceriere | 8,7% | 5,7% |
+| inversioni di verso | ~30 al colpo | **0** |
+
+L'ultima riga è la misura che conta, ed è quella che una prova automatica può
+guardare: uno strappo che risale, anche di poco, è indistinguibile da un
+fotogramma perso.
 
 ### E perché il fermo-immagine è durato un giorno
 
@@ -697,6 +726,46 @@ mondo — chi non ce l'ha non paga niente:
 La lava non tocca mai la corsia. Aggiungere un pericolo ambientale sarebbe
 stato facile e sbagliato: in questo gioco si muore di muro e di scelte, non di
 scenografia.
+
+## 7c. Il carceriere è del posto
+
+Le otto zone cambiavano cielo, terra e alberi, ma il carceriere ai piedi della
+torre era sempre lo stesso omone rosa. È l'unico avversario del gioco e la cosa
+che si guarda più da vicino: vederlo identico otto volte faceva sembrare uguali
+anche le otto torri.
+
+Adesso ogni tema porta `boss`, `bossDark` e `bossKey`: stessa stazza, stessa
+corona di ferro, stessa mazza — cambiano i colori e il nome. Il Guardiano del
+Gelo, il Signore del Bosco, il Re d'Ossa, l'Ombra di Rúna, il Signore del
+Vulcano, il Mangiacenere, il Re di Vetro, il Signore del Tuono.
+
+La minaccia non la porta il colore ma il numero rosso sopra la testa e la
+corona: così il carceriere del Cielo Spezzato può essere azzurro senza
+sembrare un amico.
+
+## 7d. La home in uno schermo
+
+Con le otto zone, le bandierine, gli aspetti e il diario, il menù era arrivato
+a 897 px su un telefono che ne mostra 720: il diario — che esiste apposta per
+essere fotografato — finiva sotto la piega, e la prima cosa che ha fatto chi
+giocava è stata scrollare per trovarlo.
+
+Non si è tolto niente. Si è misurato pezzo per pezzo con il DOM e si è tagliato
+dove non si nota:
+
+- bandierine e "ricomincia da capo" su **una riga sola** invece di due (−47 px);
+- titolo da 10,5vw a 9vw e margini stretti (−34);
+- carta della rinascita, riepilogo, potenziamenti e aspetti: padding e corpi
+  ridotti di un paio di punti ciascuno (−60);
+- lo spazio elastico fra il suggerimento e la rinascita da 14 px a 6.
+
+Risultato: **720 px esatti**, tutto dentro, fino a schermi da 700. Sotto, il
+menù torna a scorrere — che è giusto così: il costo di far entrare tutto in
+480 px sarebbe rimpicciolire i bottoni, e da lì si torna al problema di
+`2f`.
+
+`tools/misura-home.js` rifà il conto e stampa chi occupa cosa: è il modo per
+accorgersi che il menù è cresciuto **prima** che lo faccia notare qualcuno.
 
 ## 8. Il muro è pieno, gli ostacoli no
 
