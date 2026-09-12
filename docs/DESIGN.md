@@ -214,6 +214,49 @@ decidere (piene fino a 16 unità, sparite a 34), mentre le colonne della pista,
 distanti 30, vanno viste da lontano per avere il tempo di scegliere la corsia
 (42 e 78). Dalla linea a scacchi si leggono 21 etichette invece di 90.
 
+## 2i. Il giocatore vero è più bravo del "perfetto"
+
+Il simulatore massimizzava ogni singola riga: prendeva **sempre** l'arma a
+terra, e nel muro **sempre** il blocco più economico. Sembrava la definizione
+di gioco ottimo. Una partita vera, raccontata da chi l'ha giocata, dice che è
+sbagliata in tre punti:
+
+1. **L'arma a terra si salta**, se il colpo attuale apre già le colonne
+   davanti. Prenderla costa una riga intera di bottino e non apre niente che
+   non fosse già aperto.
+2. **Nel muro non si insegue il blocco più economico**: «ci vogliono troppi
+   riflessi». Si punta invece agli **scrigni**, che pagano oro.
+3. Dalla settima torre in poi, con la spada comprata, l'arma a terra non
+   serviva più mai.
+
+Modellati questi tre comportamenti, il simulatore azzecca la partita vera quasi
+riga per riga — e succede la cosa interessante: **il giocatore "umano" è più
+bravo di quello "perfetto"**, 18 corse contro 24 per arrivare alla ottava torre.
+
+| chi gioca | T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | in tutto |
+|---|---|---|---|---|---|---|---|---|---|
+| il "perfetto" | 4,1 | 2,5 | 1,9 | 1,5 | 2,6 | 2,8 | 3,5 | 4,6 | 24 |
+| lo stile vero | 4,9 | 1,7 | 1,2 | 1,5 | 1,8 | 1,9 | 2,3 | 2,4 | 18 |
+| la partita vera | 6 | 2 | 2 | 2 | 1* | 2* | 2* | — | 17 |
+
+La difficoltà va tarata sul secondo, non sul primo: è in `tools/sim.js`, che
+legge le costanti da `core.js` e si ferma se non le trova più.
+
+E restano due cose che il racconto ha messo a nudo:
+
+**L'arma a terra è diventata una trappola.** Il menù dice «raccogli le armi che
+trovi sulla corsia», e dalla quarta tacca di ARMA in poi seguire quel consiglio
+fa perdere. Un oggetto che sembra un premio e invece è una perdita punisce
+proprio l'istinto che il gioco insegna. La causa: le colonne dure arrivano a
+2,6 passi e il Martello colpisce per 2,7 — comprata l'arma è tutto verde, e il
+colore smette di dire qualcosa.
+
+**Il muro chiede riflessi, non scelte.** Il percorso migliore — il blocco più
+economico ad ogni riga — è quello su cui è costruito `wallBudget`, ma alla
+velocità delle torri alte non è eseguibile: il giocatore ha smesso di provarci
+e si è inventato un altro gioco, «prendo gli scrigni». Una meccanica che non si
+riesce a eseguire non produce una decisione, produce rumore.
+
 ## 3. Il colore è la regola, e la forma dice cosa fa
 
 Ogni cristallo e ogni nemico mostrano un numero, **verde se il tuo colpo attuale
