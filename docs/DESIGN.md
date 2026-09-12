@@ -496,15 +496,15 @@ una riga sola, numeri abbastanza grandi da leggersi in uno screenshot.
 La rinascita lo azzera: è una salita nuova, e mescolarla alla precedente
 renderebbe il dato inutile proprio quando serve.
 
-Ogni torre cambia mondo: Valle Gelata, Bosco Rosso, Dune d'Ossa, Notte di Rúna.
-Cambiano cielo (sfumatura ridisegnata su canvas), nebbia, luce ambientale,
-intensità del sole, terreno, rilievi, alberi, montagne e colore delle nuvole.
-Le regole e la pista non cambiano di una virgola.
+Ogni torre cambia mondo. Cambiano cielo (sfumatura ridisegnata su canvas),
+nebbia, luce ambientale, intensità del sole, terreno, rilievi, alberi, montagne
+e colore delle nuvole. Le regole e la pista non cambiano di una virgola.
 
 Costa poco perché la palette del mondo sta tutta in `THEMES` dentro `core.js` e
 `initArt()` riassegna i materiali ad ogni costruzione di livello: aggiungere una
-zona è aggiungere dodici numeri a una lista. I personaggi restano fuori dal
-tema — l'eroe dev'essere sempre lo stesso, ovunque si trovi.
+zona è aggiungere diciotto numeri a una lista. I personaggi restano fuori dal
+tema — l'eroe dev'essere sempre lo stesso, ovunque si trovi. Le zone sono otto:
+vedi la sezione 7b.
 
 ## 6e. Far pesare i colpi
 
@@ -593,6 +593,43 @@ Un dettaglio non ovvio: le etichette sui blocchi del muro e sulle colonne sono
 quindi `i18n.js` espone `langHook`, che `game.js` riempie con "ricostruisci la
 corsa e ridisegna HUD e menù". Senza quel gancio il muro resterebbe nella
 lingua di prima fino alla partita successiva.
+
+## 7b. Otto zone, e due che non sono solo colore
+
+Le zone erano quattro: alla quinta torre si tornava alla Valle Gelata, e
+tornarci è il momento in cui il gioco smette di sembrare lungo. Adesso sono
+otto — Valle Gelata, Bosco Rosso, Dune d'Ossa, Notte di Rúna, Bocca di Fuoco,
+Palude di Cenere, Foresta di Vetro, Cielo Spezzato — e otto torri sono più di
+quante ne faccia una salita prima della rinascita.
+
+Sei sono **solo palette**, che è il punto: diciotto numeri in una lista, zero
+righe di codice, e un mondo che non si era mai visto. Due chiedono qualcosa in
+più, e lo chiedono con un campo nel tema invece che con un `if` sparso nel
+mondo — chi non ce l'ha non paga niente:
+
+- **`lava`** (Bocca di Fuoco) accende le colate ai lati della pista e tre
+  vulcani lungo il percorso. La lava è un `MeshBasicMaterial`, cioè un
+  materiale **non illuminato**: in una zona con la luce bassa è l'unica cosa
+  che resta accesa, e costa quanto un colore piatto — niente luci nuove,
+  niente bagliori, niente post-processing. Un materiale solo per tutta la
+  zona, così pulsa tutto insieme con una riga per fotogramma.
+
+  Il primo tentativo metteva **un** vulcano in fondo, dietro la torre: non si
+  vedeva mai. La nebbia chiude a 580 unità e un livello ne è lungo il doppio,
+  quindi dietro la torre significa fuori dal mondo visibile. Sono tre, a
+  frazioni fisse del percorso e a lati alterni: ce n'è sempre uno dentro la
+  nebbia buona, e passandogli accanto si capisce quanto è grosso. Stessa
+  storia per le colate, che erano finite **dentro** la piana laterale: la sua
+  faccia sta a y = −0,4, non a −1.
+
+- **`floating`** (Cielo Spezzato) stacca da terra più di metà dei massi e
+  quattro guglie su dieci, e ci appende sotto la zolla strappata a punta in
+  giù. Due righe in `buildCliffs`, e il paesaggio racconta da solo che qui il
+  terreno si è rotto.
+
+La lava non tocca mai la corsia. Aggiungere un pericolo ambientale sarebbe
+stato facile e sbagliato: in questo gioco si muore di muro e di scelte, non di
+scenografia.
 
 ## 8. Il muro è pieno, gli ostacoli no
 

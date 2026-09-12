@@ -903,7 +903,14 @@ function nearestLaneX() {
   return best;
 }
 
+/* il tempo del mondo, che scorre anche nel menù: la lava pulsa pure
+   mentre si guardano i potenziamenti */
+let tempoMondo = 0;
+
 function update(dt) {
+  tempoMondo += dt;
+  pulsaLava(tempoMondo);
+
   if (steering()) {
     runT += dt;
     run.z -= run.speed * dt;

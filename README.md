@@ -77,9 +77,12 @@ alla Torre 1 con i potenziamenti azzerati, ma ogni **runa** guadagnata vale
 `+25%` su potenza e oro **per sempre**. Le rune si sommano fra una rinascita e
 l'altra: è l'unica strada per arrivare più in là.
 
-**Le zone.** Ogni torre cambia mondo: Valle Gelata, Bosco Rosso, Dune d'Ossa,
-Notte di Rúna. Cambiano cielo, luce, terreno, alberi e montagne — la pista e le
-regole restano identiche.
+**Le zone.** Ogni torre cambia mondo, e sono otto: Valle Gelata, Bosco Rosso,
+Dune d'Ossa, Notte di Rúna, Bocca di Fuoco, Palude di Cenere, Foresta di Vetro,
+Cielo Spezzato. Cambiano cielo, luce, terreno, alberi e montagne — la pista e le
+regole restano identiche. Due fanno qualcosa in più: nella Bocca di Fuoco
+colano i fiumi di lava e tre vulcani fumano lungo il percorso, nel Cielo
+Spezzato metà del paesaggio non tocca terra.
 
 **Il boss.** Sfondati tutti e trenta, ai piedi della torre ti aspetta il
 carceriere. Quello che ti resta è la forza con cui lo affronti: i due numeri
@@ -140,7 +143,7 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Menù con potenziamenti permanenti e salvataggio locale
 - [x] Corsie con torri di mattoni da spaccare o schivare, nemici, armi, bonus
 - [x] Rinascita con rune permanenti (+25% potenza e oro l'una)
-- [x] Quattro zone a tema che cambiano ad ogni torre
+- [x] Otto zone a tema che cambiano ad ogni torre, con vulcani e lava
 - [x] Ombre proiettate
 - [x] Muro di 30 blocchi a consumo di potenza, con cartelli del record
 - [x] Duello col boss e camera che sale sulla principessa alla vittoria

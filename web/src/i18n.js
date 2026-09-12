@@ -107,7 +107,11 @@ const STRINGS = {
     'z.ice'       : 'VALLE GELATA',
     'z.wood'      : 'BOSCO ROSSO',
     'z.bone'      : 'DUNE D’OSSA',
-    'z.rune'      : 'NOTTE DI RÚNA'
+    'z.rune'      : 'NOTTE DI RÚNA',
+    'z.lava'      : 'BOCCA DI FUOCO',
+    'z.ash'       : 'PALUDE DI CENERE',
+    'z.glass'     : 'FORESTA DI VETRO',
+    'z.sky'       : 'CIELO SPEZZATO'
   },
 
   en: {
@@ -185,7 +189,11 @@ const STRINGS = {
     'z.ice'       : 'FROZEN VALLEY',
     'z.wood'      : 'RED WOODS',
     'z.bone'      : 'BONE DUNES',
-    'z.rune'      : 'RUNE NIGHT'
+    'z.rune'      : 'RUNE NIGHT',
+    'z.lava'      : 'MOUTH OF FIRE',
+    'z.ash'       : 'ASH MARSH',
+    'z.glass'     : 'GLASS FOREST',
+    'z.sky'       : 'BROKEN SKY'
   }
 };
 

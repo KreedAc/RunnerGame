@@ -47,7 +47,13 @@ const C = {
 
 /* Le zone. Cambiano ogni torre e sono l'unica differenza fra un
    livello e l'altro sul piano visivo: la pista resta la stessa,
-   il mondo attorno no. */
+   il mondo attorno no.
+
+   Otto zone, cioè otto torri prima di rivedere la prima: una zona costa
+   diciotto numeri e si nota molto più di quanto costa. Quasi tutte sono
+   solo palette; due chiedono qualcosa in più al mondo e lo dicono con un
+   campo — `lava` accende il vulcano e le colate, `floating` stacca da
+   terra un pezzo di paesaggio. Chi non li ha non paga niente. */
 const THEMES = [
   { key: 'z.ice',
     skyTop: 0x1fb4dc, skyMid: 0x59c9e6, skyLow: 0x8ad9ee, fog: 0x7fcfe8,
@@ -79,7 +85,46 @@ const THEMES = [
     slab: 0x3a3268, slabDark: 0x272248,
     rock: 0x4c4470, rockDark: 0x352f52,
     tree: 0x2c6a72, trunk: 0x3a2f4a, snowy: false,
-    cloud: 0x9d92d8, hemiSky: 0xa8b8ff, hemiI: 0.5, sunI: 0.34 }
+    cloud: 0x9d92d8, hemiSky: 0xa8b8ff, hemiI: 0.5, sunI: 0.34 },
+
+  /* Il vulcano è l'unica zona che aggiunge roba al mondo invece di
+     ricolorarla: un cono enorme all'orizzonte col cratere acceso, e le
+     colate ai lati della pista. La luce è bassa apposta — quello che
+     illumina qui è la lava, che non è una luce ma un materiale non
+     illuminato, cioè la cosa più economica che ci sia. */
+  { key: 'z.lava',
+    skyTop: 0x2a0f16, skyMid: 0x7a2716, skyLow: 0xd4561f, fog: 0x8a3418,
+    ground: 0x4a3a3c, groundEdge: 0x2e2426, cap: 0xff7a2a,
+    slab: 0x3d3034, slabDark: 0x261e22,
+    rock: 0x4e3c3a, rockDark: 0x2c2223,
+    tree: 0x5a2a1e, trunk: 0x2b1d18, snowy: false,
+    cloud: 0x8a4028, hemiSky: 0xff9a5a, hemiI: 0.52, sunI: 0.42,
+    lava: 0xff5a1e, lavaHot: 0xffc23c },
+
+  { key: 'z.ash',
+    skyTop: 0x333a40, skyMid: 0x596169, skyLow: 0x969c92, fog: 0x7e847c,
+    ground: 0x5c6156, groundEdge: 0x3e433c, cap: 0xd8dacc,
+    slab: 0x4a4f47, slabDark: 0x32362f,
+    rock: 0x565a50, rockDark: 0x3b3f36,
+    tree: 0x6d7a4a, trunk: 0x2f2a22, snowy: false,
+    cloud: 0xb4b8ac, hemiSky: 0xd4d8cc, hemiI: 0.62, sunI: 0.44 },
+
+  { key: 'z.glass',
+    skyTop: 0x6a4aa8, skyMid: 0x9c7ad0, skyLow: 0xd8e8f4, fog: 0xc7d8ee,
+    ground: 0xb2bade, groundEdge: 0x8088c0, cap: 0xdff6ff,
+    slab: 0x9a9cd8, slabDark: 0x6a6aa8,
+    rock: 0xaeb4de, rockDark: 0x7b80b4,
+    tree: 0x58d8e0, trunk: 0x7e8ea8, snowy: false,
+    cloud: 0xf0e4ff, hemiSky: 0xe8f4ff, hemiI: 0.8, sunI: 0.66 },
+
+  { key: 'z.sky',
+    skyTop: 0x0f2a6a, skyMid: 0x2f6ac0, skyLow: 0x8fd0f0, fog: 0x9fd4ee,
+    ground: 0x8ea86a, groundEdge: 0x6a8450, cap: 0xfdfdfd,
+    slab: 0x8d7a62, slabDark: 0x64543f,
+    rock: 0x9a8a72, rockDark: 0x6d5f4c,
+    tree: 0x3f8a4e, trunk: 0x5c4430, snowy: false,
+    cloud: 0xffffff, hemiSky: 0xffffff, hemiI: 0.85, sunI: 0.78,
+    floating: true }
 ];
 
 const themeFor = lvl => THEMES[(lvl - 1) % THEMES.length];
@@ -339,6 +384,11 @@ function applyTheme(theme) {
   C.tree = theme.tree; C.trunk = theme.trunk;
   C.snowy = theme.snowy;
   C.cloud = theme.cloud;
+  /* i due campi facoltativi: vanno spenti, non solo accesi, altrimenti la
+     zona dopo si porta dietro il vulcano di quella prima */
+  C.lava = theme.lava || 0;
+  C.lavaHot = theme.lavaHot || 0;
+  C.floating = !!theme.floating;
   paintSky(theme);
   scene.fog.color.setHex(theme.fog);
   hemi.groundColor.setHex(theme.rockDark);

@@ -72,21 +72,33 @@ function buildCliffs(len) {
         // guglia: cono sfaccettato con la punta chiara
         const h = rnd(4.5, 13);
         const w = rnd(2.6, 5.2);
-        const sp = putOn(world, GEO.cone6, MAT.slab, x, 0, z, w, h, w);
+        const su = C.floating && Math.random() < 0.4 ? rnd(4, 14) : 0;
+        const sp = putOn(world, GEO.cone6, MAT.slab, x, su, z, w, h, w);
         sp.rotation.y = rnd(0, 3);
         const capH = h * 0.28;
-        const cp = putOn(world, GEO.cone6, MAT.cap, x, h - capH, z,
+        const cp = putOn(world, GEO.cone6, MAT.cap, x, su + h - capH, z,
                          w * capH / h * 1.04, capH, w * capH / h * 1.04);
         cp.rotation.y = sp.rotation.y;
+        if (su) {                               // la zolla strappata, sotto
+          put(world, GEO.cone6, MAT.rockDark, x, su - w * 0.34, z, w * 1.05, w * 0.9, w * 1.05)
+            .rotation.set(Math.PI, sp.rotation.y, 0);
+        }
         castShadows(sp);
 
       } else if (r < 0.64) {
-        // masso con la cresta chiara
+        /* masso con la cresta chiara — e nel Cielo Spezzato un masso su
+           tre non tocca terra: è tutto quello che serve a far capire che
+           qui il terreno si è rotto e i pezzi galleggiano. */
         const s = rnd(1.8, 4.2);
-        const b = putOn(world, GEO.sph8, MAT.rock, x, 0, z, s * 1.3, s, s * 1.2);
+        const su = C.floating && Math.random() < 0.6 ? rnd(5, 19) : 0;
+        const b = putOn(world, GEO.sph8, MAT.rock, x, su, z, s * 1.3, s, s * 1.2);
         b.rotation.y = rnd(0, 3);
-        const t = put(world, GEO.sph8, MAT.cap, x, s * 0.72, z, s * 0.9, s * 0.42, s * 0.85);
+        const t = put(world, GEO.sph8, MAT.cap, x, su + s * 0.72, z, s * 0.9, s * 0.42, s * 0.85);
         t.rotation.y = b.rotation.y;
+        if (su) {                              // la punta rotta, sotto
+          put(world, GEO.cone6, MAT.rockDark, x, su - s * 0.55, z, s * 1.1, s * 1.2, s)
+            .rotation.set(Math.PI, b.rotation.y, 0);
+        }
         castShadows(b);
 
       } else if (r < 0.88) {
@@ -141,6 +153,87 @@ function buildClouds(len) {
           rnd(5, 9), rnd(3, 4.5), rnd(4, 6));
     }
     world.add(g);
+  }
+}
+
+/* ------------------------------ IL VULCANO -----------------------------
+   La zona del fuoco è l'unica che aggiunge forme invece di ricolorarle.
+   La lava è un materiale NON illuminato: in una zona con la luce bassa è
+   l'unica cosa che resta accesa, e costa quanto un colore piatto — niente
+   luci nuove, niente bagliori, niente post-processing.
+
+   Uno solo per tutta la zona, così pulsa tutto insieme e cambiarlo costa
+   una riga per fotogramma. */
+let lavaMat = null;
+const lavaFreddo = new THREE.Color();
+const lavaCaldo  = new THREE.Color();
+
+function pulsaLava(t) {
+  if (!lavaMat) return;
+  lavaMat.color.copy(lavaFreddo).lerp(lavaCaldo, (Math.sin(t * 1.3) + 1) / 2 * 0.55);
+}
+
+/* Colate ai lati della pista. La piana laterale ha la faccia a y = −0,4
+   (il sentiero sta a 0): la lava ci si appoggia sopra di un pelo, con una
+   crosta scura attorno che la stacca dal terreno. Mai sopra la corsia:
+   qui non si muore di lava, si muore di muro. */
+const LAVA_Y = -0.3;
+
+function buildLava(len) {
+  const EDGE = CFG.trackWidth / 2 + 4;
+  for (let z = 20; z > -len - 60; z -= rnd(16, 40)) {
+    for (const side of [-1, 1]) {
+      if (Math.random() < 0.3) continue;
+      const x = side * rnd(EDGE, EDGE + 30);
+      const w = rnd(7, 19), l = rnd(12, 34);
+      put(world, GEO.box, MAT.rockDark, x, LAVA_Y - 0.12, z, w + 2.6, 0.5, l + 2.6);
+      put(world, GEO.box, lavaMat,      x, LAVA_Y, z, w, 0.3, l);
+      // isolotti di crosta che galleggiano nella colata
+      for (let i = 0; i < rint(1, 4); i++) {
+        put(world, GEO.octa, MAT.rockDark,
+            x + rnd(-w / 2.6, w / 2.6), LAVA_Y + 0.15, z + rnd(-l / 2.6, l / 2.6),
+            rnd(1, 2.6), rnd(0.6, 1.3), rnd(1, 2.6)).rotation.y = rnd(0, 3);
+      }
+    }
+  }
+}
+
+/* I vulcani stanno di lato: devono dominare l'orizzonte senza mai coprire
+   la torre, che è la cosa che il giocatore deve vedere.
+
+   Non uno solo in fondo: la nebbia chiude a 580 unità e un livello è
+   lungo il doppio, quindi un vulcano piazzato oltre la torre sarebbe
+   semplicemente invisibile. Sono tre lungo il percorso, a lato alterno —
+   ce n'è sempre uno dentro la nebbia buona, e passandogli accanto si
+   capisce quanto è grosso. */
+function buildVolcanoes(len) {
+  const lato = Math.random() < 0.5 ? -1 : 1;
+  [0.22, 0.56, 0.9].forEach((f, i) => {
+    buildVolcano(lato * (i % 2 ? -1 : 1) * rnd(66, 96), -len * f, rnd(62, 92));
+  });
+}
+
+function buildVolcano(x, z, h) {
+  const w = h * 1.7;
+
+  const cono = putOn(world, GEO.cone6, MAT.rockDark, x, 0, z, w, h, w);
+  cono.rotation.y = rnd(0, 3);
+  // il cratere: un tronco di cono rovesciato, acceso dentro
+  const cw = w * 0.19;
+  put(world, GEO.cyl12, lavaMat, x, h - 1.2, z, cw, 2.4, cw);
+  // due colate che scendono dal bordo
+  for (let i = 0; i < 2; i++) {
+    const a = rnd(0, Math.PI * 2);
+    const cl = put(world, GEO.box, lavaMat,
+                   x + Math.sin(a) * w * 0.12, h * 0.62, z + Math.cos(a) * w * 0.12,
+                   2.6, h * 0.66, 2.6);
+    cl.rotation.set(Math.cos(a) * 0.26, a, -Math.sin(a) * 0.26);
+  }
+  // il pennacchio: sfere scure che salgono e si allargano
+  for (let i = 0; i < 9; i++) {
+    const s = 9 + i * 2.6;
+    put(world, GEO.sph8, mat(C.cloud), x + rnd(-7, 7), h + 6 + i * 7, z + rnd(-6, 6),
+        s, s * 0.7, s);
   }
 }
 
@@ -199,8 +292,17 @@ function buildTower(z) {
 
 /* ------------------------------ ASSEMBLAGGIO --------------------------- */
 function buildWorld(len) {
+  /* il materiale della lava vive quanto la zona: fuori dal fuoco non
+     esiste, e pulsaLava() non ha niente da fare */
+  lavaMat = null;
+  if (C.lava) {
+    lavaFreddo.setHex(C.lava);
+    lavaCaldo.setHex(C.lavaHot);
+    lavaMat = new THREE.MeshBasicMaterial({ color: C.lava });
+  }
   buildGround(len);
   buildCliffs(len);
   buildHorizon(len);
   buildClouds(len);
+  if (lavaMat) { buildLava(len); buildVolcanoes(len); }
 }
