@@ -153,7 +153,7 @@ function spawnWeaponPickup(x, z, tier) {
   swirl.add(model);
   g.add(swirl);
 
-  const sprite = labelSprite(WEAPONS[tier].name, '#ffe07a', 0.72);
+  const sprite = labelSprite(weaponName(tier), '#ffe07a', 0.72);
   sprite.position.set(0, 5.0, 0);
   g.add(sprite);
 
@@ -490,7 +490,7 @@ function hitEnemy(it) {
 function takeWeapon(it) {
   run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
   setWeapon(hero, run.weapon);
-  popup('⚔ ' + WEAPONS[run.weapon].name, '#ffe07a');
+  popup('⚔ ' + weaponName(run.weapon), '#ffe07a');
   it.obj.visible = false;
   refreshThreats();
 }
@@ -523,7 +523,7 @@ function hitWallBlock(it) {
   }
   if (!run.beatRecord && meta.best > 0 && run.broken > meta.best) {
     run.beatRecord = true;
-    flashBanner('RECORD SUPERATO!');
+    flashBanner(t('run.record'));
   }
   /* Prima il muro, poi la potenza: se l'ultimo blocco ti prosciuga fino a
      zero il muro l'hai comunque sfondato, e a fermarti dev'essere il boss. */
@@ -542,7 +542,7 @@ function startBossFight() {
 
   heroSprite = labelSprite(fmt(run.power), '#8dff87', 1.0);
   scene.add(heroSprite);
-  flashBanner('IL CARCERIERE!');
+  flashBanner(t('run.jailer'));
 }
 
 function updateBossFight(dt) {
@@ -568,7 +568,7 @@ function updateBossFight(dt) {
 /* ------------------------------ HUD ------------------------------------ */
 function renderHud() {
   $('hPower').textContent  = fmt(run.power);
-  $('hWeapon').textContent = WEAPONS[run.weapon].name;
+  $('hWeapon').textContent = weaponName(run.weapon);
   $('hDamage').textContent = fmt(damage());
   $('hCoins').textContent  = fmt(run.coins);
   $('hWall').textContent   = run.broken + '/' + CFG.wallRows;
@@ -598,11 +598,7 @@ function startRun() {
   showScreen(null);
 }
 
-const OUTCOMES = {
-  wall: { title: 'IL MURO TI HA FERMATO', color: '#ff8a6e' },
-  boss: { title: 'IL CARCERIERE HA VINTO', color: '#ff8a6e' },
-  win : { title: 'PRINCIPESSA LIBERATA!',  color: '#ffd24b' }
-};
+const OUTCOMES = { wall: 'run.stoppedBig', boss: 'run.beatenBig', win: 'run.freedBig' };
 
 /* ------------------------ SECONDA OCCASIONE ---------------------------
    I diamanti si raccoglievano e non si spendevano mai: un numero che
@@ -676,13 +672,13 @@ function offerRevive(outcome) {
      blocco è una presa in giro, e si vede subito */
   const vicino = outcome === 'wall' ? run.broken >= CFG.wallRows - 6
                                     : run.bossHp <= run.phaseStart;
-  $('rvHead').textContent = vicino ? 'TI MANCAVA POCO' : 'CORSA FINITA';
+  $('rvHead').textContent = t(vicino ? 'rv.close' : 'rv.over');
   $('rvWhy').textContent = outcome === 'wall'
-    ? 'FERMATO DAL MURO A ' + run.broken + '/' + CFG.wallRows
-    : 'IL CARCERIERE TI HA PIEGATO';
+    ? t('rv.byWall', run.broken, CFG.wallRows)
+    : t('rv.byBoss');
   $('rvCost').textContent = '💎 ' + REVIVE_COST;
-  $('rvGain').textContent = '+' + fmt(torna) + ' potenza, e riparti da qui';
-  $('rvLeft').textContent = 'ne hai ' + gemsAvailable();
+  $('rvGain').textContent = t('rv.gain', fmt(torna));
+  $('rvLeft').textContent = t('rv.have', gemsAvailable());
   $('revive').classList.remove('hidden');
 
   const fine = performance.now() + REVIVE_SECONDS * 1000;
@@ -709,7 +705,7 @@ function doRevive(outcome) {
   run.revived = true;
   meta.towerRevived = 1;          // il diario lo segna con un asterisco
   run.power = reviveAmount();
-  flashBanner('SECONDA OCCASIONE!');
+  flashBanner(t('rv.taken'));
   renderHud();
   /* si riprende esattamente da dove si era caduti: davanti al muro col
      conto dei blocchi intatto, o nel duello con il boss già ferito */
@@ -753,10 +749,10 @@ function finishRun(outcome) {
   writeSave(meta);
 
   if (outcome === 'win') {
-    flashBanner('PRINCIPESSA LIBERATA!');
+    flashBanner(t('run.freedBig'));
     if (boss) boss.userData.falling = true;
   } else {
-    flashBanner(OUTCOMES[outcome].title);
+    flashBanner(t(OUTCOMES[outcome]));
     hero.userData.falling = true;
   }
   setTimeout(backToHub, outcome === 'win' ? 3400 : 2200);
@@ -778,6 +774,10 @@ function backToHub() {
 }
 
 $('playBtn').onclick = () => startRun();
+
+/* Cambiata la lingua, le etichette 3D restano quelle di prima: sono
+   texture disegnate una volta sola. Si ricostruisce il mondo. */
+langHook = () => { buildRun(); renderHud(); renderHub(); };
 
 /* Rinascita e ricomincia cambiano zona e potenziamenti: il mondo va
    ricostruito da zero. */
@@ -1019,6 +1019,7 @@ window.BlockyRun = {
   start() { startRun(); }
 };
 
+applyStaticText();          // il markup nasce in italiano: qui prende la lingua giusta
 snapCamera();
 renderHub();
 showScreen('hub');

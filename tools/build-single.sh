@@ -12,7 +12,7 @@ mkdir -p dist
 OUT=dist/torre-di-ghiaccio.html
 
 # stesso ordine di caricamento di index.html
-SRC="web/src/core.js web/src/art.js web/src/world.js web/src/actors.js web/src/hub.js web/src/game.js"
+SRC="web/src/i18n.js web/src/core.js web/src/art.js web/src/world.js web/src/actors.js web/src/hub.js web/src/game.js"
 
 # tutto tranne il loader: markup, CSS e i div dell'interfaccia
 sed '/<script src="vendor\/three.min.js">/,$d' web/index.html > "$OUT"

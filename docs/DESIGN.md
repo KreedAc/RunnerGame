@@ -506,6 +506,45 @@ Costa poco perché la palette del mondo sta tutta in `THEMES` dentro `core.js` e
 zona è aggiungere dodici numeri a una lista. I personaggi restano fuori dal
 tema — l'eroe dev'essere sempre lo stesso, ovunque si trovi.
 
+## 7. Le due lingue
+
+Il gioco aveva una quarantina di stringhe, tutte scritte a mano in italiano
+dentro il markup e dentro il codice. Estrarle adesso è costato un'ora; fra sei
+mesi, con negozio, missioni e skin, sarebbero state duecento sparse ovunque e
+sarebbe costato una giornata. Il momento giusto per internazionalizzare è
+sempre il più presto possibile, e "prima o poi" non è una data.
+
+Come funziona, in `web/src/i18n.js` (che si carica per primo, prima ancora di
+`core.js`, perché tutti gli altri file lo usano):
+
+- le stringhe stanno in una tabella per lingua, `STRINGS.it` e `STRINGS.en`;
+- `t('chiave')` la legge; i valori variabili entrano come `{0}`, `{1}`
+  (`t('hub.tower', 7)` → `TORRE 7`);
+- se una chiave manca nella lingua scelta si ricade sull'inglese, e se manca
+  anche lì si mostra la chiave stessa: un buco silenzioso nell'interfaccia è
+  molto più difficile da notare di una scritta storta;
+- il markup statico si marca con `data-t="chiave"` e lo riempie
+  `applyStaticText()`; `data-t-html` per le due righe che hanno del grassetto
+  dentro. L'HTML nasce scritto in italiano, così resta leggibile aprendo il
+  file, e alla partenza viene riscritto nella lingua giusta.
+
+La regola che conta davvero riguarda i **dati**: armi, bonus, potenziamenti e
+zone non contengono più il loro nome, contengono una **chiave** (`w.sword`,
+`z.ice`, `up.power`) che si risolve al momento in cui si disegna. Se il nome
+fosse nel dato, cambiare lingua a metà partita lascerebbe "Spada" nell'HUD fino
+alla fine della corsa — il classico mezzo-tradotto che sembra un bug.
+
+La lingua si indovina al primo avvio da `navigator.language`: chi ha il
+telefono in italiano trova l'italiano senza toccare niente, tutti gli altri
+l'inglese. Le due bandierine in fondo al menù la cambiano e la scelta viene
+ricordata in `localStorage`.
+
+Un dettaglio non ovvio: le etichette sui blocchi del muro e sulle colonne sono
+**texture**, disegnate una volta sola su canvas. Cambiare lingua non le tocca,
+quindi `i18n.js` espone `langHook`, che `game.js` riempie con "ricostruisci la
+corsa e ridisegna HUD e menù". Senza quel gancio il muro resterebbe nella
+lingua di prima fino alla partita successiva.
+
 ## 8. Il muro è pieno, gli ostacoli no
 
 Le corsie stanno a x = −2.4, 0, +2.4 e la collisione si risolveva per

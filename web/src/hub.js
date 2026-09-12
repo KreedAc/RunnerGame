@@ -31,7 +31,7 @@ function upgradeInfo(key) {
    POTENZA e ORO sono moltiplicatori: si leggono ×1.10, ×1.21, ×1.33… */
 function upgradeValueText(key) {
   const lvl = meta.up[key];
-  if (key === 'weapon') return WEAPONS[lvl].name;
+  if (key === 'weapon') return weaponName(lvl);
   return '×' + UPGRADES[key].value(lvl).toFixed(2);
 }
 
@@ -68,9 +68,7 @@ function renderRebirth() {
   $('rbBonus').textContent = '×' + runeMul(meta.runes + gain).toFixed(2);
   card.classList.toggle('ready', meta.lastOutcome === 'win');
   card.classList.toggle('armed', rebirthArmed);
-  $('rbNote').textContent = rebirthArmed
-    ? 'TOCCA ANCORA PER CONFERMARE'
-    : 'Riparti dalla Torre 1 · potenziamenti azzerati';
+  $('rbNote').textContent = t(rebirthArmed ? 'rb.confirm' : 'rb.note');
 }
 
 function tapRebirth() {
@@ -92,7 +90,7 @@ function tapRebirth() {
   meta.diary = []; meta.tries = 0; meta.towerRevived = 0;   // nuova salita, diario nuovo
   rebirthArmed = false;
   writeSave(meta);
-  flashBanner('+' + gain + ' RUNE');
+  flashBanner(t('rb.done', gain));
   if (rebuildHook) rebuildHook();
   renderHub();
 }
@@ -114,8 +112,7 @@ function renderReset() {
   const btn = $('resetBtn');
   btn.classList.toggle('hidden', !hasProgress());
   btn.classList.toggle('armed', resetArmed);
-  btn.textContent = resetArmed ? 'TOCCA ANCORA: CANCELLA TUTTO'
-                               : 'RICOMINCIA DA CAPO';
+  btn.textContent = t(resetArmed ? 'reset.sure' : 'reset.do');
 }
 
 function tapReset() {
@@ -131,7 +128,7 @@ function tapReset() {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* niente da fare */ }
   Object.assign(meta, defaultSave());
   writeSave(meta);
-  flashBanner('TUTTO DA CAPO');
+  flashBanner(t('reset.done'));
   if (rebuildHook) rebuildHook();
   renderHub();
 }
@@ -146,9 +143,9 @@ function renderDiary() {
   const box = $('diary');
   box.classList.toggle('hidden', !storia.length && !inCorso);
 
-  const chip = (l, t, r, ora) =>
-    '<span class="dy-chip' + (ora ? ' now' : '') + '">T' + l + ' <b>' + t + '</b>' +
-    (r ? '<i>*</i>' : '') + '</span>';
+  const chip = (torre, tent, seconda, ora) =>
+    '<span class="dy-chip' + (ora ? ' now' : '') + '">T' + torre +
+    ' <b>' + tent + '</b>' + (seconda ? '<i>*</i>' : '') + '</span>';
 
   $('dyRow').innerHTML =
     storia.map(e => chip(e.l, e.t, e.r, false)).join('') +
@@ -157,15 +154,15 @@ function renderDiary() {
 
 function renderHub() {
   renderWallet();
-  $('hubLevel').textContent = 'TORRE ' + meta.level;
-  $('hubZone').textContent  = themeFor(meta.level).name;
+  $('hubLevel').textContent = t('hub.tower', meta.level);
+  $('hubZone').textContent  = t(themeFor(meta.level).key);
   /* Una riga sola sotto al titolo, in ordine di importanza: le rune se
      ci sono, altrimenti quanto lontano sei arrivato. */
   $('hubBest').textContent = meta.runes
-    ? meta.runes + ' RUNE · ×' + runeMul(meta.runes).toFixed(2) + ' POTENZA E ORO'
-    : (meta.bestLevel > 1 ? 'TORRE PIÙ ALTA: ' + meta.bestLevel
-      : meta.best ? 'RECORD ' + meta.best + '/' + CFG.wallRows + ' DEL MURO'
-                  : 'NESSUNA TORRE ANCORA CONQUISTATA');
+    ? t('hub.runes', meta.runes, runeMul(meta.runes).toFixed(2))
+    : (meta.bestLevel > 1 ? t('hub.highest', meta.bestLevel)
+      : meta.best ? t('hub.record', meta.best, CFG.wallRows)
+                  : t('hub.noTower'));
   renderRebirth();
   renderReset();
   renderDiary();
@@ -183,23 +180,24 @@ function renderHub() {
     $('lrCoins').textContent = '+' + fmt(meta.lastCoins);
     $('lrBadge').classList.toggle('hidden', !meta.lastRecord);
     const out = OUTCOME_TEXT[meta.lastOutcome] || {};
-    $('lrOut').textContent = out.text || '';
+    $('lrOut').textContent = out.key ? t(out.key) : '';
     $('lrOut').style.color = out.color || '#fff';
   }
 
   for (const key of Object.keys(UPGRADES)) {
     const { u, lvl, maxed, cost, afford } = upgradeInfo(key);
     const card = document.querySelector('.up-card[data-key="' + key + '"]');
-    card.querySelector('.up-name').textContent  = u.name;
-    card.querySelector('.up-level').textContent = 'Livello ' + lvl;
+    card.querySelector('.up-name').textContent  = t(u.key);
+    card.querySelector('.up-level').textContent = t('up.level', lvl);
     card.querySelector('.up-value').textContent = upgradeValueText(key);
-    card.querySelector('.up-cost').textContent  = maxed ? 'MAX' : fmt(cost);
+    card.querySelector('.up-cost').textContent  = maxed ? t('up.max') : fmt(cost);
     card.classList.toggle('locked', maxed || !afford);
     card.disabled = maxed || !afford;
   }
 
   /* per ultimo: la camera si punta sulla fascia libera, che dipende da
      tutto quello che il menù ha appena deciso di mostrare */
+  renderLangs();
   if (typeof aimMenuCamera === 'function') aimMenuCamera();
 }
 
@@ -210,11 +208,20 @@ $('rebirthCard').addEventListener('click', tapRebirth);
 $('resetBtn').addEventListener('click', tapReset);
 $('buildTag').textContent = 'BUILD ' + (window.BUILD || 'dev');
 
+/* le bandierine: quella attiva si accende, l'altra cambia lingua */
+function renderLangs() {
+  document.querySelectorAll('.lang-btn').forEach(b =>
+    b.classList.toggle('on', b.dataset.lang === lang));
+}
+document.querySelectorAll('.lang-btn').forEach(b => {
+  b.addEventListener('click', () => { setLang(b.dataset.lang); renderLangs(); });
+});
+
 /* Come si racconta la fine dell'ultima corsa */
 const OUTCOME_TEXT = {
-  wall: { text: 'FERMATO DAL MURO',      color: '#ff9d8a' },
-  boss: { text: 'SCONFITTO DAL BOSS',    color: '#ff9d8a' },
-  win : { text: 'PRINCIPESSA LIBERATA',  color: '#ffd24b' }
+  wall: { key: 'run.stopped', color: '#ff9d8a' },
+  boss: { key: 'run.beaten',  color: '#ff9d8a' },
+  win : { key: 'run.freed',   color: '#ffd24b' }
 };
 
 /* --------------------------- COLONNA BONUS ---------------------------- */
@@ -230,7 +237,7 @@ function renderBuffRail(buffs) {
     el.className = 'buff';
     el.style.borderColor = b.color;
     el.innerHTML = '<span class="buff-icon">' + b.icon + '</span>' +
-                   '<span class="buff-name">' + b.name + '</span>' +
+                   '<span class="buff-name">' + t(b.key) + '</span>' +
                    '<b style="color:' + b.color + '">+' +
                    Math.round(stacks * b.step * 100) + '%</b>';
     rail.appendChild(el);

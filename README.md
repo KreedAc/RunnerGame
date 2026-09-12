@@ -42,7 +42,9 @@ record e tre potenziamenti permanenti. **POTENZA** (`×1.10` per livello) e
 bottino. A fine partita ci si torna direttamente, con il riepilogo al posto
 della storia. Salvataggio in `localStorage`, e in fondo al menù un
 **RICOMINCIA DA CAPO** che lo cancella — due tocchi per confermare, e compare
-solo se c'è qualcosa da cancellare.
+solo se c'è qualcosa da cancellare. Accanto, due bandierine: il gioco parte
+nella lingua del telefono (italiano o inglese) e la si cambia da lì, anche a
+metà salita.
 
 **Prima metà — accumuli.** Tre corsie, una riga di scelte ogni 30 blocchi. I
 numeri delle colonne sono tarati sulla **torre**, non sulla tua arma: il colpo
@@ -102,6 +104,7 @@ azzurro sull'ultima corsa, uno dorato sul record.
 ```
 web/
   index.html          interfaccia, CSS e loader
+  src/i18n.js         tabella delle lingue (it/en) e traduzione del markup
   src/core.js         configurazione, palette, armi, potenziamenti, scena, salvataggio
   src/art.js          geometrie e materiali condivisi, contorno dei personaggi
   src/world.js        sentiero, scogliere di ghiaccio, pini, cristalli, la torre
@@ -137,5 +140,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Duello col boss e camera che sale sulla principessa alla vittoria
 - [ ] Audio e particellari oltre alle scaglie
 - [x] Diamanti spendibili: la seconda occasione
+- [x] Italiano e inglese, con la lingua indovinata dal telefono
 - [ ] Missioni e skin dell'eroe (palette e pezzi, non modelli nuovi)
 - [ ] Build Android (vedi `docs/DESIGN.md`)

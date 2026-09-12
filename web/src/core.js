@@ -49,7 +49,7 @@ const C = {
    livello e l'altro sul piano visivo: la pista resta la stessa,
    il mondo attorno no. */
 const THEMES = [
-  { name: 'VALLE GELATA',
+  { key: 'z.ice',
     skyTop: 0x1fb4dc, skyMid: 0x59c9e6, skyLow: 0x8ad9ee, fog: 0x7fcfe8,
     ground: 0xe7f0f8, groundEdge: 0xb9d2e4, cap: 0xffffff,
     slab: 0x5cc0dc, slabDark: 0x3690b0,
@@ -57,7 +57,7 @@ const THEMES = [
     tree: 0x25795c, trunk: 0x6b4a35, snowy: true,
     cloud: 0xffffff, hemiSky: 0xffffff, hemiI: 0.72, sunI: 0.72 },
 
-  { name: 'BOSCO ROSSO',
+  { key: 'z.wood',
     skyTop: 0xe08a3c, skyMid: 0xf0b060, skyLow: 0xf7d69a, fog: 0xf2c98c,
     ground: 0xd8b47c, groundEdge: 0xb08d58, cap: 0xe8c78e,
     slab: 0x9c6b3c, slabDark: 0x744d2a,
@@ -65,7 +65,7 @@ const THEMES = [
     tree: 0xc4522e, trunk: 0x5c3b26, snowy: false,
     cloud: 0xffe6c4, hemiSky: 0xfff0d8, hemiI: 0.74, sunI: 0.66 },
 
-  { name: 'DUNE D’OSSA',
+  { key: 'z.bone',
     skyTop: 0x3fa8d8, skyMid: 0x8fd0e8, skyLow: 0xf0e2b8, fog: 0xecdcae,
     ground: 0xf0dfae, groundEdge: 0xd4bd85, cap: 0xf7ecc8,
     slab: 0xdcc48c, slabDark: 0xb59c64,
@@ -73,7 +73,7 @@ const THEMES = [
     tree: 0x7a9448, trunk: 0x6b5334, snowy: false,
     cloud: 0xfff6e0, hemiSky: 0xfffaf0, hemiI: 0.78, sunI: 0.7 },
 
-  { name: 'NOTTE DI RÚNA',
+  { key: 'z.rune',
     skyTop: 0x18143a, skyMid: 0x2e2662, skyLow: 0x5b4a9c, fog: 0x453a7e,
     ground: 0x4a4270, groundEdge: 0x342e52, cap: 0x7f74c0,
     slab: 0x3a3268, slabDark: 0x272248,
@@ -90,20 +90,25 @@ const themeFor = lvl => THEMES[(lvl - 1) % THEMES.length];
    — che è il suo mestiere — invece di moltiplicare il bottino.
    `shape` conta quanto il danno: l'arma sta a terra da raccogliere e si
    deve riconoscere a colpo d'occhio quale stai per prendere. */
+/* I nomi non sono scritti qui ma in i18n.js: un dato che porta dentro
+   una lingua non si può tradurre. `weaponName(tier)` li risolve al
+   momento dell'uso. */
 const WEAPONS = [
-  { name: 'Pugni',     hit: 0.85, shape: null,     handle: null,     blade: null,     len: 0    },
-  { name: 'Randello',  hit: 1.20, shape: 'club',   handle: 0x8a6a3a, blade: 0x6b4a35, len: 0.85 },
-  { name: 'Ascia',     hit: 1.60, shape: 'axe',    handle: 0x8a6a3a, blade: 0xb9c6d2, len: 1.0  },
-  { name: 'Spada',     hit: 2.10, shape: 'sword',  handle: 0x8a6a3a, blade: 0xdfe8f2, len: 1.2  },
-  { name: 'Martello',  hit: 2.70, shape: 'hammer', handle: 0x8a6a3a, blade: 0xffc93c, len: 1.15 },
-  { name: 'Lama Rúna', hit: 3.50, shape: 'sword',  handle: 0x3a2a4a, blade: 0x69e8ff, len: 1.35 }
+  { key: 'w.fists',  hit: 0.85, shape: null,     handle: null,     blade: null,     len: 0    },
+  { key: 'w.club',   hit: 1.20, shape: 'club',   handle: 0x8a6a3a, blade: 0x6b4a35, len: 0.85 },
+  { key: 'w.axe',    hit: 1.60, shape: 'axe',    handle: 0x8a6a3a, blade: 0xb9c6d2, len: 1.0  },
+  { key: 'w.sword',  hit: 2.10, shape: 'sword',  handle: 0x8a6a3a, blade: 0xdfe8f2, len: 1.2  },
+  { key: 'w.hammer', hit: 2.70, shape: 'hammer', handle: 0x8a6a3a, blade: 0xffc93c, len: 1.15 },
+  { key: 'w.rune',   hit: 3.50, shape: 'sword',  handle: 0x3a2a4a, blade: 0x69e8ff, len: 1.35 }
 ];
+
+const weaponName = tier => t(WEAPONS[clamp(tier, 0, WEAPONS.length - 1)].key);
 
 /* Bonus raccolti lungo la pista: valgono solo per la partita in corso. */
 const BUFFS = {
-  income: { name: 'Oro',      icon: '💰', step: 0.25, color: '#ffd24b' },
-  rate  : { name: 'Attacco',  icon: '⚔️', step: 0.20, color: '#ff9d5c' },
-  gain  : { name: 'Potenza',  icon: '⚡', step: 0.25, color: '#7cc9ff' }
+  income: { key: 'b.gold',   icon: '💰', step: 0.25, color: '#ffd24b' },
+  rate  : { key: 'b.attack', icon: '⚔️', step: 0.20, color: '#ff9d5c' },
+  gain  : { key: 'b.power',  icon: '⚡', step: 0.25, color: '#7cc9ff' }
 };
 
 /* Potenziamenti permanenti, comprati nel menù (azzerati dalla rinascita).
@@ -112,9 +117,9 @@ const BUFFS = {
    torre valevano meno di un arrotondamento — l'unica cosa che contava era
    l'ARMA, che però finisce a sei tacche. Da lì il gioco moriva. */
 const UPGRADES = {
-  power : { name: 'POTENZA',  base: 55,  mult: 1.34, max: 300, value: l => Math.pow(1.10, l) },
-  weapon: { name: 'ARMA',     base: 420, mult: 3.00, max: WEAPONS.length - 1, value: l => l },
-  income: { name: 'ORO',      base: 90,  mult: 1.34, max: 300, value: l => Math.pow(1.08, l) }
+  power : { key: 'up.power',  base: 55,  mult: 1.34, max: 300, value: l => Math.pow(1.10, l) },
+  weapon: { key: 'up.weapon', base: 420, mult: 3.00, max: WEAPONS.length - 1, value: l => l },
+  income: { key: 'up.income', base: 90,  mult: 1.34, max: 300, value: l => Math.pow(1.08, l) }
 };
 
 const upgradeCost = (key, level) =>

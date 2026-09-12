@@ -255,6 +255,17 @@
   /* l'asterisco dice che lì hai usato la seconda occasione */
   .dy-chip i{font-style:normal;color:#7ce0a0}
 
+  /* le due bandierine: stanno in fondo, fuori dalla strada del pollice
+     che gioca, ma sempre visibili — una lingua che non si trova è come
+     non averla */
+  .langs{display:flex;justify-content:center;gap:8px;margin-top:14px}
+  .lang-btn{padding:6px 14px;border-radius:99px;cursor:pointer;font-family:inherit;
+    font-size:11px;font-weight:800;letter-spacing:.8px;
+    color:rgba(255,255,255,.45);background:transparent;
+    border:2px solid rgba(255,255,255,.14);transition:color .15s,border-color .15s}
+  .lang-btn.on{color:#8fe3ff;border-color:rgba(143,227,255,.5);
+    background:rgba(22,60,84,.5)}
+
   /* la marca della build: serve a sapere, guardando il telefono, se la
      pagina che hai davanti è quella appena pubblicata o una in cache */
   .build-tag{margin-top:10px;text-align:center;font-size:9.5px;font-weight:700;
@@ -271,13 +282,13 @@
 <!-- ============================== HUD ============================== -->
 <div id="hud" class="hidden">
   <div class="row">
-    <div class="pill"><small>ARMA</small><b id="hWeapon">Pugni</b></div>
-    <div class="pill" id="powerPill"><small>POTENZA</small><b id="hPower">20</b></div>
-    <div class="pill"><small>ORO</small><b id="hCoins">0</b></div>
+    <div class="pill"><small data-t="hud.weapon">ARMA</small><b id="hWeapon">Pugni</b></div>
+    <div class="pill" id="powerPill"><small data-t="hud.power">POTENZA</small><b id="hPower">20</b></div>
+    <div class="pill"><small data-t="hud.gold">ORO</small><b id="hCoins">0</b></div>
   </div>
   <div class="row mid">
-    <div class="pill"><small>COLPO</small><b id="hDamage">3</b></div>
-    <div class="pill" id="wallPill"><small>MURO</small><b id="hWall">0/30</b></div>
+    <div class="pill"><small data-t="hud.hit">COLPO</small><b id="hDamage">3</b></div>
+    <div class="pill" id="wallPill"><small data-t="hud.wall">MURO</small><b id="hWall">0/30</b></div>
   </div>
   <div id="progressWrap"><div id="progress"></div></div>
   <div id="buffRail"></div>
@@ -292,11 +303,11 @@
     <div class="rv-why" id="rvWhy"></div>
     <button class="rv-go" id="rvGo">
       <span class="rv-cost" id="rvCost">💎 5</span>
-      <span class="rv-what">SECONDA OCCASIONE</span>
+      <span class="rv-what" data-t="rv.what">SECONDA OCCASIONE</span>
       <span class="rv-gain" id="rvGain"></span>
     </button>
     <div class="rv-bar"><i id="rvBar"></i></div>
-    <button class="rv-no" id="rvNo">LASCIA PERDERE</button>
+    <button class="rv-no" id="rvNo" data-t="rv.no">LASCIA PERDERE</button>
     <div class="rv-left" id="rvLeft"></div>
   </div>
 </div>
@@ -313,45 +324,39 @@
   </div>
 
   <div class="hub-title">
-    <div class="name">TORRE<br>DI GHIACCIO</div>
+    <div class="name" data-t-html="hub.title">TORRE<br>DI GHIACCIO</div>
     <div class="zone" id="hubZone">VALLE GELATA</div>
     <div class="best" id="hubBest">NESSUN RECORD</div>
   </div>
 
-  <div class="story" id="hubStory">
-    Il carceriere ha rinchiuso la principessa in cima alla torre.
-    Spacca le torri <b>verdi</b> per farti potenza, schiva le <b>rosse</b>,
-    raccogli le <b>armi</b> che trovi sulla corsia — poi sfonda i
-    <b>30 blocchi</b> del muro. Quello che ti resta è la forza con cui
-    affronti il boss.
-  </div>
+  <div class="story" id="hubStory" data-t-html="hub.story"></div>
 
   <div class="last-run hidden" id="lastRun">
-    <div class="lr-badge hidden" id="lrBadge">NUOVO RECORD</div>
+    <div class="lr-badge hidden" id="lrBadge" data-t="run.newRecord">NUOVO RECORD</div>
     <div class="lr-out" id="lrOut"></div>
     <div class="lr-row">
-      <div class="lr-cell"><b id="lrDepth">0</b><span>MURO</span></div>
+      <div class="lr-cell"><b id="lrDepth">0</b><span data-t="run.wallLbl">MURO</span></div>
       <div class="lr-sep"></div>
-      <div class="lr-cell"><b id="lrCoins" class="gold">+0</b><span>BOTTINO</span></div>
+      <div class="lr-cell"><b id="lrCoins" class="gold">+0</b><span data-t="run.lootLbl">BOTTINO</span></div>
     </div>
   </div>
 
-  <div class="hint" id="hubHint"><span class="swipe"></span> trascina per cambiare corsia</div>
+  <div class="hint" id="hubHint"><span class="swipe"></span> <span data-t="hub.hint">trascina per cambiare corsia</span></div>
   <div class="spacer"></div>
 
   <button class="rebirth-card hidden" id="rebirthCard">
-    <div class="rb-head">🔮 RINASCITA</div>
+    <div class="rb-head" data-t="rb.head">🔮 RINASCITA</div>
     <div class="rb-row">
       <span class="rb-gain" id="rbGain">+0</span>
-      <span class="rb-lbl">RUNE</span>
+      <span class="rb-lbl" data-t="rb.runes">RUNE</span>
       <span class="rb-sep"></span>
       <span class="rb-bonus" id="rbBonus">×1.00</span>
-      <span class="rb-lbl">POTENZA E ORO</span>
+      <span class="rb-lbl" data-t="rb.what">POTENZA E ORO</span>
     </div>
     <div class="rb-note" id="rbNote">Riparti dalla Torre 1 · potenziamenti azzerati</div>
   </button>
 
-  <div class="play-wrap"><button class="btn" id="playBtn">ALL'ASSALTO</button></div>
+  <div class="play-wrap"><button class="btn" id="playBtn" data-t="hub.play">ALL'ASSALTO</button></div>
 
   <div id="upgrades">
     <button class="up-card" data-key="power">
@@ -374,9 +379,13 @@
     </button>
   </div>
 
+  <div class="langs" id="langs">
+    <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
+    <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+  </div>
   <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
   <div class="diary hidden" id="diary">
-    <div class="dy-lbl">TENTATIVI PER TORRE</div>
+    <div class="dy-lbl" data-t="diary.lbl">TENTATIVI PER TORRE</div>
     <div class="dy-row" id="dyRow"></div>
   </div>
   <div class="build-tag" id="buildTag"></div>
@@ -384,7 +393,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260912-0053';</script>
+<script>window.BUILD = '260912-0122';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
@@ -393,7 +402,7 @@
      li tiene in cache dieci minuti, e senza questo un telefono può
      ritrovarsi con metà file nuovi e metà vecchi — che è peggio che
      averli tutti vecchi. Cambiando l'indirizzo, la cache non c'entra più. */
-  const FILES = ['src/core.js', 'src/art.js', 'src/world.js',
+  const FILES = ['src/i18n.js', 'src/core.js', 'src/art.js', 'src/world.js',
                  'src/actors.js', 'src/hub.js', 'src/game.js']
                 .map(f => f + '?v=' + window.BUILD);
   function load(src, cb) {
