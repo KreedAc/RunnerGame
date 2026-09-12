@@ -266,7 +266,12 @@ function buildRun() {
       items.push(Object.assign({ kind: 'enemy', z, x: CFG.laneX[lanes[1]], hp, done: false },
                                spawnEnemy(CFG.laneX[lanes[1]], z, hp, pick(ENEMY_KINDS))));
     } else {
-      const hardHp = Math.round(unit * rnd(1.4, 2.6));
+      /* Il tetto delle colonne dure arriva oltre la portata del Martello
+         (2,7 passi) e sfiora quella della Lama Rúna (3,5): senza, dalla
+         quarta tacca d'ARMA in poi era tutto verde, il colore smetteva di
+         dire qualcosa e l'arma a terra diventava una trappola — costava
+         una riga di bottino e non apriva niente. */
+      const hardHp = Math.round(unit * rnd(1.4, 3.8));
       items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[1]], hp: hardHp, done: false },
                                spawnPillar(CFG.laneX[lanes[1]], z, hardHp)));
     }
@@ -275,7 +280,7 @@ function buildRun() {
        due, e una corsia vuota rende la riga una non-scelta: si tirava
        dritto senza rischiare niente. */
     if (Math.random() < 0.70) {
-      const hardHp = Math.round(unit * rnd(1.3, 2.4));
+      const hardHp = Math.round(unit * rnd(1.3, 3.2));
       items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
                                spawnPillar(CFG.laneX[lanes[2]], z, hardHp)));
     }
@@ -312,12 +317,22 @@ function buildRun() {
   for (let i = 0; i < CFG.wallRows; i++) {
     const wz = wallStartZ - i * wallGap;
     const cheap = Math.max(1, Math.round(budget * (1 + i * 0.10) / sumW));
-    const costs = shuffle([cheap, Math.round(cheap * 1.6), Math.round(cheap * 2.3)]);
+    /* La forbice fra le tre corsie era ×1 ×1,6 ×2,3: prendere il blocco
+       sbagliato costava più del doppio, e alla velocità delle torri alte
+       inseguire il più economico non è eseguibile — chi ci gioca smette
+       di provarci. Stretta a ×1 ×1,35 ×1,7 sbagliare corsia si paga, ma
+       non rovina la corsa. */
+    const costs = shuffle([cheap, Math.round(cheap * 1.35), Math.round(cheap * 1.7)]);
     for (let l = 0; l < 3; l++) {
-      const chest = Math.random() < 0.12;
+      const chest = Math.random() < 0.10;
+      /* Lo scrigno è murato meglio: costa la metà in più, e paga in oro.
+         È questa la scelta del muro — potenza o soldi — al posto di
+         "quale dei tre numeri è più piccolo", che era un test di
+         riflessi travestito da decisione. */
+      const cost = chest ? Math.round(costs[l] * 3.0) : costs[l];
       items.push(Object.assign({ kind: 'block', z: wz, x: CFG.laneX[l],
-                                 cost: costs[l], chest, done: false },
-                               spawnWallBlock(CFG.laneX[l], wz, costs[l], chest)));
+                                 cost, chest, done: false },
+                               spawnWallBlock(CFG.laneX[l], wz, cost, chest)));
     }
   }
 
@@ -476,7 +491,10 @@ function takeWeapon(it) {
 }
 
 function takePickup(it) {
-  if (it.kind === 'coin')      run.coins += Math.round(8 * coinMul());
+  /* Una moneta vale in proporzione alla torre. Era fissa a 8 d'oro: alla
+     prima torre erano soldi, alla decima — dove un potenziamento costa
+     quattordicimila — era decorazione che luccicava. */
+  if (it.kind === 'coin')      run.coins += Math.round(run.unit * 1.1 * coinMul());
   else if (it.kind === 'gem') { run.gems += 1; popup('+1 💎', '#4fe3d5'); }
   else {
     run.buffs[it.buff]++;
@@ -494,7 +512,7 @@ function hitWallBlock(it) {
   it.obj.visible = false;
   run.broken++;
   if (it.chest) {
-    const c = Math.round(it.cost * 2 * coinMul());
+    const c = Math.round(it.loot * coinMul());
     run.coins += c;
     popup('+' + fmt(c) + ' 🪙', '#ffd24b');
   }
@@ -673,7 +691,7 @@ function finishRun(outcome) {
   const record = run.broken > meta.best;
   /* Il premio della vittoria era 200×torre: da solo pagava i potenziamenti
      della torre successiva, che cadeva al primo tentativo. */
-  const total  = run.coins + Math.round(run.broken * 6 * coinMul())
+  const total  = run.coins + Math.round(run.broken * run.unit * 0.8 * coinMul())
                + (outcome === 'win' ? Math.round(90 * meta.level * coinMul()) : 0);
 
   meta.coins += total;

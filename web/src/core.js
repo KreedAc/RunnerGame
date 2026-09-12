@@ -157,6 +157,13 @@ const trackRows  = lvl => Math.min(20, 10 + lvl);
 const trackUnit  = lvl => towerNeed(lvl) * BASE_SHARE /
                           (trackRows(lvl) * 3 * 0.75 * Math.pow(LEVEL_GAP, lvl - 1));
 
+/* Lo scrigno nel muro: quanto costa in potenza e quanto rende in oro,
+   tutti e due in multipli del costo normale di quella corsia. È la
+   scelta del muro — rompo il blocco economico, o pago il triplo per
+   riempire la borsa? */
+const CHEST_PRICE = 2.2;
+const CHEST_LOOT  = 3.0;
+
 /* Le torri alte si corrono anche più in fretta: meno tempo per decidere
    la corsia. Sale piano e si ferma, altrimenti il muro diventa una
    lotteria di riflessi. */

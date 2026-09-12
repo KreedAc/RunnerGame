@@ -60,6 +60,24 @@ const G = {
   buffPotenza: num(core, /gain\s*:\s*\{[^}]*step:\s*(\d*\.?\d+)/, 'buff potenza'),
   buffOro    : num(core, /income:\s*\{[^}]*step:\s*(\d*\.?\d+)/, 'buff oro'),
 
+  /* le taglie delle colonne, lette dalla generazione della pista */
+  facile : [num(game, /const easyHp = Math\.max\(1, Math\.round\(unit \* rnd\((\d*\.?\d+),/, 'colonna facile min'),
+            num(game, /const easyHp = Math\.max\(1, Math\.round\(unit \* rnd\(\d*\.?\d+,\s*(\d*\.?\d+)/, 'colonna facile max')],
+  nemico : [num(game, /const hp = Math\.max\(1, Math\.round\(unit \* rnd\((\d*\.?\d+),/, 'nemico min'),
+            num(game, /const hp = Math\.max\(1, Math\.round\(unit \* rnd\(\d*\.?\d+,\s*(\d*\.?\d+)/, 'nemico max')],
+  duraB  : [num(game, /corsia 2[\s\S]*?const hardHp = Math\.round\(unit \* rnd\((\d*\.?\d+),/, 'colonna dura B min'),
+            num(game, /corsia 2[\s\S]*?const hardHp = Math\.round\(unit \* rnd\(\d*\.?\d+,\s*(\d*\.?\d+)/, 'colonna dura B max')],
+  duraC  : [num(game, /corsia 3[\s\S]*?const hardHp = Math\.round\(unit \* rnd\((\d*\.?\d+),/, 'colonna dura C min'),
+            num(game, /corsia 3[\s\S]*?const hardHp = Math\.round\(unit \* rnd\(\d*\.?\d+,\s*(\d*\.?\d+)/, 'colonna dura C max')],
+
+  /* il muro: quanto costano le tre corsie e quanto rende uno scrigno */
+  muroForbice: [num(game, /costs = shuffle\(\[cheap, Math\.round\(cheap \* (\d*\.?\d+)\)/, 'muro corsia media'),
+                num(game, /costs = shuffle\(\[cheap, Math\.round\(cheap \* \d*\.?\d+\), Math\.round\(cheap \* (\d*\.?\d+)\)/, 'muro corsia cara')],
+  scrignoOro  : num(core, /CHEST_LOOT\s*=\s*(\d*\.?\d+)/, 'CHEST_LOOT'),
+  monetaValore: num(game, /kind === 'coin'\)\s+run\.coins \+= Math\.round\(run\.unit \* (\d*\.?\d+)/, 'valore moneta'),
+  bloccoValore: num(game, /run\.broken \* run\.unit \* (\d*\.?\d+) \* coinMul/, 'valore blocco'),
+  scrignoCosto: num(core, /CHEST_PRICE\s*=\s*(\d*\.?\d+)/, 'CHEST_PRICE'),
+
   /* dalla generazione della pista */
   nemicoProb : num(game, /Math\.random\(\)\s*<\s*(\d*\.?\d+)\)\s*\{\s*\n?\s*const hp/, 'probabilità nemico'),
   corsia3Prob: num(game, /corsia 3[\s\S]{0,200}?Math\.random\(\)\s*<\s*(\d*\.?\d+)\)/, 'probabilità corsia 3'),
@@ -87,7 +105,10 @@ const fra = (a, b) => a + caso() * (b - a);
                 economico — è il giocatore che non esiste;
      'umano'    salta l'arma quando il colpo gli apre già le colonne, nel
                 muro punta gli scrigni e sbaglia corsia un terzo delle
-                volte. È quello misurato su una partita vera.            */
+                volte. È quello misurato su una partita vera.
+     'ingenuo'  come l'umano nel muro, ma raccoglie SEMPRE l'arma a terra,
+                come dice il menù. Serve a rispondere a una domanda sola:
+                seguire il consiglio del gioco fa ancora perdere?        */
 function corsa(m, stile) {
   const u = passo(m.level);
   let potenza = G.potenzaIni, arma = m.up.arma, oro = 0, rotti = 0;
@@ -102,19 +123,25 @@ function corsa(m, stile) {
   const n = righe(m.level);
   let tierPista = m.up.arma;
   for (let i = 0; i < n; i++) {
-    const A = { t: 'colonna', hp: Math.max(1, Math.round(u * fra(0.55, 0.95))) };
+    const A = { t: 'colonna', hp: Math.max(1, Math.round(u * fra(G.facile[0], G.facile[1]))) };
     let B;
     const armaQui = i % 4 === 3 && tierPista < G.armi.length - 1;
     if (armaQui) { B = { t: 'arma', tier: tierPista + 1 }; tierPista++; }
-    else if (caso() < G.nemicoProb) B = { t: 'nemico', hp: Math.max(1, Math.round(u * fra(0.6, 1.7))) };
-    else B = { t: 'colonna', hp: Math.round(u * fra(1.4, 2.6)) };
-    const C = caso() < G.corsia3Prob ? { t: 'colonna', hp: Math.round(u * fra(1.3, 2.4)) } : null;
+    else if (caso() < G.nemicoProb) B = { t: 'nemico', hp: Math.max(1, Math.round(u * fra(G.nemico[0], G.nemico[1]))) };
+    else B = { t: 'colonna', hp: Math.round(u * fra(G.duraB[0], G.duraB[1])) };
+    const C = caso() < G.corsia3Prob ? { t: 'colonna', hp: Math.round(u * fra(G.duraC[0], G.duraC[1])) } : null;
 
     const valore = it => {
       if (!it) return 0;
       /* l'arma a terra costa una riga di bottino: chi gioca bene la
          prende solo se gli serve davvero ad aprire corsie */
-      if (it.t === 'arma') return (stile === 'umano' && colpo() >= 2.2 * u) ? 0 : Infinity;
+      if (it.t === 'arma') {
+        /* "se le vedevo già verdi evitavo di prendere il power up arma":
+           si salta quando in questa riga c'è già una colonna dura alla
+           tua portata, perché quella rende più dell'arma */
+        const duraVerde = C && C.hp >= 1.4 * u && C.hp <= colpo();
+        return (stile === 'umano' && duraVerde) ? 0 : Infinity;
+      }
       if (it.hp > colpo()) return -1;
       return it.t === 'nemico' ? it.hp * 1.5 : it.hp * 3;
     };
@@ -128,7 +155,7 @@ function corsa(m, stile) {
     }
     if (i > 0) {
       if (caso() < G.bonusProb) bonus[['oro', 'attacco', 'potenza'][Math.floor(caso() * 3)]]++;
-      else oro += Math.round(24 * molOro() * u / passo(1));
+      else oro += Math.round(3 * u * G.monetaValore * molOro());   // tre monete per varco
     }
   }
 
@@ -138,23 +165,28 @@ function corsa(m, stile) {
   for (let i = 0; i < G.righeMuro; i++) pesi += 1 + i * 0.10;
   for (let i = 0; i < G.righeMuro; i++) {
     const base = Math.max(1, Math.round(budget * (1 + i * 0.10) / pesi));
-    const costi = [base, Math.round(base * 1.6), Math.round(base * 2.3)];
+    const costi = [base, Math.round(base * G.muroForbice[0]), Math.round(base * G.muroForbice[1])];
     const scrigni = [caso() < G.scrignoProb, caso() < G.scrignoProb, caso() < G.scrignoProb];
     let corsia = 0;
-    if (stile === 'umano') {
+    if (stile !== 'perfetto') {
       const conScrigno = scrigni.findIndex(x => x);
       if (conScrigno >= 0) corsia = conScrigno;                       // l'oro prima di tutto
       else if (caso() < 0.35) corsia = 1 + Math.floor(caso() * 2);    // riflessi
     }
-    potenza -= costi[corsia];
+    /* lo scrigno è murato meglio: si paga di più per aprirlo */
+    const prezzo = scrigni[corsia] ? Math.round(costi[corsia] * G.scrignoCosto)
+                                   : costi[corsia];
+    potenza -= prezzo;
     rotti++;
-    if (scrigni[corsia]) oro += Math.round(costi[corsia] * 2 * molOro());
+    /* il premio si calcola sul costo normale della corsia, non sul
+       prezzo gonfiato: sono due manopole separate */
+    if (scrigni[corsia]) oro += Math.round(costi[corsia] * G.scrignoOro * molOro());
     if (rotti >= G.righeMuro || potenza <= 0) break;
   }
 
   const esito = rotti >= G.righeMuro
     ? (potenza > vitaBoss(m.level) ? 'vinta' : 'boss') : 'muro';
-  oro += Math.round(rotti * 6 * molOro() * u / passo(1));
+  oro += Math.round(rotti * u * G.bloccoValore * molOro());
   if (esito === 'vinta') oro += Math.round(G.premioVinta * m.level * molOro());
   return { esito, alMuro, alBoss: Math.max(0, potenza), rotti, oro };
 }
@@ -209,11 +241,14 @@ if (require.main === module) {
   const quante   = Number(process.argv[3] || 10);
 
   console.log(`passo della pista: ${G.baseShare}  ·  salto per torre: ${G.levelGap}  ·  muro ${G.quotaMuro}`);
-  console.log(`armi: ${G.armi.join(' ')}\n`);
+  console.log(`armi: ${G.armi.join(' ')}`);
+  console.log(`colonne: facile ${G.facile.join('-')}  dura ${G.duraB.join('-')} / ${G.duraC.join('-')}`);
+  console.log(`muro: forbice ×1 ×${G.muroForbice[0]} ×${G.muroForbice[1]}` +
+              `  ·  scrigno costa ×${G.scrignoCosto} e rende ×${G.scrignoOro} oro\n`);
   console.log('torre:      ' + Array.from({ length: maxTorre }, (_, i) =>
               String(i + 1).padStart(5)).join(''));
 
-  for (const stile of ['perfetto', 'umano']) {
+  for (const stile of ['perfetto', 'umano', 'ingenuo']) {
     const tutte = [];
     for (let s = 0; s < quante; s++) tutte.push(salita(stile, 3 + s * 101, maxTorre));
     const riga = [];

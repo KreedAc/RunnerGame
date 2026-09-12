@@ -257,6 +257,51 @@ velocità delle torri alte non è eseguibile: il giocatore ha smesso di provarci
 e si è inventato un altro gioco, «prendo gli scrigni». Una meccanica che non si
 riesce a eseguire non produce una decisione, produce rumore.
 
+## 2j. Togliere le due strade obbligate
+
+Le due cose messe a nudo dalla partita vera sono state riparate insieme,
+perché toccavano lo stesso nervo: **c'era una risposta giusta nascosta**, e
+chi non la trovava giocava peggio senza sapere perché.
+
+**L'arma non è più una trappola.** Le colonne dure arrivavano a 2,6 passi e il
+Martello colpisce per 2,7: comprata la quarta tacca d'ARMA era tutto verde,
+il colore smetteva di dire qualcosa e raccogliere l'arma a terra — cosa che il
+menù *consiglia* — costava una riga di bottino in cambio di niente. Il tetto è
+salito a **3,8 passi** (3,2 sulla terza corsia), oltre la portata del Martello
+e al limite di quella della Lama Rúna: c'è sempre del rosso davanti, e l'arma
+serve fino all'ultima tacca.
+
+**Il muro non è più un test di riflessi.** La forbice fra le tre corsie era
+×1 ×1,6 ×2,3 — sbagliare corsia costava più del doppio, e alla velocità delle
+torri alte inseguire il blocco più economico non è eseguibile. Stretta a
+**×1 ×1,35 ×1,7**: sbagliare si paga, non rovina la corsa. Al suo posto la
+scelta vera è lo **scrigno**, che costa `×2,2` di potenza e rende `×3` d'oro —
+sacrificare questa corsa per finanziare la prossima.
+
+Prezzo e premio dello scrigno si calcolano tutti e due sul costo normale della
+corsia, non l'uno sull'altro. Legandoli — com'era all'inizio — alzare il prezzo
+alzava anche il premio, e la scelta restava identica a sé stessa qualunque
+numero si mettesse: due ore di misure per scoprire che la manopola non era
+collegata a niente.
+
+**E le monete valgono in proporzione alla torre.** Erano fisse a 8 d'oro: alla
+prima torre erano soldi, alla decima — dove un potenziamento costa
+quattordicimila — erano decorazione che luccicava.
+
+Il risultato si legge in una riga. Corse necessarie per arrivare alla decima
+torre, per tre modi diversi di giocare:
+
+| stile | prima | adesso |
+|---|---|---|
+| insegue il blocco più economico | 35 | 27 |
+| caccia gli scrigni | 26 | 25 |
+| raccoglie sempre l'arma, come dice il menù | 24 | 25 |
+
+Erano lontani il 35%, adesso stanno **entro l'8%**: non esiste più una strada
+nascosta che è quella giusta, e la differenza la fa come giochi, non cosa hai
+capito del bilanciamento. `BASE_SHARE` e `LEVEL_GAP` sono rimaste dov'erano —
+è cambiata la trama, non la durezza.
+
 ## 3. Il colore è la regola, e la forma dice cosa fa
 
 Ogni cristallo e ogni nemico mostrano un numero, **verde se il tuo colpo attuale

@@ -53,6 +53,7 @@ migliore apre corsie che prima erano rosse.
 |---|---|
 | 🟢 **Torre verde** | Il numero è sotto al tuo colpo: la spacchi e prendi `numero × 3 × POTENZA` |
 | 🔴 **Torre rossa** | Troppo dura: se la prendi perdi il 18% della potenza. Schivala |
+| 🟡 **Scrigno nel muro** | Murato meglio: costa più del doppio in potenza, ma riempie la borsa |
 | 👹 **Nemico** | Due o tre a partita. Lo abbatti per l'oro, oppure ti costa il 22% |
 | ⚔️ **Arma a terra** | L'oggetto vero — randello, ascia, spada, martello, lama rúnica — che galleggia sulla corsia: la raccogli e sostituisce la tua |
 | ⚡ **Bonus** | Oro, Attacco e Potenza: valgono solo per questa partita |
@@ -63,7 +64,9 @@ l'arma cambia: file che erano rosse diventano verdi appena raccogli l'arma dopo.
 **Seconda metà — spendi.** Oltre la linea a scacchi ci sono **30 blocchi**
 fra te e la torre. Ognuno costa la sua cifra di potenza, i costi crescono, e
 nella stessa riga i tre blocchi costano diverso: si sceglie ancora la corsia.
-Se la potenza finisce prima, il muro ti ferma.
+Se la potenza finisce prima, il muro ti ferma. Ogni tanto un blocco è uno
+**scrigno**: costa `×2,2` ma rende `×3` d'oro — sacrifichi questa corsa per
+finanziare la prossima.
 
 **La rinascita.** Ogni torre chiede il 34% in più della precedente mentre i
 potenziamenti crescono col logaritmo del denaro: prima o poi ogni torre costa
