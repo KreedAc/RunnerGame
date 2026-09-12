@@ -222,12 +222,38 @@ function defaultSave() {
   };
 }
 
+/* Un numero rotto dentro il salvataggio si porta dietro tutto il resto:
+   basta un NaN — che JSON scrive `null` — e da lì in poi ogni somma è NaN,
+   l'oro sparisce dal portafoglio e non si compra più niente. È successo
+   davvero, per un premio degli scrigni che moltiplicava un campo
+   inesistente. Al caricamento ogni numero che non è un numero torna al
+   suo valore di partenza: il salvataggio si ripara da solo invece di
+   costringere a ricominciare. */
+function sanaNumeri(dato, modello) {
+  for (const k of Object.keys(modello)) {
+    const atteso = modello[k];
+    if (typeof atteso === 'number') {
+      if (typeof dato[k] !== 'number' || !isFinite(dato[k])) dato[k] = atteso;
+    } else if (typeof atteso === 'boolean') {
+      if (typeof dato[k] !== 'boolean') dato[k] = atteso;
+    } else if (Array.isArray(atteso)) {
+      if (!Array.isArray(dato[k])) dato[k] = atteso;
+    } else if (atteso && typeof atteso === 'object') {
+      if (!dato[k] || typeof dato[k] !== 'object') dato[k] = atteso;
+      else sanaNumeri(dato[k], atteso);
+    }
+  }
+  return dato;
+}
+
 function loadSave() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultSave();
     const s = JSON.parse(raw);
-    return Object.assign(defaultSave(), s, { up: Object.assign(defaultSave().up, s.up) });
+    const base = defaultSave();
+    return sanaNumeri(Object.assign(base, s, { up: Object.assign(base.up, s.up) }),
+                      defaultSave());
   } catch (e) {
     return defaultSave();
   }

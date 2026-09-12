@@ -302,6 +302,41 @@ nascosta che è quella giusta, e la differenza la fa come giochi, non cosa hai
 capito del bilanciamento. `BASE_SHARE` e `LEVEL_GAP` sono rimaste dov'erano —
 è cambiata la trama, non la durezza.
 
+## 2k. Il NaN degli scrigni, e la prova che mancava
+
+Un bug vero, vale la pena raccontarlo per intero perché l'errore non è
+stato scrivere il codice sbagliato: è stato **non accorgersi di non averlo
+scritto affatto**.
+
+Cercando il valore giusto dello scrigno, la riga che lo genera è stata
+riscritta più volte con delle sostituzioni al volo da riga di comando. La
+modifica definitiva — quella che aggiungeva il campo `loot` — cercava il
+testo *com'era prima* di quelle sostituzioni, non l'ha trovato e **non ha
+fatto niente, in silenzio**. Il gioco è rimasto con `it.loot` inesistente:
+`Math.round(undefined * coinMul())` fa `NaN`, e da lì ogni somma è NaN.
+L'oro è sparito dal portafoglio, il bottino di fine corsa è diventato
+`+NaN`, e JSON ha scritto `"coins": null` sul salvataggio — che così è
+rimasto rotto anche dopo la correzione.
+
+Tre riparazioni, in ordine di importanza:
+
+1. **Il salvataggio si ripara da solo.** Al caricamento ogni numero che non
+   è un numero finito torna al suo valore di partenza. Un campo rotto non
+   deve costringere a ricominciare da capo.
+2. **`tools/smoke.js`** gioca una corsa intera e controlla che *ogni numero
+   che il giocatore vede* sia finito — durante la corsa, sullo schermo e
+   dentro il salvataggio. Le prove di prima guardavano che la corsa
+   finisse, non che finisse con dei numeri veri. Rimesso il bug, questa
+   prova lo prende: `run.coins non è un numero: NaN`.
+3. **Il simulatore controlla di misurare il gioco vero.** `CHEST_PRICE` e
+   `CHEST_LOOT` esistevano in `core.js` e nessuno le usava: lui le leggeva
+   e riportava numeri di un gioco che non esisteva. Adesso verifica che
+   `game.js` le nomini davvero, e altrimenti si ferma.
+
+La lezione che resta: **una sostituzione di testo che non trova niente
+deve essere un errore, non un silenzio.** Vale per gli strumenti e vale per
+chi li usa.
+
 ## 3. Il colore è la regola, e la forma dice cosa fa
 
 Ogni cristallo e ogni nemico mostrano un numero, **verde se il tuo colpo attuale

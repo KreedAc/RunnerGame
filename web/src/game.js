@@ -325,13 +325,18 @@ function buildRun() {
     const costs = shuffle([cheap, Math.round(cheap * 1.35), Math.round(cheap * 1.7)]);
     for (let l = 0; l < 3; l++) {
       const chest = Math.random() < 0.10;
-      /* Lo scrigno è murato meglio: costa la metà in più, e paga in oro.
-         È questa la scelta del muro — potenza o soldi — al posto di
-         "quale dei tre numeri è più piccolo", che era un test di
-         riflessi travestito da decisione. */
-      const cost = chest ? Math.round(costs[l] * 3.0) : costs[l];
+      /* Lo scrigno è murato meglio: costa più del doppio in potenza, e
+         paga in oro. È questa la scelta del muro — potenza o soldi — al
+         posto di "quale dei tre numeri è più piccolo", che era un test di
+         riflessi travestito da decisione.
+
+         Prezzo e premio si calcolano tutti e due sul costo normale della
+         corsia, non l'uno sull'altro: legandoli, alzare il prezzo alzava
+         anche il premio e la scelta restava sempre uguale a sé stessa. */
+      const cost = chest ? Math.round(costs[l] * CHEST_PRICE) : costs[l];
+      const loot = chest ? Math.round(costs[l] * CHEST_LOOT)  : 0;
       items.push(Object.assign({ kind: 'block', z: wz, x: CFG.laneX[l],
-                                 cost, chest, done: false },
+                                 cost, loot, chest, done: false },
                                spawnWallBlock(CFG.laneX[l], wz, cost, chest)));
     }
   }

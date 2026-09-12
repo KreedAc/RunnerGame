@@ -86,6 +86,18 @@ const G = {
   premioVinta: num(game, /outcome === 'win' \? Math\.round\((\d+)\s*\*\s*meta\.level/, 'premio vittoria')
 };
 
+/* Una costante può esistere in core.js e non essere usata da nessuna
+   parte: è successo con CHEST_PRICE e CHEST_LOOT, definite e mai
+   collegate, e il simulatore misurava allegramente un gioco diverso da
+   quello che si giocava. Qui si controlla che il gioco le usi davvero. */
+for (const nome of ['CHEST_PRICE', 'CHEST_LOOT']) {
+  if (!game.includes(nome)) {
+    console.error(`${nome} è definita in core.js ma game.js non la usa.\n` +
+                  'Il gioco e il simulatore stanno misurando cose diverse.');
+    process.exit(1);
+  }
+}
+
 const torreNeed  = l => Math.round(G.torreBase * Math.pow(G.torreCresc, l - 1));
 const budgetMuro = l => Math.round(torreNeed(l) * G.quotaMuro);
 const vitaBoss   = l => Math.round(torreNeed(l) * (1 - G.quotaMuro));

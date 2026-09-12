@@ -111,6 +111,7 @@ web/
   vendor/three.min.js copia locale di three.js (serve al pacchetto offline)
 docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
 tools/sim.js          simulatore dell'economia: quanti tentativi costa ogni torre
+tools/smoke.js        gioca una corsa e controlla che nessun numero impazzisca
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
 .github/workflows/    pubblicazione automatica su GitHub Pages ad ogni push
