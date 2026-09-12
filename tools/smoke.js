@@ -49,6 +49,19 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
   await p.goto(PAGINA);
   await p.waitForFunction(() => window.BlockyRun, null, { timeout: 30000 });
 
+  /* I numeri schizzano dal punto colpito, che è una proiezione sullo
+     schermo: se l'oggetto colpito non ha una posizione valida ne esce
+     "NaN%", il browser lo ignora in silenzio e il numero torna al centro
+     senza che nessuno se ne accorga. Qui si guardano tutti. */
+  await p.evaluate(() => {
+    window.__pop = [];
+    new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
+      if (n.classList && n.classList.contains('pop'))
+        window.__pop.push({ testo: n.textContent,
+                            x: parseFloat(n.style.left), y: parseFloat(n.style.top) });
+    }))).observe(document.getElementById('pops'), { childList: true });
+  });
+
   /* qualche diamante in cassa: così si prova anche la seconda occasione */
   await p.evaluate(() => { window.BlockyRun.meta.gems = 9; renderHub(); });
   await p.click('#playBtn');
@@ -90,6 +103,7 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
     .then(() => p.click('#rvGo')).catch(() => {});
   await Promise.race([finita, offerta]);
   await finita;
+  await p.waitForTimeout(1500);        // il tempo che la scossa finisca
 
   const r = await p.evaluate(() => {
     const G = window.BlockyRun;
@@ -104,6 +118,9 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
     return {
       numeri, esito: G.run.outcome, muro: G.run.broken,
       salvataggio: scritti,
+      pop: window.__pop,
+      /* lo scostamento della scossa: va tolto, non accumulato */
+      scossa: [scossaOff.x, scossaOff.y, scossaOff.z],
       /* quello che il giocatore legge davvero sullo schermo */
       schermo: [...document.querySelectorAll('#hub .up-cost, #hubCoins, #hubGems, #lrCoins, #lrDepth')]
                  .map(e => e.textContent).join(' ')
@@ -116,6 +133,12 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
   controlla(!/NaN|null/.test(r.salvataggio), `salvataggio sporco: ${r.salvataggio}`);
   controlla(['wall', 'boss', 'win'].includes(r.esito), `esito strano: ${r.esito}`);
   controlla(r.muro > 0, 'la corsa non ha rotto nemmeno un blocco del muro');
+  controlla(r.pop.length > 0, 'in tutta la corsa non è comparso un numero');
+  for (const q of r.pop)
+    controlla(isFinite(q.x) && isFinite(q.y) && q.x > 0 && q.x < 100 && q.y > 0 && q.y < 100,
+              `numero fuori schermo: "${q.testo}" a ${q.x}%, ${q.y}%`);
+  controlla(r.scossa.every(v => Math.abs(v) < 0.001),
+            'la camera è rimasta scostata dopo la scossa: ' + r.scossa.join(', '));
   controlla(errori.length === 0, 'errori JS: ' + errori.join(' / '));
 
   /* ---- la seconda occasione si vende solo se può servire ----
@@ -160,5 +183,6 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
     process.exit(1);
   }
   console.log(`prova superata · esito ${r.esito} · muro ${r.muro}/30 · ` +
-              `oro ${r.numeri['meta.coins']} · nessun numero rotto`);
+              `oro ${r.numeri['meta.coins']} · ${r.pop.length} numeri a posto · ` +
+              `nessun numero rotto`);
 })();

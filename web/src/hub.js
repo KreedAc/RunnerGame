@@ -256,13 +256,18 @@ function flashBanner(text) {
   bannerTimer = setTimeout(() => el.classList.remove('show'), 1700);
 }
 
-/* ------------------------------ POPUP --------------------------------- */
-function popup(text, color, side) {
+/* ------------------------------ POPUP ---------------------------------
+   Il numero parte dal punto colpito, non dal centro dello schermo: chi
+   gioca guarda la corsia, non il centro, e un numero che nasce dove è
+   appena esploso qualcosa si legge senza spostare gli occhi. Senza punto
+   (la vittoria, un messaggio generico) torna in mezzo. */
+function popup(text, color, punto) {
   const d = document.createElement('div');
   d.className = 'pop';
   d.textContent = text;
   d.style.color = color;
-  d.style.left = (side === undefined ? 50 : side) + '%';
+  d.style.left = (punto ? punto.x : 50) + '%';
+  d.style.top  = (punto ? punto.y : 48) + '%';
   $('pops').appendChild(d);
   setTimeout(() => d.remove(), 900);
 }

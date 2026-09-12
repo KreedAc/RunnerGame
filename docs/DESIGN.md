@@ -506,6 +506,55 @@ Costa poco perché la palette del mondo sta tutta in `THEMES` dentro `core.js` e
 zona è aggiungere dodici numeri a una lista. I personaggi restano fuori dal
 tema — l'eroe dev'essere sempre lo stesso, ovunque si trovi.
 
+## 6e. Far pesare i colpi
+
+Spaccare una colonna da mille e una da dieci si vedeva identico: lo stesso
+numero che saliva dal centro dello schermo, la stessa camera immobile. Il
+gioco *sapeva* la differenza, il giocatore no.
+
+Tre cose, nessuna delle quali cambia una regola:
+
+1. **La camera trema.** `impatto(forza, fermo)` alza una riserva di scossa da
+   0 a 1 che cala da sola; ogni fotogramma ne esce uno scostamento casuale
+   proporzionale al *quadrato* di quel che resta, così parte forte e smette
+   in fretta invece di sfumare per un secondo. La forza è tarata sull'evento:
+   0,16 per un blocco del muro (ce ne sono trenta di fila, e una scossa piena
+   trenta volte è nausea), 0,34 per una colonna verde, 0,62 per una rossa —
+   sbagliare deve farsi sentire più che indovinare — e 1 quando il carceriere
+   cade.
+
+   Il punto delicato: la posizione della camera è **interpolata** verso il suo
+   bersaglio, non riscritta. Uno scostamento sommato lì dentro non sparisce,
+   viene inseguito dall'interpolazione del fotogramma dopo e la camera se ne
+   va per i fatti suoi. Quindi lo scostamento si toglie *prima* delle
+   interpolazioni e si rimette *dopo*: da qui `scossaVia()` e
+   `scossaMetti()`, una all'inizio del blocco camera e l'altra alla fine.
+   L'inclinazione no: quella la riscrive `lookAt` ogni volta, e si somma
+   senza pensieri.
+
+2. **Il numero parte dal punto colpito.** Era sempre al centro dello schermo,
+   ma chi gioca guarda la corsia. `puntoSchermo(obj, alto)` proietta il punto
+   colpito e ne ricava una percentuale, tenuta lontana dai bordi perché un
+   numero mezzo fuori è un numero non letto.
+
+3. **Un fermo-immagine di qualche centesimo.** Il trucco più vecchio del
+   genere: il tempo di gioco quasi si ferma per 20–140 ms e il colpo sembra
+   pesare. Si conta in tempo vero e si spende sul tempo di gioco, così
+   l'attesa finisce anche a dieci fotogrammi al secondo.
+
+Chi ha chiesto **meno movimento** al sistema operativo non ha né scossa né
+fermo-immagine: `prefers-reduced-motion` si legge una volta all'avvio e
+`impatto()` esce subito. Le scosse di camera sono la prima cosa che dà la
+nausea, e su un telefono in mano non è un dettaglio teorico.
+
+La prova del fumo adesso guarda anche questo: registra ogni numero che
+compare e pretende che abbia una posizione finita e dentro lo schermo — una
+proiezione andata male produrrebbe `NaN%`, che il browser ignora in silenzio
+rimettendo il numero al centro — e controlla che a corsa finita lo
+scostamento della camera sia tornato esattamente a zero. Verificata
+rompendola apposta: con la proiezione guasta la prova fallisce su quattro
+numeri.
+
 ## 7. Le due lingue
 
 Il gioco aveva una quarantina di stringhe, tutte scritte a mano in italiano
@@ -631,10 +680,8 @@ Se su fascia bassa non regge, in ordine di resa:
 
 1. **Audio** — musica loop e sfx sull'impatto. Sposta la qualità percepita più
    di qualunque effetto grafico.
-2. **Impatti più grassi** — scossa di camera, numeri che schizzano dal punto
-   colpito invece che dal centro schermo, rallentamento di un frame.
-4. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
-5. **Missioni e valuta premium** — i cristalli si raccolgono ma non si spendono
+2. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
+3. **Missioni e valuta premium** — i cristalli si raccolgono ma non si spendono
    ancora.
-6. **Prima esecuzione** — mano animata che spiega lo swipe, prima riga con solo
+4. **Prima esecuzione** — mano animata che spiega lo swipe, prima riga con solo
    verde.

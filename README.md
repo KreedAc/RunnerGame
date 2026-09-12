@@ -96,6 +96,12 @@ decidere, e compare solo quando può davvero cambiare come finisce.
 `T1 3 · T2 1 · T3 2*`, dove l'asterisco segna dove hai usato la seconda
 occasione. Serve a tarare la difficoltà su una partita vera.
 
+**I colpi.** Ogni impatto scuote la camera in proporzione a quanto è grosso —
+un blocco del muro appena, una colonna sbagliata parecchio, il carceriere che
+cade tutto — ferma il tempo per qualche centesimo e fa partire il numero dal
+punto colpito invece che dal centro dello schermo. Chi ha chiesto meno
+movimento al sistema operativo non ha né scossa né fermo-immagine.
+
 **I cartelli.** Piantati di traverso al muro segnano dove sei arrivato: uno
 azzurro sull'ultima corsa, uno dorato sul record.
 

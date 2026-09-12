@@ -433,6 +433,67 @@ function fadeLabels() {
   }
 }
 
+/* ------------------------------ IMPATTI --------------------------------
+   Un colpo che vale mille punti e un colpo che ne vale dieci si vedevano
+   uguali: stesso numero al centro dello schermo, stessa camera ferma. Tre
+   cose piccole, e nessuna cambia una regola:
+
+   - la camera trema, con forza proporzionale a quanto è grosso il colpo;
+   - il numero parte dal punto colpito invece che dal centro dello schermo,
+     così si vede *cosa* hai preso e non solo che hai preso qualcosa;
+   - un fermo-immagine di qualche centesimo, che è il trucco più vecchio del
+     genere: il tempo si ferma un istante e il colpo sembra pesare.
+
+   Chi ha chiesto meno movimento al sistema operativo non ne ha nessuna: le
+   scosse di camera sono la prima cosa che dà la nausea. */
+const MENO_MOTO = (() => {
+  try { return matchMedia('(prefers-reduced-motion: reduce)').matches; }
+  catch (e) { return false; }
+})();
+
+let scossa = 0;                     // 0..1, quanto sta tremando adesso
+let fermo  = 0;                     // secondi di fermo-immagine da consumare
+const scossaOff = new THREE.Vector3();
+
+function impatto(forza, stop) {
+  if (MENO_MOTO) return;
+  scossa = Math.min(1, scossa + forza);
+  fermo  = Math.max(fermo, stop || 0);
+}
+
+/* La scossa è uno scostamento della camera, non una posizione: la posizione
+   viene interpolata ogni fotogramma verso il suo bersaglio, quindi lo
+   scostamento del fotogramma prima va tolto *prima* delle interpolazioni,
+   altrimenti l'interpolazione lo insegue e la camera se ne va per i fatti
+   suoi. L'inclinazione invece la riscrive `lookAt` ogni volta, e si può
+   sommare senza pensieri. Da qui le due metà: una apre il blocco camera,
+   l'altra lo chiude. */
+function scossaVia() {
+  camera.position.sub(scossaOff);
+  scossaOff.set(0, 0, 0);
+}
+
+function scossaMetti(dt) {
+  if (scossa <= 0) return;
+  scossa = Math.max(0, scossa - dt * 2.6);
+  const q = scossa * scossa;                 // quadratico: smette in fretta
+  scossaOff.set((Math.random() * 2 - 1) * q * 0.85,
+                (Math.random() * 2 - 1) * q * 0.55, 0);
+  camera.position.add(scossaOff);
+  camera.rotation.z += (Math.random() * 2 - 1) * q * 0.03;
+}
+
+/* Dove finisce sullo schermo un punto del mondo, in percentuale. Si tiene
+   lontano dai bordi: un numero mezzo fuori è un numero non letto. */
+const _proj = new THREE.Vector3();
+function puntoSchermo(obj, alto) {
+  obj.getWorldPosition(_proj);
+  _proj.y += alto || 0;
+  _proj.project(camera);
+  return { x: clamp((_proj.x + 1) / 2 * 100, 9, 91),
+           y: clamp((1 - (_proj.y + 1) / 2) * 100, 17, 76) };
+}
+
 /* ------------------------------ RISOLUZIONE ---------------------------- */
 const debris = [];
 
@@ -451,11 +512,13 @@ function shatter(group, n, material) {
 
 function hitPillar(it) {
   const dmg = damage();
+  const dove = puntoSchermo(it.obj, 2.4);
   run.swing = 0.35;
   if (dmg >= it.hp) {
     const gain = Math.round(it.hp * 3 * gainMul());
     run.power += gain;
-    popup('+' + fmt(gain), '#8dff87');
+    popup('+' + fmt(gain), '#8dff87', dove);
+    impatto(0.34, 0.05);
     shatter(it.obj, 8, MAT.good);
   } else {
     /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
@@ -463,7 +526,8 @@ function hitPillar(it) {
        far scegliere davvero. */
     const loss = Math.max(3, Math.round(run.power * 0.18));
     run.power = Math.max(0, run.power - loss);
-    popup('−' + fmt(loss), '#ff7a6e');
+    popup('−' + fmt(loss), '#ff7a6e', dove);
+    impatto(0.62, 0.09);              // sbagliare deve farsi sentire di più
     shatter(it.obj, 8, MAT.bad);
   }
   it.obj.visible = false;
@@ -471,18 +535,21 @@ function hitPillar(it) {
 
 function hitEnemy(it) {
   const dmg = damage();
+  const dove = puntoSchermo(it.obj, 2.2);
   run.swing = 0.35;
   if (dmg >= it.hp) {
     const coins = Math.round(it.hp * 3 * coinMul());
     run.coins += coins;
     run.power += Math.round(it.hp * 1.5 * gainMul());
-    popup('+' + fmt(coins) + ' 🪙', '#ffd24b');
+    popup('+' + fmt(coins) + ' 🪙', '#ffd24b', dove);
+    impatto(0.42, 0.06);
     it.mob.userData.dying = true;
     it.sprite.visible = false;
   } else {
     const loss = Math.max(5, Math.round(run.power * 0.22));
     run.power = Math.max(0, run.power - loss);
-    popup('−' + fmt(loss), '#ff5a4a');
+    popup('−' + fmt(loss), '#ff5a4a', dove);
+    impatto(0.7, 0.1);
     it.obj.visible = false;
   }
 }
@@ -490,7 +557,8 @@ function hitEnemy(it) {
 function takeWeapon(it) {
   run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
   setWeapon(hero, run.weapon);
-  popup('⚔ ' + weaponName(run.weapon), '#ffe07a');
+  popup('⚔ ' + weaponName(run.weapon), '#ffe07a', puntoSchermo(it.obj, 2.6));
+  impatto(0.3, 0.07);                 // l'arma nuova è un momento, non un dettaglio
   it.obj.visible = false;
   refreshThreats();
 }
@@ -499,12 +567,13 @@ function takePickup(it) {
   /* Una moneta vale in proporzione alla torre. Era fissa a 8 d'oro: alla
      prima torre erano soldi, alla decima — dove un potenziamento costa
      quattordicimila — era decorazione che luccicava. */
+  const dove = puntoSchermo(it.obj, 1.8);
   if (it.kind === 'coin')      run.coins += Math.round(run.unit * 1.1 * coinMul());
-  else if (it.kind === 'gem') { run.gems += 1; popup('+1 💎', '#4fe3d5'); }
+  else if (it.kind === 'gem') { run.gems += 1; popup('+1 💎', '#4fe3d5', dove); }
   else {
     run.buffs[it.buff]++;
     const b = BUFFS[it.buff];
-    popup(b.icon + ' +' + Math.round(b.step * 100) + '%', b.color);
+    popup(b.icon + ' +' + Math.round(b.step * 100) + '%', b.color, dove);
     renderBuffRail(run.buffs);
     if (it.buff === 'rate') refreshThreats();
   }
@@ -512,14 +581,18 @@ function takePickup(it) {
 }
 
 function hitWallBlock(it) {
+  const dove = puntoSchermo(it.obj, 1.5);
   run.power -= it.cost;
   shatter(it.obj, 6, it.chest ? MAT.gold : MAT.wall);
   it.obj.visible = false;
   run.broken++;
+  /* Trenta blocchi di fila: qui la scossa va tenuta bassa, altrimenti il
+     muro diventa un frullatore. Lo scrigno è l'eccezione, è raro. */
+  impatto(it.chest ? 0.38 : 0.16, it.chest ? 0.05 : 0.02);
   if (it.chest) {
     const c = Math.round(it.loot * coinMul());
     run.coins += c;
-    popup('+' + fmt(c) + ' 🪙', '#ffd24b');
+    popup('+' + fmt(c) + ' 🪙', '#ffd24b', dove);
   }
   if (!run.beatRecord && meta.best > 0 && run.broken > meta.best) {
     run.beatRecord = true;
@@ -560,9 +633,12 @@ function updateBossFight(dt) {
   setLabel(heroSprite, fmt(run.power), '#8dff87');
   setLabel(bossSprite, fmt(run.bossHp), '#ff8f7a');
   run.swing = 0.3;
+  /* lo scontro dura un secondo e mezzo: un rombo basso e costante, non una
+     scossa a ogni fotogramma */
+  if (!MENO_MOTO) scossa = Math.max(scossa, 0.3);
 
-  if (run.bossHp <= 0)      endRun('win');
-  else if (run.power <= 0)  endRun('boss');
+  if (run.bossHp <= 0)      { impatto(1, 0.14); endRun('win'); }
+  else if (run.power <= 0)  { impatto(1, 0.14); endRun('boss'); }
 }
 
 /* ------------------------------ HUD ------------------------------------ */
@@ -924,6 +1000,7 @@ function update(dt) {
   }
 
   /* --- camera --- */
+  scossaVia();
   const menu  = state === 'hub';
   const duel  = state === 'boss' || state === 'over';
   const cheer = state === 'over' && run.outcome === 'win';
@@ -944,6 +1021,7 @@ function update(dt) {
     camera.lookAt(duel ? run.x * 0.3 : run.x, duel ? 4.0 : menu ? menuLookY : 1.6,
                   run.z - (menu ? 12 : duel ? 13 : 16));
   }
+  scossaMetti(dt);
 }
 
 /* ------------------- L'EROE NELLA FASCIA LIBERA -----------------------
@@ -1004,6 +1082,8 @@ addEventListener('resize', aimMenuCamera);
 /* Tornando al menù la camera è a fondo pista: senza questo salto farebbe
    tutta la strada al contrario in dissolvenza. */
 function snapCamera() {
+  scossa = 0;
+  scossaOff.set(0, 0, 0);
   camera.position.set(0, MENU_CAM_Y, run.z + menuCamZ);
   camera.lookAt(0, menuLookY, run.z - 12);
 }
@@ -1028,6 +1108,11 @@ buildRun();
 
 (function loop() {
   requestAnimationFrame(loop);
-  update(Math.min(clock.getDelta(), 0.05));
+  /* Il fermo-immagine si conta in tempo vero e si spende sul tempo di gioco:
+     il mondo quasi si ferma per qualche centesimo, ma l'attesa finisce
+     sempre, anche se il telefono va a dieci fotogrammi. */
+  let dt = Math.min(clock.getDelta(), 0.05);
+  if (fermo > 0) { fermo = Math.max(0, fermo - dt); dt *= 0.1; }
+  update(dt);
   renderer.render(scene, camera);
 })();
