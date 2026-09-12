@@ -613,7 +613,8 @@ const OUTCOMES = {
    Restituisce metà della potenza con cui avevi iniziato la fase in cui sei
    caduto, non metà di quella che ti serviva: così è un aiuto a chi c'era
    quasi, non un modo per comprare una torre fuori portata. Una volta sola
-   per corsa. */
+   per corsa — e solo se quella metà può davvero cambiare come finisce
+   (vedi reviveUseful). */
 const REVIVE_COST    = 5;
 const REVIVE_SHARE   = 0.5;
 const REVIVE_SECONDS = 7;
@@ -629,14 +630,48 @@ function spendGems(n) {
 
 let reviveRAF = 0;
 
+/* Quanto costerebbe finire il muro giocandolo bene: la somma del blocco
+   più economico di ogni riga che resta. Serve a sapere se una seconda
+   occasione può davvero portarti dall'altra parte. */
+function remainingWallCost() {
+  const perRiga = new Map();
+  for (const it of items) {
+    if (it.kind !== 'block' || it.done) continue;
+    const z = Math.round(it.z);
+    perRiga.set(z, Math.min(perRiga.has(z) ? perRiga.get(z) : Infinity, it.cost));
+  }
+  let somma = 0;
+  for (const c of perRiga.values()) somma += c;
+  return somma;
+}
+
+const reviveAmount = () => Math.max(1, Math.round(run.phaseStart * REVIVE_SHARE));
+
+/* L'offerta compare solo se può cambiare come va a finire.
+   Sfondare l'ultimo blocco del muro con la potenza a zero è legittimo — il
+   muro l'hai preso — ma ti fa entrare nel duello a mani vuote, e metà di
+   zero è zero: il gioco offriva "+1 potenza" per cinque diamanti. Vendere
+   qualcosa che non può servire è peggio che non vendere niente. */
+function reviveUseful(outcome) {
+  const torna = reviveAmount();
+  if (outcome === 'boss') {
+    /* nel duello i due numeri scendono insieme: o superi quello che resta
+       al carceriere, o hai buttato i diamanti */
+    return torna > run.bossHp;
+  }
+  /* al muro basta che possa portarti dall'altra parte giocando bene */
+  return torna >= remainingWallCost();
+}
+
 function canRevive(outcome) {
   return (outcome === 'wall' || outcome === 'boss') &&
-         !run.revived && gemsAvailable() >= REVIVE_COST;
+         !run.revived && gemsAvailable() >= REVIVE_COST &&
+         reviveUseful(outcome);
 }
 
 function offerRevive(outcome) {
   state = 'offer';
-  const torna = Math.max(1, Math.round(run.phaseStart * REVIVE_SHARE));
+  const torna = reviveAmount();
   /* "ti mancava poco" solo se è vero: dirlo a chi si è fermato al quinto
      blocco è una presa in giro, e si vede subito */
   const vicino = outcome === 'wall' ? run.broken >= CFG.wallRows - 6
@@ -673,7 +708,7 @@ function doRevive(outcome) {
   spendGems(REVIVE_COST);
   run.revived = true;
   meta.towerRevived = 1;          // il diario lo segna con un asterisco
-  run.power = Math.max(1, Math.round(run.phaseStart * REVIVE_SHARE));
+  run.power = reviveAmount();
   flashBanner('SECONDA OCCASIONE!');
   renderHud();
   /* si riprende esattamente da dove si era caduti: davanti al muro col

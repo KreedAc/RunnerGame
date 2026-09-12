@@ -87,8 +87,8 @@ balcone e la principessa è libera — torre successiva, più dura e più veloce
 
 **La seconda occasione.** Quando il muro ti ferma o il carceriere ti piega,
 se hai **5 diamanti** puoi ripartire da lì con metà della potenza con cui
-avevi iniziato quella fase. Una volta sola per corsa, e hai sette secondi per
-decidere.
+avevi iniziato quella fase. Una volta sola per corsa, hai sette secondi per
+decidere, e compare solo quando può davvero cambiare come finisce.
 
 **Il diario.** In fondo al menù, quanti tentativi è costata ogni torre —
 `T1 3 · T2 1 · T3 2*`, dove l'asterisco segna dove hai usato la seconda

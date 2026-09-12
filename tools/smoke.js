@@ -118,6 +118,40 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
   controlla(r.muro > 0, 'la corsa non ha rotto nemmeno un blocco del muro');
   controlla(errori.length === 0, 'errori JS: ' + errori.join(' / '));
 
+  /* ---- la seconda occasione si vende solo se può servire ----
+     Nasce da un caso vero: sfondato l'ultimo blocco del muro con la
+     potenza a zero, il gioco offriva "+1 potenza" per cinque diamanti. */
+  async function siOffre(prepara) {
+    const q = await ctx.newPage();
+    await q.goto(PAGINA);
+    await q.waitForFunction(() => window.BlockyRun);
+    await q.evaluate(() => { window.BlockyRun.meta.gems = 20; renderHub(); });
+    await q.click('#playBtn');
+    await q.waitForTimeout(300);
+    await q.evaluate(prepara);
+    await q.waitForTimeout(300);
+    const c = await q.evaluate(() => ({
+      mostrata: !document.getElementById('revive').classList.contains('hidden'),
+      quanta: window.BlockyRun.run.phaseStart
+    }));
+    await q.close();
+    return c.mostrata;
+  }
+
+  const inutile = await siOffre(() => {
+    const G = window.BlockyRun;
+    G.items.forEach(i => { if (i.kind !== 'block') { i.done = true; i.obj.visible = false; } });
+    G.run.broken = 30; G.run.phaseStart = 0; G.run.bossHp = 1114;
+    G.setPower(0); endRun('boss');
+  });
+  const utile = await siOffre(() => {
+    const G = window.BlockyRun;
+    G.run.broken = 30; G.run.phaseStart = 900; G.run.bossHp = 300;
+    G.setPower(0); endRun('boss');
+  });
+  controlla(!inutile, 'la seconda occasione si offre anche quando non può cambiare niente');
+  controlla(utile, 'la seconda occasione NON si offre quando servirebbe');
+
   await browser.close();
 
   if (problemi.length) {

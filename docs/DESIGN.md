@@ -468,6 +468,19 @@ C'è anche un motivo che guarda avanti: in un gioco pubblicato questo è
 esattamente il punto dove si mette la pubblicità con premio. Il prototipo si
 porta dietro già la struttura giusta.
 
+**E non si vende quello che non può servire.** Sfondare l'ultimo blocco del
+muro con la potenza esattamente a zero è legittimo — il muro l'hai preso, ed è
+il boss che deve fermarti — ma ti fa entrare nel duello a mani vuote. Metà di
+zero è zero: il gioco offriva *«+1 potenza»* per cinque diamanti. Adesso
+l'offerta compare solo quando può cambiare come finisce: nel duello, se la
+potenza restituita supera quello che resta al carceriere — i due numeri
+scendono insieme, quindi qualunque cifra inferiore è denaro buttato; al muro,
+se basta ad arrivare dall'altra parte giocando bene (la somma del blocco più
+economico di ogni riga che resta).
+
+Un'offerta che non può salvarti è peggio di nessuna offerta: la prima ti frega
+cinque diamanti, la seconda ti lascia almeno la dignità della sconfitta.
+
 ## 6d. Il diario della salita
 
 Il simulatore dice una cosa, un pollice su un telefono ne dice un'altra — e
