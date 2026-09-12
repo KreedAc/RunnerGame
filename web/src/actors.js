@@ -22,17 +22,22 @@ function eyes(parent, y, z, spread, r) {
 /* -------------------------------- EROE -------------------------------- */
 /* Vichingo: elmo con nasale e corna, tunica sopra la cotta, mantello di
    pelliccia, scudo sulla schiena. È l'unica cosa sempre in scena, quindi
-   ogni pezzo in più qui vale il doppio di uno messo nel paesaggio. */
+   ogni pezzo in più qui vale il doppio di uno messo nel paesaggio.
+
+   I colori non stanno più qui ma nella skin indossata (SKINS in core.js):
+   la forma è una sola, le tinte cambiano. L'incarnato no — quello è
+   l'eroe, non il suo vestito. */
 function buildHero() {
   const g = new THREE.Group();
+  const S = skinOf();
   const skin  = mat(C.skin);
-  const cloth = mat(C.cloth);
-  const clothD= mat(C.clothDark);
-  const hide  = mat(C.hero);
-  const hideD = mat(C.heroDark);
-  const metal = mat(0xb9c4d0);
-  const metalD= mat(0x7d8896);
-  const gold  = mat(C.gold);
+  const cloth = mat(S.cloth);
+  const clothD= mat(S.clothDark);
+  const hide  = mat(S.hero);
+  const hideD = mat(S.heroDark);
+  const metal = mat(S.metal);
+  const metalD= mat(S.metalDark);
+  const gold  = mat(S.trim);
 
   /* gambe: calzari e fasce incrociate */
   const legL = limb(g, hideD, -0.19, 0.80, 0, 0.27, 0.80);
@@ -40,7 +45,7 @@ function buildHero() {
   for (const leg of [legL, legR]) {
     put(leg, GEO.cyl, hide,  0, -0.30, 0, 0.30, 0.14, 0.30);
     put(leg, GEO.cyl, hide,  0, -0.54, 0, 0.30, 0.12, 0.30);
-    put(leg, GEO.box, mat(0x4a3626), 0, -0.78, 0.06, 0.32, 0.18, 0.44);
+    put(leg, GEO.box, mat(S.boot), 0, -0.78, 0.06, 0.32, 0.18, 0.44);
   }
 
   /* busto: cotta scura sotto, tunica sopra, cintura con fibbia */
@@ -72,7 +77,7 @@ function buildHero() {
   put(g, GEO.cyl, metalD, 0, 1.94, 0, 0.66, 0.14, 0.64);          // bordo
   put(g, GEO.box, metal,  0, 1.92, 0.28, 0.10, 0.30, 0.10);       // nasale
   for (const s of [-1, 1]) {
-    const horn = put(g, GEO.cone6, mat(0xe6dcc8), s * 0.37, 2.12, 0, 0.21, 0.46, 0.21);
+    const horn = put(g, GEO.cone6, mat(S.horn), s * 0.37, 2.12, 0, 0.21, 0.46, 0.21);
     horn.rotation.z = s * -0.72;
   }
 
@@ -90,9 +95,9 @@ function buildHero() {
     o.userData.noOutline = true;
     return o;
   };
-  paint(mat(0xc94a3f), -0.09, 0.58, 0.58);
-  const bar1 = put(shield, GEO.box, mat(0xeee4d0), 0, -0.12, 0, 0.58, 0.04, 0.13);
-  const bar2 = put(shield, GEO.box, mat(0xeee4d0), 0, -0.12, 0, 0.13, 0.04, 0.58);
+  paint(mat(S.shield), -0.09, 0.58, 0.58);
+  const bar1 = put(shield, GEO.box, mat(S.shieldLine), 0, -0.12, 0, 0.58, 0.04, 0.13);
+  const bar2 = put(shield, GEO.box, mat(S.shieldLine), 0, -0.12, 0, 0.13, 0.04, 0.58);
   bar1.userData.noOutline = bar2.userData.noOutline = true;
   put(shield, GEO.sph, metal, 0, -0.15, 0, 0.24, 0.14, 0.24).userData.noOutline = true;
   g.add(shield);

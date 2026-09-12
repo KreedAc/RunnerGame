@@ -149,6 +149,53 @@ const WEAPONS = [
 
 const weaponName = tier => t(WEAPONS[clamp(tier, 0, WEAPONS.length - 1)].key);
 
+/* ------------------------------- ASPETTO -------------------------------
+   Le skin sono l'altra cosa che i diamanti comprano, insieme alla seconda
+   occasione — ed è una tensione voluta: i diamanti sono pochi, e chi ne
+   spende quaranta per vestirsi bene ha rinunciato a otto seconde occasioni.
+
+   Nessuna tocca una regola. Un vantaggio comprato con una valuta che si
+   raccoglie giocando trasforma "sono bello" in "sono avanti", e da lì il
+   gioco è un'altra cosa.
+
+   Non sono modelli nuovi: l'eroe è lo stesso vichingo, ridipinto. Undici
+   colori a testa, nessuna geometria in più, e la silhouette — che è quello
+   che si legge davvero a schermo — resta riconoscibile in tutte. */
+const SKINS = [
+  { key: 'sk.viking', gems: 0,
+    hero: 0x9c5a2c, heroDark: 0x6f3c1c, cloth: 0x2f9e8f, clothDark: 0x1f6f66,
+    metal: 0xb9c4d0, metalDark: 0x7d8896, horn: 0xe6dcc8, boot: 0x4a3626,
+    shield: 0xc94a3f, shieldLine: 0xeee4d0, trim: 0xffc93c },
+
+  { key: 'sk.ember', gems: 15,
+    hero: 0x7a3a22, heroDark: 0x4e2414, cloth: 0xd4551f, clothDark: 0x8f3410,
+    metal: 0x5a5158, metalDark: 0x37323a, horn: 0xffb05a, boot: 0x2e2226,
+    shield: 0x2c2228, shieldLine: 0xff8a3c, trim: 0xff7a2a },
+
+  { key: 'sk.frost', gems: 35,
+    hero: 0xcfe0ee, heroDark: 0x9ab4cc, cloth: 0x3f8fd0, clothDark: 0x2a6aa0,
+    metal: 0xe4f2ff, metalDark: 0xa8c4dc, horn: 0xffffff, boot: 0x5a7590,
+    shield: 0x2f6ea8, shieldLine: 0xdff2ff, trim: 0x9fe4ff },
+
+  /* La prima versione era viola dalla testa ai piedi e la sagoma spariva:
+     una skin deve restare leggibile a schermo piccolo, quindi ogni tinta
+     ha almeno un pezzo chiaro accanto. Qui l'acciaio e le corna. */
+  { key: 'sk.night', gems: 70,
+    hero: 0x2e2742, heroDark: 0x1b1628, cloth: 0x4a2f7c, clothDark: 0x2b1a4e,
+    metal: 0x9aa8d8, metalDark: 0x5e6a96, horn: 0xe8e0ff, boot: 0x1d1828,
+    shield: 0x1b1628, shieldLine: 0xb9a8ff, trim: 0xffd24b },
+
+  { key: 'sk.gold', gems: 120,
+    hero: 0x8a6a2a, heroDark: 0x5e4718, cloth: 0xf0e4c8, clothDark: 0xc4b492,
+    metal: 0xffc93c, metalDark: 0xc48f14, horn: 0xfff0c0, boot: 0x6b5320,
+    shield: 0xffc93c, shieldLine: 0x8a6a2a, trim: 0xffe89a }
+];
+
+/* La skin indossata. `meta` nasce in hub.js, che si carica dopo: questa
+   funzione si chiama solo a mondo costruito, mai qui in cima. */
+const skinOf = () => SKINS[clamp(Math.round(meta.skin) || 0, 0, SKINS.length - 1)];
+const skinOwned = i => i === 0 || (meta.skins || []).indexOf(i) >= 0;
+
 /* Bonus raccolti lungo la pista: valgono solo per la partita in corso. */
 const BUFFS = {
   income: { key: 'b.gold',   icon: '💰', step: 0.25, color: '#ffd24b' },
@@ -268,6 +315,8 @@ function defaultSave() {
     tries: 0,            // tentativi sulla torre corrente
     towerRevived: 0,     // su questa torre hai usato la seconda occasione?
     diary: [],           // { l: torre, t: tentativi, r: seconda occasione }
+    skin: 0,             // l'aspetto indossato…
+    skins: [],           // …e quelli comprati (lo 0 è di tutti)
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

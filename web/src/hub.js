@@ -197,6 +197,7 @@ function renderHub() {
 
   /* per ultimo: la camera si punta sulla fascia libera, che dipende da
      tutto quello che il menù ha appena deciso di mostrare */
+  renderSkins();
   renderLangs();
   if (typeof aimMenuCamera === 'function') aimMenuCamera();
 }
@@ -223,6 +224,67 @@ const OUTCOME_TEXT = {
   boss: { key: 'run.beaten',  color: '#ff9d8a' },
   win : { key: 'run.freed',   color: '#ffd24b' }
 };
+
+/* ------------------------------- ASPETTO -------------------------------
+   La fila di pastiglie sotto ai potenziamenti. Sono colori, non nomi: cinque
+   nomi in fila non si leggono su un telefono, cinque macchie di colore sì.
+   Il nome — e il prezzo, se è chiuso — sta nella riga sotto, una alla volta.
+
+   Comprare chiede due tocchi come la rinascita e il ricomincia: i diamanti
+   sono pochi e un pollice sbaglia. Il primo tocco su un aspetto chiuso ne
+   mostra il prezzo, il secondo paga. */
+let skinArmed = -1;
+let skinHook = null;      // lo riempie game.js: deve ricostruire l'eroe
+
+const esa = n => '#' + n.toString(16).padStart(6, '0');
+
+function renderSkins() {
+  const row = $('skRow');
+  row.innerHTML = '';
+  SKINS.forEach((s, i) => {
+    const mio = skinOwned(i);
+    const b = document.createElement('button');
+    b.className = 'sk' + (i === meta.skin ? ' on' : '') +
+                  (mio ? '' : ' locked') + (skinArmed === i ? ' armed' : '');
+    b.style.background = 'linear-gradient(135deg,' + esa(s.cloth) + ' 52%,' +
+                         esa(s.metal) + ' 52%)';
+    if (!mio) b.innerHTML = '<i>🔒</i>';
+    b.addEventListener('click', () => tapSkin(i));
+    row.appendChild(b);
+  });
+
+  const mostrata = skinArmed >= 0 ? skinArmed : meta.skin;
+  const s = SKINS[mostrata];
+  $('skName').textContent = skinOwned(mostrata)
+    ? t(s.key)
+    : t('sk.price', t(s.key), s.gems);
+  $('skName').classList.toggle('armed', skinArmed >= 0);
+}
+
+function tapSkin(i) {
+  if (skinOwned(i)) {                     // già tuo: si indossa e basta
+    skinArmed = -1;
+    if (meta.skin !== i) {
+      meta.skin = i;
+      writeSave(meta);
+      if (skinHook) skinHook();
+    }
+    renderSkins();
+    return;
+  }
+  if (skinArmed !== i) { skinArmed = i; renderSkins(); return; }   // primo tocco: il prezzo
+
+  const s = SKINS[i];
+  if (meta.gems < s.gems) { flashBanner(t('sk.need', s.gems - meta.gems)); return; }
+  meta.gems -= s.gems;
+  meta.skins = (meta.skins || []).concat(i);
+  meta.skin = i;
+  skinArmed = -1;
+  writeSave(meta);
+  if (skinHook) skinHook();
+  flashBanner(t('sk.bought', t(s.key)));
+  renderHub();
+}
 
 /* --------------------------- COLONNA BONUS ---------------------------- */
 /* I bonus raccolti nella partita in corso, impilati a sinistra. */

@@ -67,9 +67,23 @@ const coinMul = () => UPGRADES.income.value(meta.up.income) *
                      (1 + run.buffs.income * BUFFS.income.step) * runeMul(meta.runes);
 
 /* --------------------------------- EROE -------------------------------- */
-const hero = buildHero();
+/* `let` e non `const`: cambiando aspetto l'eroe si ricostruisce. I
+   materiali sono condivisi per colore (matCache), quindi ridipingerlo sul
+   posto ridipingerebbe mezzo mondo — si rifà, ed è una volta ogni tanto. */
+let hero = buildHero();
 hero.rotation.y = Math.PI;                 // di spalle: corre verso −Z
 scene.add(hero);
+
+function rifaiEroe() {
+  const vecchio = hero;
+  hero = buildHero();
+  hero.rotation.y = Math.PI;
+  hero.position.copy(vecchio.position);
+  hero.rotation.x = vecchio.rotation.x;
+  scene.add(hero);
+  scene.remove(vecchio);
+  setWeapon(hero, run.weapon);
+}
 
 const shadow = new THREE.Mesh(
   GEO.disc,
@@ -859,10 +873,14 @@ langHook = () => { buildRun(); renderHud(); renderHub(); };
    ricostruito da zero. */
 rebuildHook = () => {
   run.x = 0; run.targetX = 0; run.z = 0;
+  rifaiEroe();                     // il ricomincia da capo rimette l'aspetto di serie
   setWeapon(hero, meta.up.weapon);
   buildRun();
   snapCamera();
 };
+
+/* lo chiama il menù quando si cambia aspetto */
+skinHook = () => { rifaiEroe(); setWeapon(hero, meta.up.weapon); };
 
 /* -------------------------------- INPUT -------------------------------- */
 const steering = () => state === 'run' || state === 'wall';

@@ -481,6 +481,43 @@ economico di ogni riga che resta).
 Un'offerta che non può salvarti è peggio di nessuna offerta: la prima ti frega
 cinque diamanti, la seconda ti lascia almeno la dignità della sconfitta.
 
+## 6c-bis. Gli aspetti, e perché non danno niente
+
+I diamanti compravano una cosa sola, la seconda occasione. Adesso ne comprano
+due, ed è una tensione voluta: sono pochi, e chi ne spende settanta per
+vestirsi bene ha rinunciato a quattordici seconde occasioni. Questa è la
+scelta, e senza di essa un negozio di aspetti è solo un pulsante.
+
+Nessun aspetto tocca una regola. Un vantaggio comprato con una valuta che si
+raccoglie giocando trasforma "sono bello" in "sono avanti", e da lì il gioco è
+un altro — quello dove chi paga vince, che non è quello che stiamo facendo.
+
+Non sono modelli nuovi: è lo stesso vichingo ridipinto. Undici colori a testa
+in `SKINS` (pelliccia, tunica, acciaio, corna, stivali, scudo, rifiniture),
+zero geometrie in più, e la silhouette — che è quello che davvero si legge a
+schermo piccolo — resta la stessa in tutte. Cinque: Vichingo (di serie),
+Brace 💎15, Brina 💎35, Guardia Notturna 💎70, Campione 💎120.
+
+Due cose imparate disegnandoli:
+
+- **una tinta sola non basta.** La Guardia Notturna era viola dalla testa ai
+  piedi e la sagoma spariva: ogni aspetto ha bisogno di almeno un pezzo chiaro
+  accanto a quello scuro — qui l'acciaio e le corna.
+- **colori, non nomi.** Cinque nomi in fila non si leggono su un telefono,
+  cinque macchie di colore sì. Le pastiglie sono solo colore; il nome di
+  quella toccata sta nella riga sotto, una alla volta. E comprare chiede due
+  tocchi come la rinascita: i diamanti sono pochi e un pollice sbaglia.
+
+I materiali sono condivisi per colore (`matCache`), quindi ridipingere l'eroe
+sul posto ridipingerebbe mezzo mondo: cambiando aspetto lo si **ricostruisce**,
+che capita una volta ogni tanto e costa niente. Da qui `hero` che è diventato
+`let`.
+
+`tools/skins.js` fa il giro completo — chiuso, pagato, indossato, salvato,
+tradotto, e il ricomincia da capo che rimette quello di serie — perché un
+aspetto regalato o pagato due volte nessuno lo segnala: se ne accorge solo chi
+conta i diamanti.
+
 ## 6d. Il diario della salita
 
 Il simulatore dice una cosa, un pollice su un telefono ne dice un'altra — e

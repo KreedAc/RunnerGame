@@ -90,6 +90,16 @@ const STRINGS = {
     'reset.done'  : 'TUTTO DA CAPO',
     'diary.lbl'   : 'TENTATIVI PER TORRE',
 
+    /* --- aspetto --- */
+    'sk.price'    : '{0} · 💎{1} — TOCCA ANCORA',
+    'sk.need'     : 'TI MANCANO {0} 💎',
+    'sk.bought'   : '{0}!',
+    'sk.viking'   : 'VICHINGO',
+    'sk.ember'    : 'BRACE',
+    'sk.frost'    : 'BRINA',
+    'sk.night'    : 'GUARDIA NOTTURNA',
+    'sk.gold'     : 'CAMPIONE',
+
     /* --- armi --- */
     'w.fists'     : 'Pugni',
     'w.club'      : 'Randello',
@@ -174,6 +184,15 @@ const STRINGS = {
     'reset.sure'  : 'TAP AGAIN: WIPE EVERYTHING',
     'reset.done'  : 'ALL FROM SCRATCH',
     'diary.lbl'   : 'ATTEMPTS PER TOWER',
+
+    'sk.price'    : '{0} · 💎{1} — TAP AGAIN',
+    'sk.need'     : 'YOU NEED {0} MORE 💎',
+    'sk.bought'   : '{0}!',
+    'sk.viking'   : 'VIKING',
+    'sk.ember'    : 'EMBER',
+    'sk.frost'    : 'FROST',
+    'sk.night'    : 'NIGHTWATCH',
+    'sk.gold'     : 'CHAMPION',
 
     'w.fists'     : 'Fists',
     'w.club'      : 'Club',

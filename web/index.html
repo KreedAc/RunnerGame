@@ -255,6 +255,27 @@
   /* l'asterisco dice che lì hai usato la seconda occasione */
   .dy-chip i{font-style:normal;color:#7ce0a0}
 
+  /* L'aspetto: una fila di pastiglie colorate sotto ai potenziamenti.
+     Colori e non nomi — cinque nomi in fila su un telefono non si leggono,
+     cinque macchie di colore sì — e il nome di quello toccato nella riga
+     sotto, una alla volta. */
+  .skins{margin-top:14px}
+  .sk-row{display:flex;justify-content:center;gap:9px}
+  .sk{width:38px;height:38px;border-radius:50%;cursor:pointer;padding:0;
+    position:relative;font-family:inherit;
+    border:2px solid rgba(255,255,255,.18);
+    box-shadow:inset 0 -6px 10px rgba(0,0,0,.28);
+    transition:transform .1s,border-color .15s}
+  .sk.on{border-color:#ffd24b;transform:scale(1.14);
+    box-shadow:inset 0 -6px 10px rgba(0,0,0,.28),0 0 0 3px rgba(255,210,75,.22)}
+  .sk.locked{filter:saturate(.35) brightness(.62)}
+  .sk.locked.armed{filter:none;border-color:#8fe3ff}
+  .sk i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-style:normal;font-size:14px}
+  .sk-name{margin-top:7px;text-align:center;font-size:10.5px;font-weight:800;
+    letter-spacing:1.2px;color:rgba(255,255,255,.5)}
+  .sk-name.armed{color:#8fe3ff}
+
   /* le due bandierine: stanno in fondo, fuori dalla strada del pollice
      che gioca, ma sempre visibili — una lingua che non si trova è come
      non averla */
@@ -379,6 +400,11 @@
     </button>
   </div>
 
+  <div class="skins">
+    <div class="sk-row" id="skRow"></div>
+    <div class="sk-name" id="skName"></div>
+  </div>
+
   <div class="langs" id="langs">
     <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
     <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
@@ -393,7 +419,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260912-0158';</script>
+<script>window.BUILD = '260912-0207';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

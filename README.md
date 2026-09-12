@@ -95,6 +95,12 @@ se hai **5 diamanti** puoi ripartire da lì con metà della potenza con cui
 avevi iniziato quella fase. Una volta sola per corsa, hai sette secondi per
 decidere, e compare solo quando può davvero cambiare come finisce.
 
+**Gli aspetti.** Sotto ai potenziamenti, cinque pastiglie colorate: Vichingo
+(di serie), Brace 💎15, Brina 💎35, Guardia Notturna 💎70, Campione 💎120. Si
+pagano in diamanti — gli stessi della seconda occasione, ed è la scelta — e
+non danno nessun vantaggio: è lo stesso eroe ridipinto. Due tocchi per
+comprare, uno per rimettersi quello che hai già.
+
 **Il diario.** In fondo al menù, quanti tentativi è costata ogni torre —
 `T1 3 · T2 1 · T3 2*`, dove l'asterisco segna dove hai usato la seconda
 occasione. Serve a tarare la difficoltà su una partita vera.
@@ -124,6 +130,7 @@ web/
 docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
 tools/sim.js          simulatore dell'economia: quanti tentativi costa ogni torre
 tools/smoke.js        gioca una corsa e controlla che nessun numero impazzisca
+tools/skins.js        compra, indossa e salva un aspetto: il giro dei diamanti
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
 .github/workflows/    pubblicazione automatica su GitHub Pages ad ogni push
@@ -150,5 +157,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [ ] Audio e particellari oltre alle scaglie
 - [x] Diamanti spendibili: la seconda occasione
 - [x] Italiano e inglese, con la lingua indovinata dal telefono
-- [ ] Missioni e skin dell'eroe (palette e pezzi, non modelli nuovi)
+- [x] Cinque aspetti dell'eroe comprabili in diamanti (solo colore, zero vantaggi)
+- [ ] Missioni
 - [ ] Build Android (vedi `docs/DESIGN.md`)
