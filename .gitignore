@@ -1,3 +1,7 @@
+# la barra finale non copre un collegamento simbolico chiamato
+# node_modules, che e' il modo piu' comodo di puntare a una copia di
+# Playwright installata altrove: si ignorano tutti e due i casi
+node_modules
 node_modules/
 dist/
 .DS_Store
