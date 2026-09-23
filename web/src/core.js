@@ -234,7 +234,47 @@ const START_POWER = 30;
    arrivare non basta, bisogna arrivarci con qualcosa in mano. */
 const towerNeed  = lvl => Math.round(430 * Math.pow(1.62, lvl - 1));
 const wallBudget = lvl => Math.round(towerNeed(lvl) * 0.62);
-const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.38);
+/* 0,38 prima del duello; 0,44 adesso. Il simulatore, a parità di tutto
+   il resto: senza duello 28,8 / 25,8 / 26,3 corse fino alla torre 10
+   (perfetto / umano / ingenuo); col duello e 0,38, 25,8 / 23,9 / 24,3 —
+   un regalo; col duello e 0,44, 28,3 / 25,0 / 25,5 — il costo di prima. */
+const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.44);
+
+/* ------------------------------ IL DUELLO -----------------------------
+   Lo scontro col carceriere era l'unico momento del gioco in cui non si
+   faceva niente: due numeri che scendevano insieme, e l'esito già deciso
+   dal muro. Adesso è un duello a tempo. Un anello si stringe sul bersaglio;
+   chi tocca quando combacia mette un colpo critico, che toglie al
+   carceriere una fetta della vita con cui era partito.
+
+   durata : quanto dura lo scontro se le due forze sono pari (secondi)
+   giro   : quanto ci mette un anello a chiudersi del tutto
+   da, a  : quanto è grande l'anello quando nasce e quando muore
+            (1 = il bersaglio)
+   perfetto, buono : le finestre, in secondi dal momento giusto. Un
+            telefono ha ~50-80 ms fra il dito e lo schermo: sotto gli 80
+            ms la finestra perfetta diventa fortuna.
+   pausa  : fra un anello e il successivo
+   critP, critB : quanto toglie un colpo, in frazione della vita iniziale
+
+   Il duello regala vita tolta, quindi va pagato: la vita del carceriere
+   è stata alzata di quanto un giocatore medio recupera coi colpi (vedi
+   tools/sim.js). Chi tocca bene vince di più, chi non tocca perde di più;
+   in media la torre costa quello che costava. */
+/* ------------------------------ LA COMBO ------------------------------
+   Colonne verdi e nemici abbattuti di fila, senza farsi male, alzano la
+   potenza che raccogli: +passo per ogni colpo della serie, fino a max
+   colpi. Una colonna rossa o un nemico che ti prende la azzera. Schivare
+   non la rompe: la serie premia chi non sbaglia, non chi rischia.
+
+   Anche questa va pagata, come il duello: vedi BASE_SHARE. */
+const COMBO = { passo: 0.03, max: 5 };
+
+const DUELLO = {
+  durata: 3.6, giro: 0.9, da: 2.4, a: 0.5,
+  perfetto: 0.08, buono: 0.18, pausa: 0.16,
+  critP: 0.07, critB: 0.035
+};
 
 /* ---------------------------- IL PASSO DELLA PISTA --------------------
    Prima le colonne erano tarate sull'arma del giocatore: comprare
@@ -255,8 +295,14 @@ const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.38);
                al netto di quello che la pista dà da sola. Inclina la
                curva: alzarla non tocca le prime torri e fa esplodere la
                coda, quindi è la manopola sbagliata per "è troppo facile
-               all'inizio". */
-const BASE_SHARE = 0.42;
+               all'inizio".
+
+   0,42 fino alla combo; 0,375 adesso. La combo alza la potenza raccolta
+   fino al 15% a chi non sbaglia, e il giocatore simulato non sbaglia mai:
+   con 0,42 la salita fino alla torre 10 passava da 25,8 a 22,0 corse.
+   Con 0,375 torna a 25,5 — il costo di prima per chi gioca pulito, un po'
+   di più per chi prende colonne rosse e perde la serie. */
+const BASE_SHARE = 0.375;
 const LEVEL_GAP  = 1.34;
 const trackRows  = lvl => Math.min(20, 10 + lvl);
 const trackUnit  = lvl => towerNeed(lvl) * BASE_SHARE /

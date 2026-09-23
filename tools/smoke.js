@@ -26,6 +26,13 @@ catch (e) {
   process.exit(2);
 }
 
+/* Prima di tutto: il simulatore riconosce ancora il gioco? È lo strumento
+   con cui si tara la difficoltà, e ha il suo controllo — si ferma se una
+   costante sparisce — ma quel controllo scatta solo se qualcuno lo lancia.
+   Dopo la traduzione nessuno l'ha lanciato per settimane, ed era rotto.
+   Caricarlo qui costa un millisecondo e lo fa scattare a ogni prova. */
+require('./sim.js');
+
 const PAGINA = process.argv[2] ||
   'file://' + path.join(__dirname, '..', 'web', 'index.html');
 const CROMO = process.env.CHROME_PATH ||

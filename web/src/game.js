@@ -52,6 +52,7 @@ const run = {
   beatRecord: false,
   swing: 0,
   schiaccia: 0,            // 1 appena colpito, scende a 0: l'eroe si schiaccia e rimbalza
+  combo: 0,                // colpi puliti di fila (vedi COMBO in core.js)
   unit: 1,                 // il passo della torre in corso (vedi trackUnit)
   speed: CFG.speed,
   phaseStart: 0,           // potenza all'inizio del muro / del duello
@@ -62,8 +63,10 @@ const run = {
    rompere: è il rapporto fra i due numeri a decidere cosa si spacca. */
 const damage  = () => Math.round(WEAPONS[run.weapon].hit * run.unit *
                                  (1 + run.buffs.rate * BUFFS.rate.step));
+const comboMul = () => 1 + Math.min(run.combo, COMBO.max) * COMBO.passo;
 const gainMul = () => UPGRADES.power.value(meta.up.power) *
-                     (1 + run.buffs.gain * BUFFS.gain.step) * runeMul(meta.runes);
+                     (1 + run.buffs.gain * BUFFS.gain.step) * runeMul(meta.runes) *
+                     comboMul();
 const coinMul = () => UPGRADES.income.value(meta.up.income) *
                      (1 + run.buffs.income * BUFFS.income.step) * runeMul(meta.runes);
 
@@ -608,6 +611,7 @@ function hitPillar(it) {
     impatto(0.55);
     fxColpo(it.obj, 0x6dff8a, false);
     shatter(it.obj, 16, MAT.good);
+    comboSu();
   } else {
     /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
        incontrano più spesso, e il prezzo dev'essere abbastanza alto da
@@ -620,6 +624,7 @@ function hitPillar(it) {
     impatto(0.8);                     // sbagliare deve farsi sentire di più
     fxColpo(it.obj, 0xff5a44, true);
     shatter(it.obj, 16, MAT.bad);
+    comboGiu();
   }
   it.obj.visible = false;
 }
@@ -640,6 +645,7 @@ function hitEnemy(it) {
     fxColpo(it.obj, 0xffd24b, false);
     it.mob.userData.dying = true;
     it.sprite.visible = false;
+    comboSu();
   } else {
     const loss = Math.max(5, Math.round(run.power * 0.22));
     run.power = Math.max(0, run.power - loss);
@@ -649,7 +655,48 @@ function hitEnemy(it) {
     impatto(0.8);
     fxColpo(it.obj, 0xff5a44, true);
     it.obj.visible = false;
+    comboGiu();
   }
+}
+
+/* ------------------------------ LA COMBO -------------------------------
+   Il distintivo sotto la barra: compare dal secondo colpo pulito, cresce a
+   ogni colpo, e quando ti fai male si rompe con una scritta rossa invece
+   di sparire in silenzio — perdere una serie deve bruciare un po'. */
+function comboSu() {
+  run.combo++;
+  renderCombo();
+  if (run.combo >= 2) pulsa('combo', 'bump');
+  if (run.combo === COMBO.max) {
+    /* al massimo: un momento, non un numero che smette di crescere */
+    FX.scintille.emetti(run.x, 1.6, run.z - 1, 24, 0xffb13c,
+                        { vel: 6, su: 4, taglia: 0.45, vita: 0.6, grav: 6 });
+  }
+}
+
+function comboGiu() {
+  const eraSerie = run.combo >= 2;
+  run.combo = 0;
+  if (!eraSerie) { renderCombo(); return; }
+  const el = $('combo');
+  el.classList.remove('hidden', 'bump');
+  el.classList.add('rotta');
+  /* un timer solo: finita la rottura si ridisegna. Con due timer separati
+     il ridisegno arrivava prima della fine dell'animazione, la trovava
+     ancora in corso e lasciava il distintivo rotto sullo schermo. */
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => { el.classList.remove('rotta'); renderCombo(); }, 520);
+}
+let comboTimer = 0;
+
+function renderCombo() {
+  const el = $('combo');
+  if (el.classList.contains('rotta')) return;
+  const n = run.combo;
+  el.classList.toggle('hidden', n < 2);
+  el.classList.toggle('piena', n >= COMBO.max);
+  $('comboN').textContent = '×' + n;
+  $('comboBonus').textContent = t('co.bonus', Math.round((comboMul() - 1) * 100));
 }
 
 function takeWeapon(it) {
@@ -724,7 +771,10 @@ function startBossFight() {
   state = 'boss';
   run.phaseStart = run.power;            // per la seconda occasione
   run.bossHp = bossHealth(meta.level);
-  run.clash = Math.max(run.power, run.bossHp) / 1.5;   // ~1.5s di scontro
+  run.bossHpIni = run.bossHp;            // i colpi critici ne tolgono una fetta
+  /* le due forze scendono insieme: a pari forza lo scontro dura
+     DUELLO.durata secondi, abbastanza per quattro anelli */
+  run.clash = Math.max(run.power, run.bossHp) / DUELLO.durata;
 
   heroSprite = labelSprite(fmt(run.power), '#8dff87', 1.0);
   scene.add(heroSprite);
@@ -739,6 +789,9 @@ function updateBossFight(dt) {
     run.x = lerp(run.x, 0, 1 - Math.pow(0.004, dt));
     return;
   }
+  if (!duello.aperto) apriDuello();
+  aggiornaDuello(dt);
+
   const step = run.clash * dt;
   run.power  = Math.max(0, run.power - step);
   run.bossHp = Math.max(0, run.bossHp - step);
@@ -767,6 +820,96 @@ function updateBossFight(dt) {
   }
   else if (run.power <= 0)  { impatto(1.1, 0.12); endRun('boss'); }
 }
+
+/* ------------------------------ IL DUELLO ------------------------------
+   Un anello si stringe sul bersaglio, a metà strada fra te e il carceriere.
+   Tocchi — dove vuoi, lo schermo intero è il bottone — quando combacia:
+   perfetto o buono è un colpo critico, che toglie al carceriere una fetta
+   della vita con cui era partito. Le costanti stanno in DUELLO (core.js)
+   perché il simulatore le deve leggere.
+
+   L'anello è DOM e non 3D: deve essere nitido, sempre sopra a tutto, e
+   non deve mai finire dietro alla mazza del carceriere. */
+const duello = { aperto: false, anello: -1, pausa: 0, primo: true };
+const _duPos = new THREE.Vector3();
+const alBersaglio = () => (DUELLO.da - 1) / (DUELLO.da - DUELLO.a) * DUELLO.giro;
+
+function apriDuello() {
+  duello.aperto = true;
+  duello.anello = -1;                    // -1: fra un anello e l'altro
+  duello.pausa = DUELLO.pausa;
+  duello.primo = true;
+  $('duScritta').textContent = t('du.tocca');
+  $('duScritta').classList.remove('via');
+  $('duello').classList.remove('hidden');
+}
+
+function chiudiDuello() {
+  duello.aperto = false;
+  $('duello').classList.add('hidden');
+}
+
+function aggiornaDuello(dt) {
+  /* sta sul petto del carceriere: è lì che guarda chi gioca, ed è lontano
+     dal numero della tua potenza, che a metà strada finiva coperto */
+  _duPos.set(0.3, 2.3, bossZ + 0.6).project(camera);
+  const el = $('duello');
+  el.style.left = ((_duPos.x + 1) / 2 * 100) + '%';
+  el.style.top  = ((1 - (_duPos.y + 1) / 2) * 100) + '%';
+
+  if (duello.anello < 0) {
+    duello.pausa -= dt;
+    if (duello.pausa <= 0) duello.anello = 0;
+  } else {
+    duello.anello += dt;
+    if (duello.anello >= DUELLO.giro) esitoColpo('mancato');   // chiuso senza un tocco
+  }
+  const s = duello.anello < 0 ? 0
+          : DUELLO.da - (DUELLO.da - DUELLO.a) * duello.anello / DUELLO.giro;
+  const anello = $('duAnello');
+  anello.style.transform = 'translate(-50%,-50%) scale(' + s.toFixed(3) + ')';
+  anello.style.opacity = duello.anello < 0 ? 0 : 1;
+  /* il bersaglio si accende quando è il momento: chi non ha ancora capito
+     il ritmo lo impara dal colore */
+  const scarto = duello.anello < 0 ? 9 : Math.abs(duello.anello - alBersaglio());
+  el.classList.toggle('ora', scarto <= DUELLO.perfetto);
+}
+
+function tocco() {
+  if (!duello.aperto || state !== 'boss' || duello.anello < 0) return;
+  const scarto = Math.abs(duello.anello - alBersaglio());
+  esitoColpo(scarto <= DUELLO.perfetto ? 'perfetto'
+           : scarto <= DUELLO.buono    ? 'buono' : 'mancato');
+}
+
+function esitoColpo(esito) {
+  duello.anello = -1;
+  duello.pausa = DUELLO.pausa;
+  if (duello.primo) { duello.primo = false; $('duScritta').classList.add('via'); }
+  const el = $('duello');
+  const qui = { x: parseFloat(el.style.left), y: parseFloat(el.style.top) - 10 };
+  if (esito === 'mancato') { popup(t('du.mancato'), '#aab6c6', qui); return; }
+
+  const perfetto = esito === 'perfetto';
+  const via = Math.max(1, Math.round(run.bossHpIni * (perfetto ? DUELLO.critP : DUELLO.critB)));
+  run.bossHp = Math.max(0, run.bossHp - via);
+  popup(t(perfetto ? 'du.perfetto' : 'du.buono'), perfetto ? '#ffd24b' : '#8fe3ff', qui);
+  if (boss) popup('−' + fmt(via), '#ff8f7a', puntoSchermo(boss, 3.6));
+  setLabel(bossSprite, fmt(run.bossHp), '#ff8f7a');
+
+  impatto(perfetto ? 0.7 : 0.45);
+  run.swing = 0.35;
+  run.schiaccia = 0.8;
+  FX.scintille.emetti(0, 2.7, bossZ + 1.6, perfetto ? 36 : 18, perfetto ? 0xffd24b : 0x8fe3ff,
+                      { vel: 10, su: 5, taglia: 0.55, vita: 0.6 });
+  if (perfetto) FX.onde.lancia(0, 0.15, bossZ + 1, 0xffd24b, 4.5);
+}
+
+/* lo schermo intero è il bottone; da tastiera, spazio o invio */
+addEventListener('pointerdown', tocco);
+addEventListener('keydown', e => {
+  if (e.key === ' ' || e.key === 'Enter') tocco();
+});
 
 /* ------------------------------ HUD ------------------------------------ */
 /* I numeri dell'HUD non saltano al valore nuovo: ci corrono. Un +340 che
@@ -798,6 +941,7 @@ function startRun() {
   run.weapon = meta.up.weapon;
   run.coins = 0; run.gems = 0; run.broken = 0; run.swing = 0;
   run.beatRecord = false; run.outcome = '';
+  run.combo = 0; renderCombo();
   run.phaseStart = 0; run.revived = false;
   run.buffs = { income: 0, rate: 0, gain: 0 };
   run.x = 0; run.targetX = 0; run.z = 0;
@@ -1090,6 +1234,10 @@ function update(dt) {
     updateBossFight(dt);
     renderHud();
   }
+  /* finito lo scontro — vinto, perso, o in attesa della seconda occasione —
+     l'anello sparisce; se la seconda occasione riporta allo scontro, si
+     riapre da solo */
+  if (duello.aperto && state !== 'boss') chiudiDuello();
 
   /* --- eroe --- */
   const moving = steering() || (state === 'boss' && run.z > bossZ + 7);

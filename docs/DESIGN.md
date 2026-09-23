@@ -540,6 +540,59 @@ economico di ogni riga che resta).
 Un'offerta che non può salvarti è peggio di nessuna offerta: la prima ti frega
 cinque diamanti, la seconda ti lascia almeno la dignità della sconfitta.
 
+## 6b-bis. Il duello e la combo, e chi li paga
+
+Due meccaniche nuove, entrambe per lo stesso motivo: premiare chi gioca bene
+senza rendere il gioco più facile per tutti.
+
+**Il duello.** Lo scontro col carceriere era l'unico momento del gioco in cui
+non si faceva niente: due numeri che scendevano insieme e un esito già deciso
+dal muro. Adesso dura 3,6 secondi a forze pari, e ogni ~0,8 secondi un anello
+si stringe su un bersaglio sul petto del carceriere. Tocchi — lo schermo intero
+è il bottone — quando combacia: entro 80 ms è **perfetto** (−7% della vita con
+cui era partito), entro 180 ms è **buono** (−3,5%). Il bersaglio si accende
+d'oro nel momento giusto: chi non ha ancora capito il ritmo lo impara dal
+colore. La finestra perfetta non scende sotto gli 80 ms perché un telefono ne
+mette 50-80 fra il dito e lo schermo: sotto, diventa fortuna.
+
+L'anello è DOM, non 3D: deve essere nitido, stare sopra a tutto e non finire
+mai dietro alla mazza.
+
+**La combo.** Colonne verdi e nemici abbattuti di fila, senza farsi male,
+alzano la potenza raccolta del 3% a colpo, fino al 15%. Una colonna rossa o un
+nemico che ti prende la azzera, con un distintivo che si rompe invece di
+sparire in silenzio — perdere una serie deve bruciare un po'. Schivare non la
+rompe: premia chi non sbaglia, non chi rischia.
+
+**Chi paga.** Tutte e due regalano qualcosa, e un regalo che arriva a tutti è
+solo un abbassamento della difficoltà — che chi gioca aveva appena detto
+essere giusta. Quindi ognuna è stata compensata, misurando col simulatore la
+salita fino alla torre 10 (perfetto / umano / ingenuo, 24 semi):
+
+| | corse |
+|---|---|
+| prima di tutto | 28,8 / 25,8 / 26,3 |
+| + duello | 25,8 / 23,9 / 24,3 |
+| + duello, carceriere da 0,38 a **0,44** | 28,3 / 25,0 / 25,5 |
+| + combo | 23,9 / 22,0 / 22,4 |
+| + combo, `BASE_SHARE` da 0,42 a **0,375** | 28,8 / 25,5 / 25,8 |
+
+In media la torre costa quello che costava. Chi tocca a tempo e non prende
+rosse vince di più; chi manca gli anelli e sbaglia colonna perde di più. È lo
+scambio voluto. Il giocatore simulato tocca con una precisione stimata (umano:
+35% perfetti, 40% buoni) e non prende mai una rossa: va ritarato sul diario
+appena ci sono partite vere col duello.
+
+**Il simulatore era rotto.** Con la traduzione i potenziamenti avevano perso
+il nome leggibile (`name: 'POTENZA'` → `key: 'up.power'`), e il simulatore —
+giustamente — si rifiutava di misurare un gioco che non riconosceva. Ma quel
+controllo scatta solo se qualcuno lo lancia, e per settimane nessuno l'ha
+fatto. Adesso `tools/smoke.js` lo carica come prima cosa: se il simulatore non
+riconosce più il gioco, la prova del fumo non parte. Nello stesso giro la vita
+del carceriere nel simulatore era `1 − quota del muro`: uguale per
+coincidenza (0,38 = 1 − 0,62) finché qualcuno non toccava uno dei due numeri.
+Adesso si legge da `bossHealth`.
+
 ## 6c-bis. Gli aspetti, e perché non danno niente
 
 I diamanti compravano una cosa sola, la seconda occasione. Adesso ne comprano

@@ -86,10 +86,19 @@ Spezzato metà del paesaggio non tocca terra.
 
 **Il boss.** Sfondati tutti e trenta, ai piedi della torre ti aspetta il
 carceriere della zona — il Signore del Vulcano, il Mangiacenere, il Re di
-Vetro: stessa stazza e stessa mazza, colori e nome del posto. Quello che ti resta è la forza con cui lo affronti: i due numeri
-scendono insieme, chi arriva a zero cade. Se vinci, la camera sale sul
+Vetro: stessa stazza e stessa mazza, colori e nome del posto. Quello che ti
+resta è la forza con cui lo affronti: i due numeri scendono insieme, chi
+arriva a zero cade. Ma non stai a guardare — è un **duello a tempo**: un
+anello si stringe sul bersaglio sul petto del carceriere, e se tocchi quando
+combacia metti un colpo critico (perfetto −7% della sua vita, buono −3,5%).
+Un buon duello vince scontri che sulla carta erano persi. Se vinci, la camera sale sul
 balcone e la principessa è libera — torre successiva, più dura e più veloce
 (la corsa accelera da 15 a 21 con le torri; solo il muro resta al suo ritmo).
+
+**La combo.** Colonne verdi e nemici abbattuti di fila senza farti male
+alzano la potenza raccolta del 3% a colpo, fino al +15%: il distintivo sotto
+la barra si scalda fino all'oro. Una colonna rossa o un nemico che ti prende
+la rompe. Schivare no.
 
 **La seconda occasione.** Quando il muro ti ferma o il carceriere ti piega,
 se hai **5 diamanti** puoi ripartire da lì con metà della potenza con cui
@@ -161,6 +170,7 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Duello col boss e camera che sale sulla principessa alla vittoria
 - [ ] Audio e particellari oltre alle scaglie
 - [x] Diamanti spendibili: la seconda occasione
+- [x] Duello a tempo col carceriere e combo per chi non sbaglia (compensati: la difficoltà media non cambia)
 - [x] Italiano e inglese, con la lingua indovinata dal telefono
 - [x] Cinque aspetti dell'eroe comprabili in diamanti (solo colore, zero vantaggi)
 - [ ] Missioni

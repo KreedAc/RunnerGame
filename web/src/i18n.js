@@ -38,7 +38,8 @@ const STRINGS = {
                     'torre. Spacca le torri <b>verdi</b> per farti potenza, ' +
                     'schiva le <b>rosse</b>, raccogli le <b>armi</b> che trovi ' +
                     'sulla corsia — poi sfonda i <b>{0} blocchi</b> del muro. ' +
-                    'Quello che ti resta è la forza con cui affronti il boss.',
+                    'Quello che ti resta è la forza con cui affronti il boss: ' +
+                    '<b>tocca a tempo</b> e ogni colpo pesa di più.',
     'hub.hint'    : 'trascina per cambiare corsia',
     'hub.noTower' : 'NESSUNA TORRE ANCORA CONQUISTATA',
     'hub.highest' : 'TORRE PIÙ ALTA: {0}',
@@ -57,6 +58,15 @@ const STRINGS = {
     'run.freedBig'  : 'PRINCIPESSA LIBERATA!',
     'run.jailer'  : 'IL CARCERIERE!',
     'run.record'  : 'RECORD SUPERATO!',
+
+    /* --- la combo --- */
+    'co.bonus'    : '+{0}% POTENZA',
+
+    /* --- il duello --- */
+    'du.tocca'    : 'TOCCA QUANDO SI CHIUDE!',
+    'du.perfetto' : 'PERFETTO!',
+    'du.buono'    : 'BUONO!',
+    'du.mancato'  : 'MANCATO',
 
     /* --- rinascita --- */
     'rb.head'     : '🔮 RINASCITA',
@@ -148,7 +158,8 @@ const STRINGS = {
                     'tower. Smash the <b>green</b> towers for power, dodge ' +
                     'the <b>red</b> ones, pick up the <b>weapons</b> you find ' +
                     'in your lane — then break the <b>{0} blocks</b> of the ' +
-                    'wall. What you have left is what you fight the boss with.',
+                    'wall. What you have left is what you fight the boss with: ' +
+                    '<b>tap on time</b> and every hit lands harder.',
     'hub.hint'    : 'drag to change lane',
     'hub.noTower' : 'NO TOWER CONQUERED YET',
     'hub.highest' : 'HIGHEST TOWER: {0}',
@@ -165,6 +176,13 @@ const STRINGS = {
     'run.beatenBig' : 'THE JAILER WON',
     'run.freedBig'  : 'PRINCESS FREED!',
     'run.jailer'  : 'THE JAILER!',
+
+    'co.bonus'    : '+{0}% POWER',
+
+    'du.tocca'    : 'TAP WHEN IT CLOSES!',
+    'du.perfetto' : 'PERFECT!',
+    'du.buono'    : 'GOOD!',
+    'du.mancato'  : 'MISS',
     'run.record'  : 'NEW RECORD!',
 
     'rb.head'     : '🔮 REBIRTH',

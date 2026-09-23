@@ -47,14 +47,33 @@ const G = {
 
   armi: (core.match(/hit:\s*\d*\.?\d+/g) || []).map(s => parseFloat(s.split(':')[1])),
 
-  pot: { base: num(core, /power\s*:\s*\{\s*name:\s*'POTENZA',\s*base:\s*(\d+)/, 'POTENZA base'),
-         mult: num(core, /name:\s*'POTENZA',\s*base:\s*\d+,\s*mult:\s*(\d*\.?\d+)/, 'POTENZA mult'),
-         step: num(core, /'POTENZA'[^}]*Math\.pow\((\d*\.?\d+)/, 'POTENZA passo') },
-  arma:{ base: num(core, /weapon:\s*\{\s*name:\s*'ARMA',\s*base:\s*(\d+)/, 'ARMA base'),
-         mult: num(core, /name:\s*'ARMA',\s*base:\s*\d+,\s*mult:\s*(\d*\.?\d+)/, 'ARMA mult') },
-  oro: { base: num(core, /income\s*:\s*\{\s*name:\s*'ORO',\s*base:\s*(\d+)/, 'ORO base'),
-         mult: num(core, /name:\s*'ORO',\s*base:\s*\d+,\s*mult:\s*(\d*\.?\d+)/, 'ORO mult'),
-         step: num(core, /'ORO'[^}]*Math\.pow\((\d*\.?\d+)/, 'ORO passo') },
+  /* i potenziamenti si riconoscono dalla chiave della traduzione: il nome
+     leggibile non sta più nei dati da quando il gioco parla due lingue
+     (e il simulatore, giustamente, si era fermato) */
+  pot: { base: num(core, /key:\s*'up\.power',\s*base:\s*(\d+)/, 'POTENZA base'),
+         mult: num(core, /key:\s*'up\.power',\s*base:\s*\d+,\s*mult:\s*(\d*\.?\d+)/, 'POTENZA mult'),
+         step: num(core, /'up\.power'[^}]*Math\.pow\((\d*\.?\d+)/, 'POTENZA passo') },
+  arma:{ base: num(core, /key:\s*'up\.weapon',\s*base:\s*(\d+)/, 'ARMA base'),
+         mult: num(core, /key:\s*'up\.weapon',\s*base:\s*\d+,\s*mult:\s*(\d*\.?\d+)/, 'ARMA mult') },
+  oro: { base: num(core, /key:\s*'up\.income',\s*base:\s*(\d+)/, 'ORO base'),
+         mult: num(core, /key:\s*'up\.income',\s*base:\s*\d+,\s*mult:\s*(\d*\.?\d+)/, 'ORO mult'),
+         step: num(core, /'up\.income'[^}]*Math\.pow\((\d*\.?\d+)/, 'ORO passo') },
+  quotaBoss : num(core, /bossHealth\s*=\s*lvl\s*=>\s*Math\.round\(towerNeed\(lvl\)\s*\*\s*(\d*\.?\d+)\)/, 'bossHealth'),
+
+  /* la combo: colpi puliti di fila */
+  combo: { passo: num(core, /COMBO\s*=\s*\{\s*passo:\s*(\d*\.?\d+)/, 'COMBO.passo'),
+           max  : num(core, /COMBO\s*=\s*\{[^}]*max:\s*(\d+)/, 'COMBO.max') },
+
+  /* il duello col carceriere */
+  duello: {
+    durata  : num(core, /DUELLO[\s\S]*?durata:\s*(\d*\.?\d+)/, 'DUELLO.durata'),
+    giro    : num(core, /DUELLO[\s\S]*?giro:\s*(\d*\.?\d+)/, 'DUELLO.giro'),
+    da      : num(core, /DUELLO[\s\S]*?da:\s*(\d*\.?\d+)/, 'DUELLO.da'),
+    a       : num(core, /DUELLO[\s\S]*?\ba:\s*(\d*\.?\d+)/, 'DUELLO.a'),
+    pausa   : num(core, /DUELLO[\s\S]*?pausa:\s*(\d*\.?\d+)/, 'DUELLO.pausa'),
+    critP   : num(core, /DUELLO[\s\S]*?critP:\s*(\d*\.?\d+)/, 'DUELLO.critP'),
+    critB   : num(core, /DUELLO[\s\S]*?critB:\s*(\d*\.?\d+)/, 'DUELLO.critB')
+  },
 
   buffAttacco: num(core, /rate\s*:\s*\{[^}]*step:\s*(\d*\.?\d+)/, 'buff attacco'),
   buffPotenza: num(core, /gain\s*:\s*\{[^}]*step:\s*(\d*\.?\d+)/, 'buff potenza'),
@@ -74,7 +93,7 @@ const G = {
   muroForbice: [num(game, /costs = shuffle\(\[cheap, Math\.round\(cheap \* (\d*\.?\d+)\)/, 'muro corsia media'),
                 num(game, /costs = shuffle\(\[cheap, Math\.round\(cheap \* \d*\.?\d+\), Math\.round\(cheap \* (\d*\.?\d+)\)/, 'muro corsia cara')],
   scrignoOro  : num(core, /CHEST_LOOT\s*=\s*(\d*\.?\d+)/, 'CHEST_LOOT'),
-  monetaValore: num(game, /kind === 'coin'\)\s+run\.coins \+= Math\.round\(run\.unit \* (\d*\.?\d+)/, 'valore moneta'),
+  monetaValore: num(game, /kind === 'coin'\)\s*\{?\s*run\.coins \+= Math\.round\(run\.unit \* (\d*\.?\d+)/, 'valore moneta'),
   bloccoValore: num(game, /run\.broken \* run\.unit \* (\d*\.?\d+) \* coinMul/, 'valore blocco'),
   scrignoCosto: num(core, /CHEST_PRICE\s*=\s*(\d*\.?\d+)/, 'CHEST_PRICE'),
 
@@ -100,7 +119,9 @@ for (const nome of ['CHEST_PRICE', 'CHEST_LOOT']) {
 
 const torreNeed  = l => Math.round(G.torreBase * Math.pow(G.torreCresc, l - 1));
 const budgetMuro = l => Math.round(torreNeed(l) * G.quotaMuro);
-const vitaBoss   = l => Math.round(torreNeed(l) * (1 - G.quotaMuro));
+/* era 1 - quotaMuro: uguale per coincidenza (0.38 = 1 - 0.62), finché
+   qualcuno non tocca uno dei due numeri. Adesso si legge dal gioco. */
+const vitaBoss   = l => Math.round(torreNeed(l) * G.quotaBoss);
 const righe      = l => Math.min(20, 10 + l);
 const passo      = l => torreNeed(l) * G.baseShare /
                         (righe(l) * 3 * 0.75 * Math.pow(G.levelGap, l - 1));
@@ -127,8 +148,14 @@ function corsa(m, stile) {
   const bonus = { oro: 0, attacco: 0, potenza: 0 };
 
   const colpo = () => G.armi[arma] * u * (1 + bonus.attacco * G.buffAttacco);
+  /* La combo: il giocatore simulato non prende mai una colonna rossa (sceglie
+     sempre fra quelle che può spaccare), quindi la sua serie non si rompe
+     mai. È il caso migliore, e va bene così: la compensazione su BASE_SHARE
+     è tarata su chi gioca pulito, e chi sbaglia paga la combo persa. */
+  let combo = 0;
   const molPot = () => Math.pow(G.pot.step, m.up.pot) * (1 + bonus.potenza * G.buffPotenza)
-                       * (1 + (m.rune || 0) * 0.25);
+                       * (1 + (m.rune || 0) * 0.25)
+                       * (1 + Math.min(combo, G.combo.max) * G.combo.passo);
   const molOro = () => Math.pow(G.oro.step, m.up.oro) * (1 + bonus.oro * G.buffOro)
                        * (1 + (m.rune || 0) * 0.25);
 
@@ -163,7 +190,8 @@ function corsa(m, stile) {
       else if (scelta.t === 'nemico') {
         oro += Math.round(scelta.hp * 3 * molOro());
         potenza += Math.round(scelta.hp * 1.5 * molPot());
-      } else potenza += Math.round(scelta.hp * 3 * molPot());
+        combo++;
+      } else { potenza += Math.round(scelta.hp * 3 * molPot()); combo++; }
     }
     if (i > 0) {
       if (caso() < G.bonusProb) bonus[['oro', 'attacco', 'potenza'][Math.floor(caso() * 3)]]++;
@@ -197,10 +225,44 @@ function corsa(m, stile) {
   }
 
   const esito = rotti >= G.righeMuro
-    ? (potenza > vitaBoss(m.level) ? 'vinta' : 'boss') : 'muro';
+    ? duello(Math.max(0, potenza), vitaBoss(m.level), stile) : 'muro';
   oro += Math.round(rotti * u * G.bloccoValore * molOro());
   if (esito === 'vinta') oro += Math.round(G.premioVinta * m.level * molOro());
   return { esito, alMuro, alBoss: Math.max(0, potenza), rotti, oro };
+}
+
+/* ---------------------------- IL DUELLO -------------------------------
+   Quanto bene tocca ciascuno, su cento anelli: [perfetti, buoni]. Il resto
+   sono mancati. L'"umano" è stimato, non misurato: va ritarato sul diario
+   appena ci sono partite vere col duello. */
+const MIRA = {
+  perfetto: [0.70, 0.25],
+  umano   : [0.35, 0.40],
+  ingenuo : [0.10, 0.30]
+};
+
+function duello(P, B, stile) {
+  const D = G.duello;
+  const q = MIRA[stile];
+  const ritmo = Math.max(P, B) / D.durata;           // le due forze scendono insieme
+  const alBersaglio = (D.da - 1) / (D.da - D.a) * D.giro;
+  const passo = alBersaglio + D.pausa;               // da un tocco al successivo
+  let t = 0, prossimo = D.pausa + alBersaglio;
+  let p = P, b = B;
+  const dt = 1 / 60;
+  while (p > 0 && b > 0) {
+    t += dt;
+    p -= ritmo * dt;
+    b -= ritmo * dt;
+    if (t >= prossimo) {
+      const r = caso();
+      if (r < q[0]) b -= B * D.critP;
+      else if (r < q[0] + q[1]) b -= B * D.critB;
+      prossimo += passo;
+    }
+  }
+  /* come nel gioco: il boss cade se arriva a zero, anche insieme a te */
+  return b <= 0 ? 'vinta' : 'boss';
 }
 
 /* ------------------------- COSA COMPRARE ------------------------------ */
