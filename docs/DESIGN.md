@@ -392,6 +392,65 @@ La nebbia è stata la trappola: partiva a 110 unità su una pista lunga 700, e
 tutto oltre la prima riga di colonne era latte bianco. Portata a 190–580 la
 scena ha ripreso profondità e i colori sono tornati.
 
+## 4b. Il salto grafico, senza post-processing
+
+La richiesta era "stravolgerlo". Il vincolo era uno solo, e l'aveva detto chi
+gioca due volte: *sembra che lagghi*. Quindi niente di quello che fa sembrare
+belli i giochi WebGL nelle demo — bloom a schermo intero, profondità di campo,
+occlusione ambientale — perché ognuno è un secondo passaggio su ogni pixel a
+ogni fotogramma. Tutto quello che segue vive dentro la scena o nel CSS.
+
+**Lo shading a bande.** Il Lambert di prima era il look di default di
+three.js, e si riconosce. Adesso ogni forma ha quattro toni netti
+(`TOON_RAMP` in `art.js`) e un bordo di luce del colore del cielo sulle facce
+che si voltano via dalla camera — stacca le sagome dalla nebbia. Il bordo si
+spegne sulle facce rivolte in alto, altrimenti il terreno visto di taglio si
+accendeva fino all'orizzonte.
+
+**L'uscita lineare.** Il primo tentativo usciva slavato: tutto pastello, la
+lava beige. La causa non era lo shading ma la gestione del colore — con
+l'uscita sRGB three prendeva i colori esadecimali scelti a mano come valori
+già lineari e li ri-codificava, cioè li schiariva. Un tone mapping filmico
+peggiorava le cose (appiattisce i saturi). La soluzione adottata da quasi ogni
+gioco stilizzato in WebGL: uscita lineare, colori che escono come sono stati
+disegnati, e luci ritarate perché una faccia piena valga colore × ~1
+(`LUCE` in `core.js`; le zone sommavano a 1,44 e il bianco bruciava).
+
+**La risoluzione che si adatta.** Lo shading a bande è per pixel, il Lambert
+di three r128 era per vertice: costa di più. `adattaRisoluzione()` misura il
+tempo medio di un fotogramma ogni ~45 e, sotto i 48 al secondo, scende di un
+quarto di densità; risale solo dopo sei misure sopra i 58. Scendere subito,
+risalire piano: un telefono che oscilla fra due densità fa più danno di uno
+che resta un po' sotto.
+
+**La luce che non c'è** (`fx.js`):
+
+- i bagliori sono sprite additivi con una sfumatura tonda — gemme, armi,
+  bonus, crateri — e costano quanto uno sprite;
+- le scintille sono un anello di 360 punti riusati, una sola chiamata di
+  disegno, con un piccolo shader che dà a ogni punto la sua trasparenza e
+  la sua taglia (PointsMaterial di r128 non lo sa fare);
+- l'onda d'urto è un anello a terra che si allarga in un terzo di secondo;
+- l'**aria della zona** — neve, foglie, polvere, rune, braci, cenere, schegge
+  di vetro, bave di nuvola — è un volume di punti che segue la camera e si
+  ricicla ai bordi con un modulo: sempre gli stessi 70–190 punti, per quanto
+  lunga sia la corsa;
+- le scie di velocità sono un'unica `InstancedMesh` di bastoncini;
+- la vignetta è un gradiente CSS sopra al canvas: zero pixel del 3D toccati.
+
+**Il carattere.** Lilita One, nel repository (OFL, 10 KB) e dentro al file
+singolo come data URI. Solo per numeri e titoli; la storia resta nel
+carattere di sistema, che a 13 px si legge meglio di qualunque display. Le
+etichette 3D sono texture disegnate una volta, quindi quando il carattere
+arriva si ridisegnano (solo nel menù).
+
+**Il succo.** Le monete raccolte volano al portafoglio con un'animazione del
+browser; i numeri dell'HUD corrono verso il valore nuovo invece di saltarci;
+la potenza pulsa in verde quando sale e trema in rosso quando scende; l'eroe
+si piega nelle curve e si schiaccia sui colpi con un rimbalzo; le monete che
+stai per prendere ti vengono incontro — solo quelle: la calamita è una cosa
+che si vede, non una regola, e la raccolta resta decisa dalla corsia.
+
 ## 5. Il momento della vittoria
 
 Battuto il boss, la camera lascia il duello e sale sul balcone della torre.

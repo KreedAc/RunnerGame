@@ -125,6 +125,7 @@ web/
   src/core.js         configurazione, palette, armi, potenziamenti, scena, salvataggio
   src/art.js          geometrie e materiali condivisi, contorno dei personaggi
   src/world.js        sentiero, scogliere di ghiaccio, pini, cristalli, la torre
+  src/fx.js           bagliori, scintille, onde d'urto, aria della zona, scie di velocità
   src/actors.js       eroe, nemici, boss, principessa, armi, animazioni
   src/hub.js          menù, portafoglio, potenziamenti, schermate
   src/game.js         corsa, ostacoli, muro, duello col boss, ciclo di gioco
@@ -150,6 +151,7 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 
 - [x] Storia: principessa rapita, muro da sfondare, boss ai piedi della torre
 - [x] Grafica low-poly liscia con contorni (niente più voxel)
+- [x] Shading a bande con bordo di luce, bagliori, particelle per zona, risoluzione adattiva
 - [x] Menù con potenziamenti permanenti e salvataggio locale
 - [x] Corsie con torri di mattoni da spaccare o schivare, nemici, armi, bonus
 - [x] Rinascita con rune permanenti (+25% potenza e oro l'una)

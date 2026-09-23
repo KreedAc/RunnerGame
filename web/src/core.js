@@ -57,7 +57,7 @@ const C = {
 const THEMES = [
   { key: 'z.ice',
     skyTop: 0x1fb4dc, skyMid: 0x59c9e6, skyLow: 0x8ad9ee, fog: 0x7fcfe8,
-    ground: 0xe7f0f8, groundEdge: 0xb9d2e4, cap: 0xffffff,
+    ground: 0xd9e6f2, groundEdge: 0xa9c4da, cap: 0xffffff,
     slab: 0x5cc0dc, slabDark: 0x3690b0,
     rock: 0x77899a, rockDark: 0x556474,
     tree: 0x25795c, trunk: 0x6b4a35, snowy: true,
@@ -376,9 +376,48 @@ const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x7fcfe8, 190, 580);
 
 const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 700);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.outputEncoding = THREE.sRGBEncoding;
+
+/* ------------------------ RISOLUZIONE CHE SI ADATTA -------------------
+   Lo shading a bande è calcolato per pixel, non per vertice come il
+   Lambert di prima: costa di più, e costa in proporzione ai pixel. Un
+   telefono di fascia alta a densità 2 non se ne accorge, uno di fascia
+   media sì — e "sembra che lagghi" è la frase che questo gioco ha già
+   sentito due volte.
+
+   Quindi la densità non è fissa: si misura il tempo medio di un
+   fotogramma ogni ~45 fotogrammi e, sotto i 48 al secondo, si scende di
+   un quarto; sopra i 58 per sei misure di fila si risale. Scendere è
+   subito, risalire è lento: un telefono che oscilla fra due densità
+   farebbe più danno di uno che resta un po' sotto. */
+const DPR_MAX = Math.min(devicePixelRatio || 1, 2);
+let dprOra = DPR_MAX, dprCampioni = 0, dprSomma = 0, dprCalmo = 0;
+
+function adattaRisoluzione(dtVero) {
+  if (!(dtVero > 0) || dtVero > 0.25) return;      // scheda nascosta, pausa: non conta
+  dprSomma += dtVero;
+  if (++dprCampioni < 45) return;
+  const medio = dprSomma / dprCampioni;
+  dprCampioni = 0; dprSomma = 0;
+  let nuova = dprOra;
+  if (medio > 1 / 48 && dprOra > 1) { nuova = Math.max(1, dprOra - 0.25); dprCalmo = 0; }
+  else if (medio < 1 / 58 && dprOra < DPR_MAX) {
+    if (++dprCalmo >= 6) { nuova = Math.min(DPR_MAX, dprOra + 0.25); dprCalmo = 0; }
+  } else dprCalmo = 0;
+  if (nuova !== dprOra) {
+    dprOra = nuova;
+    renderer.setPixelRatio(dprOra);
+    renderer.setSize(innerWidth, innerHeight);
+  }
+}
+/* Uscita lineare, di proposito. I colori del gioco sono scelti a mano in
+   esadecimale e pensati per comparire così come sono; con l'uscita sRGB
+   three li trattava come valori già lineari e li ri-codificava, cioè li
+   schiariva e li slavava — il verde delle colonne diventava pastello e la
+   lava beige. È il compromesso di quasi ogni gioco stilizzato in WebGL:
+   la luce non è fisicamente corretta, i colori sono quelli disegnati. */
+renderer.outputEncoding = THREE.LinearEncoding;
 if (CFG.shadows) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -433,6 +472,11 @@ function moveSun(x, z) {
   sun.target.updateMatrixWorld();
 }
 
+/* In uscita lineare una faccia piena di luce vale colore × (sole + cielo):
+   la somma deve stare intorno a 1, altrimenti il bianco brucia. Le zone
+   arrivavano a 1,44. */
+const LUCE = { cielo: 0.62, sole: 0.78 };
+
 /* Applica una zona: cielo, nebbia e colori del mondo. */
 function applyTheme(theme) {
   C.ground = theme.ground; C.groundEdge = theme.groundEdge; C.cap = theme.cap;
@@ -441,6 +485,7 @@ function applyTheme(theme) {
   C.tree = theme.tree; C.trunk = theme.trunk;
   C.snowy = theme.snowy;
   C.cloud = theme.cloud;
+  C.rim = theme.hemiSky;            // il bordo di luce prende il colore del cielo
   /* Anche il carceriere è del posto: stessa stazza e stessa mazza, colori
      e nome della zona. È l'unico avversario del gioco, e vederlo sempre
      identico faceva sembrare uguali anche le otto torri. */
@@ -454,8 +499,13 @@ function applyTheme(theme) {
   scene.fog.color.setHex(theme.fog);
   hemi.groundColor.setHex(theme.rockDark);
   hemi.color.setHex(theme.hemiSky);
-  hemi.intensity = theme.hemiI;
-  sun.intensity  = theme.sunI;
+  /* Le intensità delle zone erano tarate per il Lambert. Lo shading a bande
+     legge la luce "a mezzo Lambert" (anche il lato in ombra prende un
+     tono): a parità di numeri tutto usciva più chiaro, e il sentiero della
+     Valle Gelata bruciava in bianco pieno. Le si scala qui, una volta,
+     invece di ritoccare diciotto numeri per otto zone. */
+  hemi.intensity = theme.hemiI * LUCE.cielo;
+  sun.intensity  = theme.sunI * LUCE.sole;
 }
 
 /* ------------------------- INQUADRATURA COSTANTE ----------------------

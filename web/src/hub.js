@@ -319,6 +319,45 @@ function flashBanner(text, tono) {
   bannerTimer = setTimeout(() => el.classList.remove('show'), 1700);
 }
 
+/* ------------------------------ REAZIONI -------------------------------
+   Una classe CSS che si riaccende: l'animazione sta nel foglio di stile,
+   qui si decide solo quando. Toglierla e rimetterla con un reflow in mezzo
+   è il modo di far ripartire un'animazione che sta ancora girando. */
+function pulsa(id, classe) {
+  const el = $(id);
+  if (!el) return;
+  el.classList.remove('su', 'giu', 'bump');
+  void el.offsetWidth;
+  el.classList.add(classe);
+}
+
+/* La moneta raccolta vola al portafoglio in alto. Costa una div e
+   un'animazione del browser — niente 3D — e insegna senza parole dove va
+   a finire quello che si raccoglie. Mai più di quattordici in volo: su una
+   fila di monete fitte diventerebbe uno sciame che copre la corsia. */
+let inVolo = 0;
+function volaAlPortafoglio(punto, icona) {
+  if (inVolo >= 14 || !punto) return;
+  const r = $('coinPill').getBoundingClientRect();
+  const x0 = punto.x / 100 * innerWidth, y0 = punto.y / 100 * innerHeight;
+  const x1 = r.left + r.width / 2, y1 = r.top + r.height / 2;
+  const mx = (x0 + x1) / 2 + (Math.random() * 120 - 60), my = Math.min(y0, y1) - 30;
+  const d = document.createElement('div');
+  d.className = 'vola';
+  d.textContent = icona || '🪙';
+  $('pops').appendChild(d);
+  inVolo++;
+  const pos = (x, y, s) => 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) scale(' + s + ')';
+  const fine = () => { d.remove(); inVolo--; pulsa('coinPill', 'bump'); };
+  if (!d.animate) { fine(); return; }
+  const a = d.animate([
+    { transform: pos(x0, y0, 0.5), opacity: 0 },
+    { transform: pos(mx, my, 1.25), opacity: 1, offset: 0.38 },
+    { transform: pos(x1, y1, 0.65), opacity: 1 }
+  ], { duration: 520 + Math.random() * 180, easing: 'cubic-bezier(.5,0,.3,1)' });
+  a.onfinish = fine;
+}
+
 /* ------------------------------ POPUP ---------------------------------
    Il numero parte dal punto colpito, non dal centro dello schermo: chi
    gioca guarda la corsia, non il centro, e un numero che nasce dove è

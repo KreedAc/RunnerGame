@@ -15,6 +15,13 @@
     font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
     user-select:none;-webkit-user-select:none;touch-action:none}
   #stage{position:fixed;inset:0}
+  /* La vignetta: gli angoli un filo più scuri portano l'occhio al centro,
+     dove succede tutto. È il trucco più economico della fotografia e qui
+     costa zero — un gradiente CSS sopra al canvas, composto dal browser,
+     senza toccare un pixel del 3D. */
+  #vignetta{position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse 125% 95% at 50% 40%,
+      rgba(6,10,22,0) 52%, rgba(6,10,22,.42) 100%)}
   canvas{display:block;width:100%;height:100%}
   .hidden{display:none !important}
 
@@ -323,6 +330,45 @@
   .build-tag{margin-top:5px;text-align:center;font-size:9.5px;font-weight:700;
     letter-spacing:1.1px;color:rgba(255,255,255,.3);font-variant-numeric:tabular-nums}
 
+  /* ============================ IL CARATTERE ==========================
+     Lilita One: rotondo, pesante, leggibile a 14 px e bello a 50. Il
+     system-ui con font-weight 900 era il carattere di un'app di banca; i
+     numeri di un gioco devono avere la faccia di un gioco. È nel
+     repository (licenza OFL, 10 KB) invece che su Google Fonts: niente
+     richieste a terzi, e funziona anche offline e nel file singolo.
+
+     Solo per numeri e titoli — la storia e le etichette piccole restano
+     nel carattere di sistema, che a 13 px si legge meglio di qualunque
+     display. Il peso è 400 perché Lilita esiste solo in quel peso: con
+     900 il browser inventerebbe un grassetto finto, sbavato. */
+  @font-face{font-family:"Lilita One";font-display:swap;
+    src:url(vendor/fonts/lilita-one.woff2) format("woff2")}
+  :root{--titolo:"Lilita One",system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+  .hub-title .name,#banner b,.pill b,#powerPill b,.pop,.btn,.up-value,.up-cost,
+  .lr-cell b,.rb-gain,.rb-bonus,.coin-pill,.lr-badge,.vola{
+    font-family:var(--titolo);font-weight:400;font-synthesis:none;letter-spacing:.3px}
+  .hub-title .name{letter-spacing:.5px}
+  /* il contorno dei numeri che schizzano va dietro alla lettera, non sopra:
+     -webkit-text-stroke da solo è centrato e si mangia metà dell'asta */
+  .pop{-webkit-text-stroke:7px rgba(24,20,38,.72);paint-order:stroke fill}
+
+  /* la potenza reagisce: cresce in verde, trema in rosso */
+  #powerPill.su{animation:pSu .38s ease-out}
+  #powerPill.giu{animation:pGiu .42s ease-out}
+  @keyframes pSu{
+    35%{transform:scale(1.13);box-shadow:0 0 0 4px rgba(141,255,135,.5),0 0 26px rgba(141,255,135,.55)}
+  }
+  @keyframes pGiu{
+    18%{transform:translateX(-7px);background:linear-gradient(180deg,#ff9a8a,#d8402e)}
+    38%{transform:translateX(6px)}
+    58%{transform:translateX(-3px)}
+  }
+  .pill.bump{animation:bump .28s ease-out}
+  @keyframes bump{40%{transform:scale(1.2)}}
+  /* le monete che volano dal punto raccolto al portafoglio */
+  .vola{position:absolute;left:0;top:0;font-size:22px;pointer-events:none;
+    will-change:transform,opacity;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
+
   @media (prefers-reduced-motion:reduce){
     .swipe .dito,.pop{animation:none}
     #banner.show{animation:none;opacity:1}
@@ -330,13 +376,14 @@
 </style>
 
 <div id="stage"></div>
+<div id="vignetta"></div>
 
 <!-- ============================== HUD ============================== -->
 <div id="hud" class="hidden">
   <div class="row">
     <div class="pill"><small data-t="hud.weapon">ARMA</small><b id="hWeapon">Pugni</b></div>
     <div class="pill" id="powerPill"><small data-t="hud.power">POTENZA</small><b id="hPower">20</b></div>
-    <div class="pill"><small data-t="hud.gold">ORO</small><b id="hCoins">0</b></div>
+    <div class="pill" id="coinPill"><small data-t="hud.gold">ORO</small><b id="hCoins">0</b></div>
   </div>
   <div class="row mid">
     <div class="pill"><small data-t="hud.hit">COLPO</small><b id="hDamage">3</b></div>
@@ -453,7 +500,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260912-2131';</script>
+<script>window.BUILD = '260923-2253';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
@@ -463,7 +510,7 @@
      ritrovarsi con metà file nuovi e metà vecchi — che è peggio che
      averli tutti vecchi. Cambiando l'indirizzo, la cache non c'entra più. */
   const FILES = ['src/i18n.js', 'src/core.js', 'src/art.js', 'src/world.js',
-                 'src/actors.js', 'src/hub.js', 'src/game.js']
+                 'src/fx.js', 'src/actors.js', 'src/hub.js', 'src/game.js']
                 .map(f => f + '?v=' + window.BUILD);
   function load(src, cb) {
     const s = document.createElement('script');

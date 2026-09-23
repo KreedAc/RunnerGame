@@ -15,7 +15,7 @@ function labelTexture(text, color) {
   g.textAlign = 'center'; g.textBaseline = 'middle';
   let size = 112;
   do {
-    g.font = 'bold ' + size + 'px system-ui, Arial, sans-serif';
+    g.font = size + 'px "Lilita One", system-ui, Arial, sans-serif';
     size -= 4;
   } while (g.measureText(text).width > 292 && size > 24);
   g.lineJoin = 'round';
@@ -51,6 +51,7 @@ const run = {
   outcome: '',             // 'wall' | 'boss' | 'win'
   beatRecord: false,
   swing: 0,
+  schiaccia: 0,            // 1 appena colpito, scende a 0: l'eroe si schiaccia e rimbalza
   unit: 1,                 // il passo della torre in corso (vedi trackUnit)
   speed: CFG.speed,
   phaseStart: 0,           // potenza all'inizio del muro / del duello
@@ -157,6 +158,7 @@ function spawnWeaponPickup(x, z, tier) {
   halo.userData.noOutline = true;
   const ring = put(g, GEO.ring, MAT.gold, 0, 0.12, 0, 3.6, 3.6, 3.6);
   ring.rotation.x = -Math.PI / 2;
+  bagliore(g, 0xffd970, 6.5, 0.55, 2.5);     // l'arma si vede da lontano
 
   const swirl = new THREE.Group();
   swirl.position.set(0, 2.5, 0);
@@ -182,11 +184,14 @@ function spawnPickup(x, z, kind) {
   if (kind === 'coin') {
     const c = put(g, GEO.cyl, MAT.gold, 0, 0, 0, 0.75, 0.16, 0.75);
     c.rotation.x = Math.PI / 2;
+    bagliore(g, 0xffc93c, 1.7, 0.32);
   } else if (kind === 'gem') {
     put(g, GEO.octa, mat(0x4fe3d5), 0, 0, 0, 0.7, 1.0, 0.7);
+    bagliore(g, 0x4fe3ff, 3.0, 0.7);        // la gemma è rara: deve chiamare
   } else {
     const col = { income: 0xffd24b, rate: 0xff9d5c, gain: 0x7cc9ff }[kind];
     put(g, GEO.octa, mat(col), 0, 0, 0, 0.85, 1.0, 0.85);
+    bagliore(g, col, 3.2, 0.6);
     const s = labelSprite('+' + Math.round(BUFFS[kind].step * 100) + '%', '#ffffff', 0.5);
     s.position.set(0, 1.1, 0);
     g.add(s);
@@ -249,6 +254,7 @@ let tower = null, boss = null, bossSprite = null, heroSprite = null;
 function buildRun() {
   applyTheme(themeFor(meta.level));   // la zona cambia ad ogni torre
   initArt();
+  fxZona(themeFor(meta.level).key);   // e con lei l'aria: neve, braci, cenere…
   clearWorld();
   items.length = 0;
   tower = null; boss = null; bossSprite = null; heroSprite = null;
@@ -390,7 +396,7 @@ function buildFinishLine(z) {
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(4, 1);
-  const m = new THREE.Mesh(GEO.box, new THREE.MeshLambertMaterial({ map: t }));
+  const m = new THREE.Mesh(GEO.box, toon({ map: t }));
   m.position.set(0, 0.05, z);
   m.scale.set(CFG.trackWidth, 0.1, 2.4);
   world.add(m);
@@ -572,14 +578,16 @@ function shatter(group, n, material) {
   for (let i = 0; i < n; i++) {
     const grosso = i % 4 === 0;
     const m = new THREE.Mesh(GEO.octa, material || MAT.stone);
-    m.scale.set(rnd(0.3, 0.7) * (grosso ? 1.9 : 1),
-                rnd(0.3, 0.7) * (grosso ? 1.5 : 1),
-                rnd(0.3, 0.7) * (grosso ? 1.9 : 1));
+    m.scale.set(rnd(0.3, 0.7) * (grosso ? 1.5 : 1),
+                rnd(0.3, 0.7) * (grosso ? 1.3 : 1),
+                rnd(0.3, 0.7) * (grosso ? 1.5 : 1));
     m.rotation.set(rnd(0, 3), rnd(0, 3), rnd(0, 3));
     m.position.copy(group.position);
     m.position.y += rnd(0.5, 3.0);
     const v = grosso ? 0.6 : 1;              // i pezzi grossi non schizzano
-    m.userData.vel = new THREE.Vector3(rnd(-13, 13) * v, rnd(7, 15) * v, rnd(1, 14) * v);
+    /* in avanti e di lato, non verso la camera: un pezzo che vola in
+       faccia allo spettatore copre l'eroe proprio nel momento del colpo */
+    m.userData.vel = new THREE.Vector3(rnd(-13, 13) * v, rnd(7, 15) * v, rnd(-6, 5) * v);
     m.userData.gira = new THREE.Vector3(rnd(-9, 9), rnd(-9, 9), rnd(-9, 9));
     m.userData.life = rnd(0.9, 1.4);
     world.add(m);
@@ -595,7 +603,10 @@ function hitPillar(it) {
     const gain = Math.round(it.hp * 3 * gainMul());
     run.power += gain;
     popup('+' + fmt(gain), '#8dff87', dove);
+    pulsa('powerPill', 'su');
+    run.schiaccia = 1;
     impatto(0.55);
+    fxColpo(it.obj, 0x6dff8a, false);
     shatter(it.obj, 16, MAT.good);
   } else {
     /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
@@ -604,7 +615,10 @@ function hitPillar(it) {
     const loss = Math.max(3, Math.round(run.power * 0.18));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff7a6e', dove);
+    pulsa('powerPill', 'giu');
+    run.schiaccia = 1.4;
     impatto(0.8);                     // sbagliare deve farsi sentire di più
+    fxColpo(it.obj, 0xff5a44, true);
     shatter(it.obj, 16, MAT.bad);
   }
   it.obj.visible = false;
@@ -619,14 +633,21 @@ function hitEnemy(it) {
     run.coins += coins;
     run.power += Math.round(it.hp * 1.5 * gainMul());
     popup('+' + fmt(coins) + ' 🪙', '#ffd24b', dove);
+    for (let k = 0; k < 4; k++) volaAlPortafoglio(dove);
+    pulsa('powerPill', 'su');
+    run.schiaccia = 1;
     impatto(0.6);
+    fxColpo(it.obj, 0xffd24b, false);
     it.mob.userData.dying = true;
     it.sprite.visible = false;
   } else {
     const loss = Math.max(5, Math.round(run.power * 0.22));
     run.power = Math.max(0, run.power - loss);
     popup('−' + fmt(loss), '#ff5a4a', dove);
+    pulsa('powerPill', 'giu');
+    run.schiaccia = 1.4;
     impatto(0.8);
+    fxColpo(it.obj, 0xff5a44, true);
     it.obj.visible = false;
   }
 }
@@ -636,6 +657,9 @@ function takeWeapon(it) {
   setWeapon(hero, run.weapon);
   popup('⚔ ' + weaponName(run.weapon), '#ffe07a', puntoSchermo(it.obj, 2.6));
   impatto(0.4);                       // l'arma nuova è un momento, non un dettaglio
+  FX.scintille.emetti(it.obj.position.x, 2.5, it.obj.position.z, 40, 0xffd970,
+                      { vel: 9, su: 6, taglia: 0.55, vita: 0.8, grav: 10 });
+  FX.onde.lancia(it.obj.position.x, 0.1, it.obj.position.z, 0xffd970, 5);
   it.obj.visible = false;
   refreshThreats();
 }
@@ -645,12 +669,21 @@ function takePickup(it) {
      prima torre erano soldi, alla decima — dove un potenziamento costa
      quattordicimila — era decorazione che luccicava. */
   const dove = puntoSchermo(it.obj, 1.8);
-  if (it.kind === 'coin')      run.coins += Math.round(run.unit * 1.1 * coinMul());
-  else if (it.kind === 'gem') { run.gems += 1; popup('+1 💎', '#4fe3d5', dove); }
+  if (it.kind === 'coin') {
+    run.coins += Math.round(run.unit * 1.1 * coinMul());
+    fxRaccolta(it.obj, 0xffd24b, 7);
+    volaAlPortafoglio(dove);
+  } else if (it.kind === 'gem') {
+    run.gems += 1;
+    popup('+1 💎', '#4fe3d5', dove);
+    fxRaccolta(it.obj, 0x6ff5ff, 16);
+  }
   else {
     run.buffs[it.buff]++;
     const b = BUFFS[it.buff];
     popup(b.icon + ' +' + Math.round(b.step * 100) + '%', b.color, dove);
+    fxRaccolta(it.obj, parseInt(b.color.slice(1), 16), 18);
+    FX.onde.lancia(it.obj.position.x, 0.1, it.obj.position.z, parseInt(b.color.slice(1), 16), 3);
     renderBuffRail(run.buffs);
     if (it.buff === 'rate') refreshThreats();
   }
@@ -666,10 +699,13 @@ function hitWallBlock(it) {
   /* Trenta blocchi di fila: qui la scossa va tenuta bassa, altrimenti il
      muro diventa un frullatore. Lo scrigno è l'eccezione, è raro. */
   impatto(it.chest ? 0.45 : 0.22);
+  FX.scintille.emetti(it.obj.position.x, 1.4, it.obj.position.z, it.chest ? 26 : 10,
+                      it.chest ? 0xffd24b : 0xc8b8ff, { vel: 7, su: 4, taglia: 0.42, vita: 0.5 });
   if (it.chest) {
     const c = Math.round(it.loot * coinMul());
     run.coins += c;
     popup('+' + fmt(c) + ' 🪙', '#ffd24b', dove);
+    for (let k = 0; k < 6; k++) volaAlPortafoglio(dove);
   }
   if (!run.beatRecord && meta.best > 0 && run.broken > meta.best) {
     run.beatRecord = true;
@@ -710,6 +746,12 @@ function updateBossFight(dt) {
   setLabel(heroSprite, fmt(run.power), '#8dff87');
   setLabel(bossSprite, fmt(run.bossHp), '#ff8f7a');
   run.swing = 0.3;
+  /* dove le due forze si toccano, scintille a getto continuo */
+  if (Math.random() < 0.8) {
+    FX.scintille.emetti(run.x * 0.5 + rnd(-0.3, 0.3), 2.2, bossZ + 3.2, 3,
+                        Math.random() < 0.5 ? 0x8dff87 : 0xff8f7a,
+                        { vel: 6, su: 3, taglia: 0.4, vita: 0.4, grav: 14 });
+  }
   /* lo scontro dura un secondo e mezzo: un rombo basso e costante, non una
      scossa a ogni fotogramma */
   if (!MENO_MOTO && scossa < 0.22) { scossa = 0.22; scossaDir.set(0, -1, 0.2).normalize(); }
@@ -717,16 +759,32 @@ function updateBossFight(dt) {
   /* L'unico fermo-immagine rimasto: qui non si sta correndo, si sta
      scambiando colpi da fermi, e il tempo che si blocca sull'ultimo si
      legge per quello che è. */
-  if (run.bossHp <= 0)      { impatto(1.1, 0.12); endRun('win'); }
+  if (run.bossHp <= 0) {
+    impatto(1.1, 0.12);
+    FX.scintille.emetti(0, 2.6, bossZ, 70, 0xffd24b, { vel: 13, su: 8, taglia: 0.6, vita: 1.0, grav: 12 });
+    FX.onde.lancia(0, 0.15, bossZ, 0xffd24b, 7);
+    endRun('win');
+  }
   else if (run.power <= 0)  { impatto(1.1, 0.12); endRun('boss'); }
 }
 
 /* ------------------------------ HUD ------------------------------------ */
+/* I numeri dell'HUD non saltano al valore nuovo: ci corrono. Un +340 che
+   compare di colpo è un'informazione, uno che conta in un quarto di
+   secondo è una ricompensa. La corsa si chiude sempre sul valore vero. */
+const hudVisto = { power: 0, coins: 0 };
+function contaVerso(k, vero) {
+  const d = vero - hudVisto[k];
+  hudVisto[k] = Math.abs(d) < 1 ? vero : hudVisto[k] + d * 0.24;
+  return hudVisto[k];
+}
+function azzeraHudVisto() { hudVisto.power = run.power; hudVisto.coins = run.coins; }
+
 function renderHud() {
-  $('hPower').textContent  = fmt(run.power);
+  $('hPower').textContent  = fmt(contaVerso('power', run.power));
   $('hWeapon').textContent = weaponName(run.weapon);
   $('hDamage').textContent = fmt(damage());
-  $('hCoins').textContent  = fmt(run.coins);
+  $('hCoins').textContent  = fmt(contaVerso('coins', run.coins));
   $('hWall').textContent   = run.broken + '/' + CFG.wallRows;
 }
 
@@ -748,6 +806,7 @@ function startRun() {
   setWeapon(hero, run.weapon);
   buildRun();
   renderBuffRail(run.buffs);
+  azzeraHudVisto();
   renderHud();
   runT = 0;
   state = 'run';
@@ -1045,6 +1104,19 @@ function update(dt) {
   }
   if (hero.userData.falling) hero.rotation.x = lerp(hero.rotation.x, 1.4, 1 - Math.pow(0.02, dt));
 
+  /* Si piega nella curva, come chi corre davvero: il corpo va verso dove
+     il dito lo sta portando, e torna dritto quando arriva. Senza, cambiare
+     corsia era una traslazione — un pezzo degli scacchi che scivola. */
+  const piega = moving ? clamp((run.targetX - run.x) * 0.16, -0.32, 0.32) : 0;
+  hero.rotation.z = lerp(hero.rotation.z, piega, 1 - Math.pow(0.0005, dt));
+
+  /* Schiacciato dal colpo e poi su come una molla: il rimbalzo sopra 1 è
+     quello che lo fa sembrare elastico invece che ammaccato. */
+  if (run.schiaccia > 0) run.schiaccia = Math.max(0, run.schiaccia - dt * 4.5);
+  const sq = run.schiaccia;
+  const molla = sq > 0 ? Math.sin(sq * Math.PI * 1.5) * sq : 0;
+  hero.scale.set(1 + 0.12 * molla, 1 - 0.16 * molla, 1 + 0.12 * molla);
+
   shadow.position.set(run.x, 0.04, run.z);
   moveSun(run.x, run.z);
   if (heroSprite) heroSprite.position.set(run.x, 3.4, run.z);
@@ -1077,6 +1149,14 @@ function update(dt) {
     } else if (!it.done && it.obj.visible &&
                (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff')) {
       it.obj.rotation.y += dt * (it.spin || 1.8);
+      /* galleggiano, e quelle che stai per prendere ti vengono incontro.
+         Solo quelle: la calamita è una cosa che si vede, non una regola —
+         la raccolta resta decisa dalla corsia, come prima. */
+      const avanti = run.z - it.z;
+      const presa = steering() && avanti > 0 && avanti < 7 && Math.abs(run.x - it.x) <= HIT_X;
+      const k = presa ? 1 - avanti / 7 : 0;
+      it.obj.position.x = lerp(it.x, run.x, k * k);
+      it.obj.position.y = 1.1 + Math.sin(runT * 3 + it.z) * 0.14 + k * 0.5;
     } else if (!it.done && it.kind === 'enemy' && it.obj.visible) {
       animateIdle(it.mob, runT, it.z * 0.2);
     }
@@ -1115,6 +1195,8 @@ function update(dt) {
                   run.z - (menu ? 12 : duel ? 13 : 16));
   }
   scossaMetti(dt);
+
+  fxAggiorna(dt, tempoMondo, steering(), run.speed || 15);
 }
 
 /* ------------------- L'EROE NELLA FASCIA LIBERA -----------------------
@@ -1193,6 +1275,15 @@ window.BlockyRun = {
 };
 
 applyStaticText();          // il markup nasce in italiano: qui prende la lingua giusta
+
+/* Il carattere arriva dopo che le etichette 3D sono già state disegnate —
+   sono texture, non testo, e restano col carattere di ripiego. Quando
+   arriva si ridisegnano; solo nel menù, mai a corsa iniziata. */
+if (document.fonts && document.fonts.load) {
+  document.fonts.load('40px "Lilita One"')
+    .then(() => { if (state === 'hub') langHook(); })
+    .catch(() => {});
+}
 snapCamera();
 renderHub();
 showScreen('hub');
@@ -1204,7 +1295,9 @@ buildRun();
   /* Il fermo-immagine si conta in tempo vero e si spende sul tempo di gioco:
      il mondo quasi si ferma per qualche centesimo, ma l'attesa finisce
      sempre, anche se il telefono va a dieci fotogrammi. */
-  let dt = Math.min(clock.getDelta(), 0.05);
+  const dtVero = clock.getDelta();
+  adattaRisoluzione(dtVero);
+  let dt = Math.min(dtVero, 0.05);
   if (fermo > 0) { fermo = Math.max(0, fermo - dt); dt *= 0.1; }
   update(dt);
   renderer.render(scene, camera);

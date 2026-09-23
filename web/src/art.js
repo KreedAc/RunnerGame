@@ -20,6 +20,62 @@ const GEO = {
   ring  : new THREE.TorusGeometry(0.42, 0.06, 8, 28)
 };
 
+/* ------------------------------ LO SHADING ----------------------------
+   Il mondo era illuminato con MeshLambert: una luce che sfuma dolce da un
+   lato all'altro di ogni forma, corretta e anonima — è il look di default
+   di three.js, e si riconosce. Ora è a bande, come un cartone disegnato:
+
+   - quattro toni per forma invece di una sfumatura continua (TOON_RAMP):
+     la luce si legge a colpo d'occhio, e con i contorni già presenti sui
+     personaggi il linguaggio diventa uno solo;
+   - un bordo di luce sulle facce che si voltano via dalla camera (fresnel),
+     del colore del cielo della zona: stacca le sagome dallo sfondo, che è
+     la cosa che la nebbia tendeva a cancellare.
+
+   Il bordo si spegne sulle facce rivolte in alto. Senza, il terreno visto
+   di taglio — che per la camera è quasi tutto "bordo" — si accendeva fino
+   all'orizzonte e sembrava sovraesposto. */
+const TOON_RAMP = (() => {
+  const toni = [78, 128, 212, 255];
+  const d = new Uint8Array(toni.length * 4);
+  toni.forEach((v, i) => d.set([v, v, v, 255], i * 4));
+  const t = new THREE.DataTexture(d, toni.length, 1, THREE.RGBAFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
+})();
+
+/* Condivisi per riferimento con ogni programma: cambiare zona cambia il
+   bordo di tutto il mondo senza ricompilare niente. */
+const RIM = {
+  color: { value: new THREE.Color(0xffffff) },
+  forza: { value: 0.34 }
+};
+
+function conBordo(m) {
+  m.onBeforeCompile = sh => {
+    sh.uniforms.rimColor = RIM.color;
+    sh.uniforms.rimForza = RIM.forza;
+    sh.fragmentShader = sh.fragmentShader
+      .replace('uniform float opacity;',
+               'uniform float opacity;\nuniform vec3 rimColor;\nuniform float rimForza;')
+      .replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );', [
+        'vec3 suV = normalize( ( viewMatrix * vec4( 0.0, 1.0, 0.0, 0.0 ) ).xyz );',
+        'float lato = 1.0 - clamp( dot( normal, suV ), 0.0, 1.0 );',
+        'float rimF = 1.0 - clamp( dot( normal, normalize( vViewPosition ) ), 0.0, 1.0 );',
+        'outgoingLight += rimColor * rimForza * pow( rimF, 3.0 ) * lato;',
+        'gl_FragColor = vec4( outgoingLight, diffuseColor.a );'
+      ].join('\n'));
+  };
+  m.customProgramCacheKey = () => 'toon-bordo';
+  return m;
+}
+
+function toon(params) {
+  return conBordo(new THREE.MeshToonMaterial(Object.assign({ gradientMap: TOON_RAMP }, params)));
+}
+
 const MAT = {};
 const matCache = new Map();
 
@@ -29,7 +85,8 @@ function mat(color, flat) {
   const key = color + (flat ? 'f' : 's');
   let m = matCache.get(key);
   if (!m) {
-    m = new THREE.MeshLambertMaterial({ color, flatShading: !!flat });
+    m = toon({ color });
+    m.flatShading = !!flat;
     matCache.set(key, m);
   }
   return m;
@@ -38,6 +95,7 @@ function mat(color, flat) {
 /* I materiali del mondo dipendono dalla zona: initArt() si richiama
    ad ogni cambio di torre e li riassegna. */
 function initArt() {
+  RIM.color.value.setHex(C.rim || 0xffffff);
   MAT.ground     = mat(C.ground);
   MAT.groundEdge = mat(C.groundEdge);
   MAT.cap        = mat(C.cap);                 // neve/sabbia in cima ai rilievi
@@ -96,7 +154,7 @@ function brickMat(color, repX, repY) {
   t.needsUpdate = true;
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(repX, repY);
-  return new THREE.MeshLambertMaterial({ map: t, color });
+  return toon({ map: t, color });
 }
 
 /* --------------------------- PIAZZARE FORME --------------------------- */

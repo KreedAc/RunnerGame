@@ -31,7 +31,7 @@ function pathMaterial(total) {
   pathTex.minFilter = pathTex.magFilter = THREE.LinearFilter;
   pathTex.repeat.set(1, total / 9);
 
-  if (!pathMat) pathMat = new THREE.MeshLambertMaterial();
+  if (!pathMat) pathMat = toon();
   pathMat.map = pathTex;
   pathMat.needsUpdate = true;
   return pathMat;
@@ -221,6 +221,13 @@ function buildVolcano(x, z, h) {
   // il cratere: un tronco di cono rovesciato, acceso dentro
   const cw = w * 0.19;
   put(world, GEO.cyl12, lavaMat, x, h - 1.2, z, cw, 2.4, cw);
+  /* il bagliore del cratere: è la cosa più luminosa del cielo, e ai piedi
+     della montagna il cielo deve sembrare acceso da sotto */
+  const b = new THREE.Group();
+  b.position.set(x, h + 2, z);
+  world.add(b);
+  bagliore(b, 0xff7a2a, w * 0.55, 0.55);
+  bagliore(b, 0xffc23c, w * 0.22, 0.7);
   // due colate che scendono dal bordo
   for (let i = 0; i < 2; i++) {
     const a = rnd(0, Math.PI * 2);
