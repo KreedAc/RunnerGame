@@ -182,6 +182,76 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
   controlla(!inutile, 'la seconda occasione si offre anche quando non può cambiare niente');
   controlla(utile, 'la seconda occasione NON si offre quando servirebbe');
 
+  /* ---- la camera non attraversa mai il paesaggio ----
+     Nasce da un caso vero: nella Bocca di Fuoco il fianco di un vulcano
+     invadeva la pista e per un secondo la camera ci passava dentro — schermo
+     marrone, "un pezzo di montagna". Nessuna prova guardava la geometria.
+
+     Qui si costruisce ogni zona e si fa passare la camera lungo il suo
+     percorso vero (corsa, duello, salita sulla torre), controllando per ogni
+     forma del mondo se il punto ci cade dentro. Le forme sono primitive di
+     lato 1 scalate, quindi basta portare il punto nello spazio locale della
+     forma e confrontarlo con la primitiva: esatto, non una scatola larga. */
+  const q = await ctx.newPage();
+  await q.goto(PAGINA);
+  await q.waitForFunction(() => window.BlockyRun);
+  const zone = await q.evaluate(() => THEMES.length);
+  for (let livello = 1; livello <= zone; livello++) {
+    const dentro = await q.evaluate(lv => {
+      const G = window.BlockyRun;
+      G.meta.level = lv;
+      /* Il paesaggio è casuale, e il vulcano storto usciva in 4 mondi su 30:
+         con quattro costruzioni per zona questa prova lo mancava una volta
+         su due, ed è infatti passata la prima volta. Con venticinque lo manca
+         il 3% delle volte. Costa ~90 ms a mondo. */
+      const colpiti = [];
+      for (let prova = 0; prova < 25; prova++) {
+        rebuildHook();
+        const tipo = new Map([
+          [GEO.box, 'box'], [GEO.cyl, 'cil'], [GEO.cyl8, 'cil'], [GEO.cyl12, 'cil'],
+          [GEO.taper, 'cil'], [GEO.cone, 'cono'], [GEO.cone6, 'cono'],
+          [GEO.sph, 'sfera'], [GEO.sph8, 'sfera'], [GEO.octa, 'otta']
+        ]);
+        const forme = [];
+        world.updateMatrixWorld(true);
+        world.traverse(o => { if (o.isMesh && tipo.has(o.geometry)) forme.push(o); });
+        const inv = forme.map(o => new THREE.Matrix4().copy(o.matrixWorld).invert());
+        const cade = (p, k) => {
+          const l = p.clone().applyMatrix4(inv[k]);
+          const t = tipo.get(forme[k].geometry);
+          if (t === 'box')   return Math.abs(l.x) <= 0.5 && Math.abs(l.y) <= 0.5 && Math.abs(l.z) <= 0.5;
+          if (t === 'sfera') return l.length() <= 0.5;
+          if (t === 'otta')  return Math.abs(l.x) + Math.abs(l.y) + Math.abs(l.z) <= 0.5;
+          if (Math.abs(l.y) > 0.5) return false;
+          const r = Math.hypot(l.x, l.z);
+          return t === 'cil' ? r <= 0.5 : r <= 0.5 * (0.5 - l.y);   // cono: punta in alto
+        };
+        /* il percorso della camera: corsa (tre corsie), duello, salita */
+        const punti = [];
+        for (let z = 14; z > towerZ + 24; z -= 1.5)
+          for (const x of [-1, 0, 1]) punti.push(new THREE.Vector3(x, 6.2, z));
+        punti.push(new THREE.Vector3(5, 7.4, bossZ + 23));
+        for (let k = 0; k <= 10; k++) {
+          const f = k / 10;
+          punti.push(new THREE.Vector3(5 + 2 * f, 7.4 + 14.6 * f, bossZ + 23 + (towerZ + 26 - bossZ - 23) * f));
+        }
+        for (const p of punti) for (let k = 0; k < forme.length; k++) {
+          if (cade(p, k)) {
+            const o = forme[k];
+            colpiti.push(tipo.get(o.geometry) + ' largo ' + o.scale.x.toFixed(0) +
+                         ' a x=' + o.position.x.toFixed(0) + ' (camera a z=' + p.z.toFixed(0) + ')');
+            break;
+          }
+        }
+      }
+      return { zona: t(themeFor(lv).key), colpiti };
+    }, livello);
+    controlla(!dentro.colpiti.length,
+      `nella ${dentro.zona} la camera attraversa il paesaggio ${dentro.colpiti.length} volte: ` +
+      dentro.colpiti.slice(0, 2).join('; '));
+  }
+  await q.close();
+
   await browser.close();
 
   if (problemi.length) {

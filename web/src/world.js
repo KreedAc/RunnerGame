@@ -184,8 +184,10 @@ function buildLava(len) {
   for (let z = 20; z > -len - 60; z -= rnd(16, 40)) {
     for (const side of [-1, 1]) {
       if (Math.random() < 0.3) continue;
-      const x = side * rnd(EDGE, EDGE + 30);
+      /* stesso errore del vulcano, in piccolo: il centro a distanza fissa
+         lasciava la crosta di una colata larga infilarsi sotto la pista */
       const w = rnd(7, 19), l = rnd(12, 34);
+      const x = side * (EDGE + (w + 2.6) / 2 + rnd(0, 24));
       put(world, GEO.box, MAT.rockDark, x, LAVA_Y - 0.12, z, w + 2.6, 0.5, l + 2.6);
       put(world, GEO.box, lavaMat,      x, LAVA_Y, z, w, 0.3, l);
       // isolotti di crosta che galleggiano nella colata
@@ -209,7 +211,14 @@ function buildLava(len) {
 function buildVolcanoes(len) {
   const lato = Math.random() < 0.5 ? -1 : 1;
   [0.22, 0.56, 0.9].forEach((f, i) => {
-    buildVolcano(lato * (i % 2 ? -1 : 1) * rnd(66, 96), -len * f, rnd(62, 92));
+    /* La distanza si misura dal FIANCO, non dal centro. Prima il centro
+       stava a 66-96 unità dalla pista, ma la base è larga 1,7 volte
+       l'altezza: un vulcano alto 92 ha 78 di raggio, e il suo pendio
+       invadeva la corsa abbastanza alto da farci passare dentro la camera
+       — una volta ogni sette o otto partite, "un pezzo di montagna". */
+    const h = rnd(62, 92);
+    const raggio = h * 1.7 / 2;
+    buildVolcano(lato * (i % 2 ? -1 : 1) * (raggio + rnd(18, 40)), -len * f, h);
   });
 }
 

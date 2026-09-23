@@ -839,6 +839,21 @@ La lava non tocca mai la corsia. Aggiungere un pericolo ambientale sarebbe
 stato facile e sbagliato: in questo gioco si muore di muro e di scelte, non di
 scenografia.
 
+**Il vulcano in mezzo alla strada.** Giocando, per un secondo lo schermo è
+diventato marrone: "un pezzo di montagna". Il centro di ogni vulcano stava a
+66–96 unità dalla pista, ma la base è larga 1,7 volte l'altezza, quindi un
+vulcano alto 92 ha 78 di raggio — il pendio invadeva la corsa abbastanza alto
+da farci passare la camera. Succedeva in 4 mondi su 30. Adesso la distanza si
+misura dal fianco (`raggio + 18..40`), e lo stesso per le colate.
+
+Nessuna prova guardava la geometria. Ora `tools/smoke.js` costruisce ogni
+zona 25 volte e fa passare la camera lungo il suo percorso vero — corsa sulle
+tre corsie, duello, salita sulla torre — controllando per ogni forma del mondo
+se il punto ci cade dentro. Le forme sono primitive di lato 1 scalate, quindi
+basta portare il punto nello spazio locale della forma: il controllo è esatto,
+non una scatola larga che darebbe falsi allarmi su ogni guglia. Verificata
+rimettendo il vecchio vulcano: fallisce ("cono largo 146 a x=68").
+
 ## 7c. Il carceriere è del posto
 
 Le otto zone cambiavano cielo, terra e alberi, ma il carceriere ai piedi della
