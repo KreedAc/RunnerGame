@@ -1025,7 +1025,8 @@ function tocco() {
   let a = null, scarto = Infinity;
   for (const x of duello.anelli) {
     if (x.t < 0) continue;
-    const d = Math.abs(x.t - alBersaglio());
+    /* il tocco arriva in ritardo rispetto a quello che il dito ha visto */
+    const d = Math.abs(x.t - DUELLO.ritardo - alBersaglio());
     if (d < scarto) { scarto = d; a = x; }
   }
   if (!a) return;

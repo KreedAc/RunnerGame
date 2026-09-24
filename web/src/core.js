@@ -273,6 +273,17 @@ const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.44);
             ms la finestra perfetta diventa fortuna.
    pausa  : fra un anello e il successivo
    critP, critB : quanto toglie un colpo, in frazione della vita iniziale
+   ritardo: quanto arriva in ritardo un tocco sul telefono, fra quello che
+            l'occhio vede e l'evento che il gioco riceve. Si toglie prima
+            di giudicare, come fanno i giochi a ritmo: senza, chi tocca
+            esattamente quando l'anello combacia veniva giudicato tardi.
+
+   Prima prova vera sul telefono: "i cerchi vanno troppo veloci, ne ho
+   mancati un botto". Era così: 0,9 s per chiudersi (0,62 nel vulcano),
+   ±0,08 s per il perfetto e nessuna correzione del ritardo. Ora l'anello
+   ci mette 1,2 s, le finestre sono ±0,10 e ±0,22, il ritardo si toglie, e
+   lo scontro dura 4,6 s invece di 3,6 perché gli anelli per duello
+   restino quanti erano (~4): più lenti, non meno.
 
    Il duello regala vita tolta, quindi va pagato: la vita del carceriere
    è stata alzata di quanto un giocatore medio recupera coi colpi (vedi
@@ -288,9 +299,9 @@ const bossHealth = lvl => Math.round(towerNeed(lvl) * 0.44);
 const COMBO = { passo: 0.03, max: 5 };
 
 const DUELLO = {
-  durata: 3.6, giro: 0.9, da: 2.4, a: 0.5,
-  perfetto: 0.08, buono: 0.18, pausa: 0.16,
-  critP: 0.07, critB: 0.035
+  durata: 4.6, giro: 1.2, da: 2.4, a: 0.5,
+  perfetto: 0.10, buono: 0.22, pausa: 0.16,
+  critP: 0.07, critB: 0.035, ritardo: 0.05
 };
 
 /* Ogni carceriere combatte a modo suo. Le otto zone avevano colori e nomi
@@ -312,10 +323,10 @@ const DUELLO = {
    Una riga per stile, apposta: il simulatore le legge con una regex. */
 const STILI_DUELLO = {
   base  : { },
-  svelto: { giro: 0.76 },
+  svelto: { giro: 1.0 },
   storto: { pausaDa: 0.06, pausaA: 0.75 },
   ombra : { svanisce: 0.5 },
-  lampo : { giro: 0.62 },
+  lampo : { giro: 0.84 },
   doppio: { doppio: 0.32, peso: 0.6 },
   finta : { finta: 0.3 },
   salto : { salto: 75 }

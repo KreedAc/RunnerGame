@@ -596,13 +596,21 @@ senza rendere il gioco più facile per tutti.
 
 **Il duello.** Lo scontro col carceriere era l'unico momento del gioco in cui
 non si faceva niente: due numeri che scendevano insieme e un esito già deciso
-dal muro. Adesso dura 3,6 secondi a forze pari, e ogni ~0,8 secondi un anello
+dal muro. Adesso dura 4,6 secondi a forze pari, e ogni ~1 secondo un anello
 si stringe su un bersaglio sul petto del carceriere. Tocchi — lo schermo intero
-è il bottone — quando combacia: entro 80 ms è **perfetto** (−7% della vita con
-cui era partito), entro 180 ms è **buono** (−3,5%). Il bersaglio si accende
+è il bottone — quando combacia: entro 100 ms è **perfetto** (−7% della vita con
+cui era partito), entro 220 ms è **buono** (−3,5%). Il bersaglio si accende
 d'oro nel momento giusto: chi non ha ancora capito il ritmo lo impara dal
-colore. La finestra perfetta non scende sotto gli 80 ms perché un telefono ne
-mette 50-80 fra il dito e lo schermo: sotto, diventa fortuna.
+colore.
+
+La prima versione chiudeva l'anello in 0,9 s con ±80 ms per il perfetto, e
+alla prima prova sul telefono: "i cerchi vanno troppo veloci, ne ho mancati un
+botto". Un telefono mette 50-100 ms fra quello che l'occhio vede e il tocco che
+il gioco riceve, quindi chi toccava esattamente al momento giusto veniva
+giudicato tardi. Ora l'anello ci mette 1,2 s, le finestre sono più larghe, e
+prima di giudicare si tolgono 50 ms di ritardo (`DUELLO.ritardo`), come nei
+giochi a ritmo. Lo scontro è passato da 3,6 a 4,6 s perché gli anelli per
+duello restino quanti erano: più lenti, non meno.
 
 L'anello è DOM, non 3D: deve essere nitido, stare sopra a tutto e non finire
 mai dietro alla mazza.
@@ -1040,10 +1048,10 @@ dice cosa cambia:
 | zona | carceriere | stile | cosa succede |
 |---|---|---|---|
 | Valle Gelata | Guardiano del Gelo | base | il duello normale: si impara qui |
-| Bosco Rosso | Signore del Bosco | svelto | l'anello si chiude in 0,76 s invece di 0,9 |
+| Bosco Rosso | Signore del Bosco | svelto | l'anello si chiude in 1,0 s invece di 1,2 |
 | Dune d'Ossa | Re d'Ossa | storto | pause casuali fra 0,06 e 0,75 s: niente ritmo |
 | Notte di Rúna | Ombra di Rúna | ombra | a metà strada l'anello sparisce e il bersaglio non si accende: si conta |
-| Bocca di Fuoco | Signore del Vulcano | lampo | 0,62 s: velocissimo |
+| Bocca di Fuoco | Signore del Vulcano | lampo | 0,84 s: il più svelto |
 | Palude di Cenere | Mangiacenere | doppio | due anelli a 0,32 s l'uno dall'altro, ciascuno vale 0,6 |
 | Foresta di Vetro | Re di Vetro | finta | un anello su tre è rosso: toccarlo gli ridà vita |
 | Cielo Spezzato | Signore del Tuono | salto | il bersaglio si sposta fino a 75 px a ogni anello |

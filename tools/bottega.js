@@ -50,10 +50,11 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   ok(dopo.arma === 1 && dopo.spese === 2 && dopo.libere === 5, 'acquisto sbagliato: ' + JSON.stringify(dopo));
   ok(Math.abs(dopo.molt - 2.75) < 1e-9, 'spendere ha tolto bonus: ×' + dopo.molt);
   for (const k of [5, 5, 2, 2]) await righe.nth(k).click();   // pelle (3), mira (2)
-  const tutto = await p.evaluate(() => ({ b: meta.bottega, libere: runeLibere(), revive: reviveCost(), finestra: finestraPerfetta() }));
+  const tutto = await p.evaluate(() => ({ b: meta.bottega, libere: runeLibere(), revive: reviveCost(), finestra: finestraPerfetta(), base: DUELLO.perfetto }));
   ok(tutto.b.pelle === 1 && tutto.b.mira === 1 && tutto.libere === 0, 'pelle e mira non comprate: ' + JSON.stringify(tutto));
   ok(tutto.revive === 4, 'la seconda occasione non costa 4: ' + tutto.revive);
-  ok(Math.abs(tutto.finestra - 0.095) < 1e-9, 'la finestra perfetta non è 95 ms: ' + tutto.finestra);
+  ok(Math.abs(tutto.finestra - (tutto.base + 0.015)) < 1e-9,
+     'la mano ferma non allarga la finestra di 15 ms: ' + tutto.base + ' → ' + tutto.finestra);
   await righe.nth(3).click();               // muro: costa 3, non ce ne sono
   ok(/MANCANO/.test(await p.textContent('#banner')), 'non dice che mancano rune');
   await p.click('#btChiudi');
