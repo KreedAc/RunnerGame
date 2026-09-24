@@ -630,6 +630,51 @@ tradotto, e il ricomincia da capo che rimette quello di serie — perché un
 aspetto regalato o pagato due volte nessuno lo segnala: se ne accorge solo chi
 conta i diamanti.
 
+## 6c-ter. La bottega delle rune e l'obiettivo del giorno
+
+**Le rune erano un moltiplicatore invisibile**: +25% l'una su potenza e oro, e
+basta. Funzionavano — sono l'unica strada per andare oltre — ma si subivano.
+Adesso si spendono anche, in sei vantaggi che la rinascita non azzera:
+
+| vantaggio | gradini (rune) | cosa fa |
+|---|---|---|
+| ⚔️ Arma di famiglia | 2 · 4 · 7 | parti almeno con randello, ascia, spada |
+| 🎒 Zaino | 1 · 2 · 3 · 5 | parti con due colonne facili di potenza per gradino |
+| 🎯 Mano ferma | 2 · 5 | finestra del colpo perfetto 80 → 95 → 110 ms |
+| 🧱 Muratore | 3 · 6 | blocchi del muro −4% per gradino |
+| 💎 Occhio del gioielliere | 3 · 6 | gemme sulla pista +50% per gradino |
+| 🪽 Seconda pelle | 3 · 6 | la seconda occasione costa 4, poi 3 diamanti |
+
+Il punto delicato è che **spendere non deve costare potenza**. Il +25% si
+conta sulle rune *guadagnate* (`meta.runes`, che non scende mai); in bottega si
+spendono le stesse rune meno quelle già spese (`meta.runeSpese`). Una runa fa
+due cose, e rinascere diventa una scelta — cosa compro — invece di una tassa.
+La prova lo controlla: con 7 rune il bonus è ×2,75 prima e dopo aver speso.
+
+Tutti i vantaggi aiutano soprattutto la salita *dopo* una rinascita, che è
+quando servono. La prima salita — quella su cui è tarata la difficoltà — non ha
+rune, e il simulatore non cambia. Lo Zaino è in proporzione alla torre (due
+colonne facili, non un numero fisso), altrimenti alla decima varrebbe zero.
+
+La bottega si apre toccando la pillola 🔮 del portafoglio, che si accende di un
+puntino d'oro quando c'è qualcosa alla portata. Non ha una riga nel menù: il
+menù è già alto quanto lo schermo, e una bottega che si usa una volta per
+rinascita non la merita.
+
+**L'obiettivo del giorno.** I diamanti arrivavano col contagocce — un paio a
+corsa — e gli aspetti ne costano fino a 120. Serviva una fonte regolare, e un
+motivo per tornare domani. Uno al giorno, scelto dal numero del giorno e non a
+caso, così due amici che giocano lo stesso giorno hanno lo stesso obiettivo e
+se lo possono raccontare: spacca 30 colonne verdi, fai una combo da 8, metti 4
+colpi perfetti, sfonda 60 blocchi, raccogli 45 monete, abbatti 6 nemici. Vale
+6 diamanti, pagati nel momento in cui lo completi — è lì che fa piacere, non al
+menù. Non compare alla prima partita: quella è di chi sta imparando.
+
+La riga dell'obiettivo ha fatto sforare il menù di 13 px: `tools/misura-home.js`
+l'ha detto subito, e qualche pixel di margine qua e là l'ha riportato a 720
+(700 sugli schermi più bassi). `tools/bottega.js` fa il giro completo di
+bottega e obiettivo, compreso "il premio non si paga due volte".
+
 ## 6d. Il diario della salita
 
 Il simulatore dice una cosa, un pollice su un telefono ne dice un'altra — e

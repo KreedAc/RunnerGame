@@ -48,8 +48,14 @@ function buyUpgrade(key) {
 function renderWallet() {
   $('hubCoins').textContent = fmt(meta.coins);
   $('hubGems').textContent  = fmt(meta.gems);
-  $('hubRunes').textContent = fmt(meta.runes);
+  /* la pillola mostra le rune da SPENDERE, e si accende quando in
+     bottega c'è qualcosa alla loro portata */
+  const libere = runeLibere();
+  $('hubRunes').textContent = fmt(libere);
   $('runePill').classList.toggle('hidden', meta.runes === 0);
+  const spendibile = Object.keys(BOTTEGA).some(k =>
+    perk(k) < BOTTEGA[k].costi.length && BOTTEGA[k].costi[perk(k)] <= libere);
+  $('runePill').classList.toggle('spendi', spendibile);
 }
 
 /* ------------------------------ RINASCITA ------------------------------ */
@@ -133,6 +139,121 @@ function tapReset() {
   renderHub();
 }
 
+/* ------------------------- L'OBIETTIVO DEL GIORNO ----------------------
+   Uno al giorno, lo stesso per tutti quel giorno: si sceglie dal numero
+   del giorno, non a caso, così due amici che giocano lo stesso giorno
+   hanno lo stesso obiettivo e se lo possono raccontare. */
+function oggiData(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
+}
+
+function obiettivoOggi() {
+  const d = new Date();
+  const g = oggiData(d);
+  if (!meta.oggi || meta.oggi.giorno !== g) meta.oggi = { giorno: g, fatto: 0, preso: false };
+  const giorni = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5);
+  return OBIETTIVI[giorni % OBIETTIVI.length];
+}
+
+/* Lo chiama il gioco quando succede qualcosa che un obiettivo può contare.
+   Il premio arriva nel momento in cui lo fai, non al menù: è lì che fa
+   piacere. */
+function oggiConta(tipo, quanto) {
+  const o = obiettivoOggi();
+  if (o.tipo !== tipo || meta.oggi.preso) return;
+  meta.oggi.fatto = o.massimo ? Math.max(meta.oggi.fatto, quanto) : meta.oggi.fatto + quanto;
+  if (meta.oggi.fatto < o.n) return;
+  meta.oggi.fatto = o.n;
+  meta.oggi.preso = true;
+  meta.gems += PREMIO_OGGI;
+  writeSave(meta);
+  flashBanner(t('og.fatto', PREMIO_OGGI), 'good');
+}
+
+function renderOggi() {
+  const el = $('oggi');
+  /* la prima partita è di chi sta imparando: niente compiti */
+  const mostra = !!meta.lastOutcome;
+  el.classList.toggle('hidden', !mostra);
+  if (!mostra) return;
+  const o = obiettivoOggi();
+  el.classList.toggle('fatto', meta.oggi.preso);
+  $('oggiTesto').textContent = meta.oggi.preso ? t('og.domani') : t('og.' + o.tipo, o.n);
+  $('oggiConto').textContent = meta.oggi.preso ? '✓' : meta.oggi.fatto + '/' + o.n;
+  $('oggiPremio').textContent = '💎' + PREMIO_OGGI;
+}
+
+/* ------------------------------ LA BOTTEGA -----------------------------
+   Si apre toccando la pillola delle rune nel portafoglio: il menù è già
+   alto quanto lo schermo, e una bottega che si usa una volta per
+   rinascita non merita una riga fissa. Comprare chiede due tocchi, come
+   tutto quello che non si può annullare. */
+let bottegaArmata = '';
+
+/* cosa fa un vantaggio al gradino g, in una riga */
+function effettoPerk(k, g) {
+  switch (k) {
+    case 'arma'  : return t('bt.e.arma', weaponName(g));
+    case 'scorta': return t('bt.e.scorta', 2 * g);
+    case 'mira'  : return t('bt.e.mira', Math.round((DUELLO.perfetto + 0.015 * g) * 1000));
+    case 'muro'  : return t('bt.e.muro', 4 * g);
+    case 'gemme' : return t('bt.e.gemme', 50 * g);
+    case 'pelle' : return t('bt.e.pelle', 5 - g);
+  }
+  return '';
+}
+
+function renderBottega() {
+  const libere = runeLibere();
+  $('btSub').innerHTML = t('bt.sub', libere, runeMul(meta.runes).toFixed(2));
+  const lista = $('btList');
+  lista.innerHTML = '';
+  for (const k of Object.keys(BOTTEGA)) {
+    const B = BOTTEGA[k];
+    const g = perk(k);
+    const max = g >= B.costi.length;
+    const costo = max ? 0 : B.costi[g];
+    const riga = document.createElement('button');
+    riga.className = 'bt-riga' + (max ? ' max' : costo > libere ? ' caro' : '') +
+                     (bottegaArmata === k ? ' armata' : '');
+    const pallini = B.costi.map((_, i) => i < g ? '●' : '○').join('');
+    riga.innerHTML =
+      '<span class="bt-ico">' + B.icona + '</span>' +
+      '<span class="bt-testo"><b>' + t('bt.' + k) + '</b><small>' +
+        (max ? effettoPerk(k, g) : (g ? effettoPerk(k, g) + ' → ' : '') + effettoPerk(k, g + 1)) +
+      '</small></span>' +
+      '<span class="bt-pallini">' + pallini + '</span>' +
+      '<span class="bt-costo">' + (max ? t('up.max') : bottegaArmata === k ? t('bt.ok') : '🔮' + costo) + '</span>';
+    riga.addEventListener('click', () => compraPerk(k));
+    lista.appendChild(riga);
+  }
+}
+
+function compraPerk(k) {
+  const g = perk(k);
+  const B = BOTTEGA[k];
+  if (g >= B.costi.length) return;
+  const costo = B.costi[g];
+  if (costo > runeLibere()) { flashBanner(t('bt.poche', costo - runeLibere()), 'bad'); return; }
+  if (bottegaArmata !== k) { bottegaArmata = k; renderBottega(); return; }
+  bottegaArmata = '';
+  meta.runeSpese = (meta.runeSpese || 0) + costo;
+  meta.bottega[k] = g + 1;
+  writeSave(meta);
+  flashBanner(B.icona + ' ' + t('bt.' + k) + '!', 'good');
+  renderBottega();
+  renderHub();
+}
+
+function apriBottega() {
+  if (!meta.runes) return;
+  bottegaArmata = '';
+  renderBottega();
+  $('bottega').classList.remove('hidden');
+}
+function chiudiBottega() { $('bottega').classList.add('hidden'); }
+
 /* ------------------------------ DIARIO --------------------------------
    Quanti tentativi è costata ogni torre. Non serve al gioco: serve a
    tarare la difficoltà su una partita vera invece che sul simulatore,
@@ -166,6 +287,7 @@ function renderHub() {
   renderRebirth();
   renderReset();
   renderDiary();
+  renderOggi();
 
   /* Alla prima partita servono le regole; dopo serve il risultato.
      Non hanno senso insieme: si scambiano il posto. */
@@ -207,6 +329,8 @@ document.querySelectorAll('.up-card').forEach(card => {
 });
 $('rebirthCard').addEventListener('click', tapRebirth);
 $('resetBtn').addEventListener('click', tapReset);
+$('runePill').addEventListener('click', apriBottega);
+$('btChiudi').addEventListener('click', chiudiBottega);
 $('buildTag').textContent = 'BUILD ' + (window.BUILD || 'dev');
 
 /* le bandierine: quella attiva si accende, l'altra cambia lingua */

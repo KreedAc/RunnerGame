@@ -357,6 +357,49 @@ const RUNE_BONUS = 0.25;
 const runeMul    = runes => 1 + runes * RUNE_BONUS;
 const runeGain   = lvl => Math.max(0, lvl - 1);      // torri già superate
 
+/* ------------------------------ LA BOTTEGA ----------------------------
+   Le rune erano solo un moltiplicatore: invisibile, si subiva. Adesso si
+   spendono anche, in vantaggi che la rinascita non azzera.
+
+   Il punto delicato è che spendere non deve costare potenza: il +25%
+   si conta sulle rune GUADAGNATE (meta.runes, che non scende mai), e in
+   bottega si spendono le stesse rune meno quelle già spese
+   (meta.runeSpese). Una runa fa due cose, e rinascere diventa una
+   scelta — cosa compro — invece di una tassa.
+
+   costi[i] è il prezzo del gradino i+1. Ogni vantaggio aiuta soprattutto
+   la salita DOPO una rinascita, che è quando serve: la prima salita, su
+   cui è tarata la difficoltà, non ha rune e non cambia. */
+const BOTTEGA = {
+  arma  : { icona: '⚔️', costi: [2, 4, 7] },      // parti almeno con l'arma del gradino
+  scorta: { icona: '🎒', costi: [1, 2, 3, 5] },   // parti con due colonne facili in tasca, a gradino
+  mira  : { icona: '🎯', costi: [2, 5] },         // +15 ms alla finestra del colpo perfetto
+  muro  : { icona: '🧱', costi: [3, 6] },         // blocchi del muro −4% a gradino
+  gemme : { icona: '💎', costi: [3, 6] },         // +50% di gemme sulla pista a gradino
+  pelle : { icona: '🪽', costi: [3, 6] }          // la seconda occasione costa un diamante in meno
+};
+
+/* il gradino comprato di un vantaggio, e le rune ancora da spendere
+   (`meta` nasce in hub.js: si chiamano solo a gioco avviato) */
+const perk = k => Math.min((meta.bottega && meta.bottega[k]) || 0, BOTTEGA[k].costi.length);
+const runeLibere = () => Math.max(0, meta.runes - (meta.runeSpese || 0));
+
+/* ------------------------- L'OBIETTIVO DEL GIORNO ---------------------
+   Uno al giorno, uguale per tutti quel giorno (si sceglie dalla data), e
+   vale PREMIO_OGGI diamanti. I diamanti arrivavano col contagocce — un
+   paio a corsa — e gli aspetti ne costano fino a 120: serviva una fonte
+   regolare, e un motivo per tornare domani.
+   `massimo`: conta il valore più alto raggiunto, non la somma. */
+const OBIETTIVI = [
+  { tipo: 'verdi',    n: 30 },
+  { tipo: 'combo',    n: 8, massimo: true },
+  { tipo: 'perfetti', n: 4 },
+  { tipo: 'muro',     n: 60 },
+  { tipo: 'monete',   n: 45 },
+  { tipo: 'nemici',   n: 6 }
+];
+const PREMIO_OGGI = 6;
+
 /* ------------------------------- UTIL ------------------------------- */
 const rnd   = (a, b) => a + Math.random() * (b - a);
 const rint  = (a, b) => Math.floor(rnd(a, b + 1));
@@ -399,6 +442,9 @@ function defaultSave() {
     diary: [],           // { l: torre, t: tentativi, r: seconda occasione }
     skin: 0,             // l'aspetto indossato…
     skins: [],           // …e quelli comprati (lo 0 è di tutti)
+    runeSpese: 0,        // rune spese in bottega (il bonus si conta su meta.runes)
+    bottega: { arma: 0, scorta: 0, mira: 0, muro: 0, gemme: 0, pelle: 0 },
+    oggi: { giorno: '', fatto: 0, preso: false },   // l'obiettivo del giorno
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

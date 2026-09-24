@@ -75,7 +75,14 @@ potenziamenti crescono col logaritmo del denaro: prima o poi ogni torre costa
 qualche corsa in più. Allora si rinasce — si torna
 alla Torre 1 con i potenziamenti azzerati, ma ogni **runa** guadagnata vale
 `+25%` su potenza e oro **per sempre**. Le rune si sommano fra una rinascita e
-l'altra: è l'unica strada per arrivare più in là.
+l'altra: è l'unica strada per arrivare più in là. E si spendono anche, senza
+perdere il bonus: tocca 🔮 nel portafoglio per la **bottega delle rune** —
+arma di partenza, zaino, mano ferma nel duello, muro più morbido, più gemme,
+seconda occasione più economica.
+
+**L'obiettivo del giorno.** Sotto al titolo, uno al giorno (lo stesso per
+tutti quel giorno): spacca 30 verdi, fai una combo da 8, 4 colpi perfetti…
+Vale 6 diamanti, pagati nel momento in cui lo completi.
 
 **Le zone.** Ogni torre cambia mondo, e sono otto: Valle Gelata, Bosco Rosso,
 Dune d'Ossa, Notte di Rúna, Bocca di Fuoco, Palude di Cenere, Foresta di Vetro,
@@ -143,6 +150,7 @@ docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
 tools/sim.js          simulatore dell'economia: quanti tentativi costa ogni torre
 tools/smoke.js        gioca una corsa e controlla che nessun numero impazzisca
 tools/skins.js        compra, indossa e salva un aspetto: il giro dei diamanti
+tools/bottega.js      bottega delle rune e obiettivo del giorno: il giro delle rune
 tools/misura-home.js  quanti pixel serve il menù e chi se li prende
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
@@ -173,5 +181,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Duello a tempo col carceriere e combo per chi non sbaglia (compensati: la difficoltà media non cambia)
 - [x] Italiano e inglese, con la lingua indovinata dal telefono
 - [x] Cinque aspetti dell'eroe comprabili in diamanti (solo colore, zero vantaggi)
-- [ ] Missioni
+- [x] Un carceriere diverso per zona anche nel duello (svelto, senza ritmo, ombra, doppio, finte…)
+- [x] Bottega delle rune e obiettivo del giorno
 - [ ] Build Android (vedi `docs/DESIGN.md`)

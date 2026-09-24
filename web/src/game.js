@@ -320,7 +320,7 @@ function buildRun() {
         const lane = CFG.laneX[rint(0, 2)];
         for (let k = 0; k < 3; k++) {
           const cz = pz + k * 2.2;
-          const kind = Math.random() < 0.12 ? 'gem' : 'coin';
+          const kind = Math.random() < 0.12 * (1 + 0.5 * perk('gemme')) ? 'gem' : 'coin';
           items.push(Object.assign({ kind, z: cz, x: lane, done: false },
                                    spawnPickup(lane, cz, kind)));
         }
@@ -333,7 +333,7 @@ function buildRun() {
 
   /* Il muro: il costo complessivo del percorso migliore è wallBudget,
      così il bilanciamento sta in una sola formula invece che in trenta. */
-  const budget = wallBudget(meta.level);
+  const budget = wallBudget(meta.level) * (1 - 0.04 * perk('muro'));   // bottega: il muratore
   let sumW = 0;
   for (let i = 0; i < CFG.wallRows; i++) sumW += 1 + i * 0.10;
 
@@ -612,6 +612,7 @@ function hitPillar(it) {
     fxColpo(it.obj, 0x6dff8a, false);
     shatter(it.obj, 16, MAT.good);
     comboSu();
+    oggiConta('verdi', 1);
   } else {
     /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
        incontrano più spesso, e il prezzo dev'essere abbastanza alto da
@@ -646,6 +647,7 @@ function hitEnemy(it) {
     it.mob.userData.dying = true;
     it.sprite.visible = false;
     comboSu();
+    oggiConta('nemici', 1);
   } else {
     const loss = Math.max(5, Math.round(run.power * 0.22));
     run.power = Math.max(0, run.power - loss);
@@ -665,6 +667,7 @@ function hitEnemy(it) {
    di sparire in silenzio — perdere una serie deve bruciare un po'. */
 function comboSu() {
   run.combo++;
+  oggiConta('combo', run.combo);
   renderCombo();
   if (run.combo >= 2) pulsa('combo', 'bump');
   if (run.combo === COMBO.max) {
@@ -720,6 +723,7 @@ function takePickup(it) {
     run.coins += Math.round(run.unit * 1.1 * coinMul());
     fxRaccolta(it.obj, 0xffd24b, 7);
     volaAlPortafoglio(dove);
+    oggiConta('monete', 1);
   } else if (it.kind === 'gem') {
     run.gems += 1;
     popup('+1 💎', '#4fe3d5', dove);
@@ -743,6 +747,7 @@ function hitWallBlock(it) {
   shatter(it.obj, it.chest ? 14 : 9, it.chest ? MAT.gold : MAT.wall);
   it.obj.visible = false;
   run.broken++;
+  oggiConta('muro', 1);
   /* Trenta blocchi di fila: qui la scossa va tenuta bassa, altrimenti il
      muro diventa un frullatore. Lo scrigno è l'eccezione, è raro. */
   impatto(it.chest ? 0.45 : 0.22);
@@ -837,6 +842,7 @@ function updateBossFight(dt) {
 const duello = { aperto: false, anelli: [], attesa: 0, primo: true, stile: {}, dx: 0, dy: 0 };
 const _duPos = new THREE.Vector3();
 const giroOra = () => duello.stile.giro || DUELLO.giro;
+const finestraPerfetta = () => DUELLO.perfetto + 0.015 * perk('mira');   // bottega: la mano ferma
 const alBersaglio = () => (DUELLO.da - 1) / (DUELLO.da - DUELLO.a) * giroOra();
 const pausaOra = () => duello.stile.pausaA
   ? rnd(duello.stile.pausaDa, duello.stile.pausaA) : DUELLO.pausa;
@@ -912,7 +918,7 @@ function aggiornaDuello(dt) {
     e.classList.toggle('finto', a.finto);
     /* l'Ombra di Rúna: a metà strada l'anello si spegne, e si conta */
     e.style.opacity = S.svanisce && a.t > S.svanisce * giro ? 0.06 : 1;
-    if (!a.finto && Math.abs(a.t - alBersaglio()) <= DUELLO.perfetto) ora = true;
+    if (!a.finto && Math.abs(a.t - alBersaglio()) <= finestraPerfetta()) ora = true;
   });
   /* il bersaglio si accende quando è il momento — tranne con l'Ombra, dove
      lo farebbe l'anello invisibile al posto tuo */
@@ -932,7 +938,7 @@ function tocco() {
   if (!a) return;
   togliAnello(a);
   if (a.finto) { colpo('finta'); return; }
-  colpo(scarto <= DUELLO.perfetto ? 'perfetto'
+  colpo(scarto <= finestraPerfetta() ? 'perfetto'
       : scarto <= DUELLO.buono    ? 'buono' : 'mancato');
 }
 
@@ -956,6 +962,7 @@ function colpo(esito) {
   }
 
   const perfetto = esito === 'perfetto';
+  if (perfetto) oggiConta('perfetti', 1);
   const via = Math.max(1, Math.round(run.bossHpIni * (perfetto ? DUELLO.critP : DUELLO.critB) * peso));
   run.bossHp = Math.max(0, run.bossHp - via);
   popup(t(perfetto ? 'du.perfetto' : 'du.buono'), perfetto ? '#ffd24b' : '#8fe3ff', qui);
@@ -1003,7 +1010,7 @@ const clock = new THREE.Clock();
 
 function startRun() {
   run.power  = START_POWER;      // POTENZA adesso moltiplica quello che raccogli
-  run.weapon = meta.up.weapon;
+  run.weapon = Math.max(meta.up.weapon, perk('arma'));   // bottega: l'arma di famiglia
   run.coins = 0; run.gems = 0; run.broken = 0; run.swing = 0;
   run.beatRecord = false; run.outcome = '';
   run.combo = 0; renderCombo();
@@ -1014,6 +1021,9 @@ function startRun() {
   if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
   setWeapon(hero, run.weapon);
   buildRun();
+  /* bottega: la scorta — due colonne facili di potenza per gradino, in
+     proporzione alla torre, altrimenti alla decima varrebbe zero */
+  run.power += Math.round(perk('scorta') * 2 * 0.75 * run.unit * 3);
   renderBuffRail(run.buffs);
   azzeraHudVisto();
   renderHud();
@@ -1035,7 +1045,8 @@ const OUTCOMES = { wall: 'run.stoppedBig', boss: 'run.beatenBig', win: 'run.free
    quasi, non un modo per comprare una torre fuori portata. Una volta sola
    per corsa — e solo se quella metà può davvero cambiare come finisce
    (vedi reviveUseful). */
-const REVIVE_COST    = 5;
+const REVIVE_BASE    = 5;
+const reviveCost     = () => REVIVE_BASE - perk('pelle');   // bottega: la seconda pelle
 const REVIVE_SHARE   = 0.5;
 const REVIVE_SECONDS = 7;
 
@@ -1085,7 +1096,7 @@ function reviveUseful(outcome) {
 
 function canRevive(outcome) {
   return (outcome === 'wall' || outcome === 'boss') &&
-         !run.revived && gemsAvailable() >= REVIVE_COST &&
+         !run.revived && gemsAvailable() >= reviveCost() &&
          reviveUseful(outcome);
 }
 
@@ -1100,7 +1111,7 @@ function offerRevive(outcome) {
   $('rvWhy').textContent = outcome === 'wall'
     ? t('rv.byWall', run.broken, CFG.wallRows)
     : t('rv.byBoss');
-  $('rvCost').textContent = '💎 ' + REVIVE_COST;
+  $('rvCost').textContent = '💎 ' + reviveCost();
   $('rvGain').textContent = t('rv.gain', fmt(torna));
   $('rvLeft').textContent = t('rv.have', gemsAvailable());
   $('revive').classList.remove('hidden');
@@ -1125,7 +1136,7 @@ function closeRevive() {
 }
 
 function doRevive(outcome) {
-  spendGems(REVIVE_COST);
+  spendGems(reviveCost());
   run.revived = true;
   meta.towerRevived = 1;          // il diario lo segna con un asterisco
   run.power = reviveAmount();
