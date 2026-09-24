@@ -1315,19 +1315,120 @@ function finishRun(outcome) {
   writeSave(meta);
 
   if (outcome === 'win') {
-    flashBanner(t('run.freedBig'), 'good');
     if (boss) boss.userData.falling = true;
+    iniziaVittoria();              // il cartello arriva con le chiavi
   } else {
     flashBanner(t(OUTCOMES[outcome]), 'bad');
     hero.userData.falling = true;
   }
-  setTimeout(backToHub, outcome === 'win' ? 3400 : 2200);
+  setTimeout(backToHub, outcome === 'win' ? VITTORIA.fine * 1000 : 2200);
+}
+
+/* ------------------------------ LA VITTORIA -----------------------------
+   Si vinceva e la camera saliva sul balcone: la principessa era lì, e
+   basta. Adesso la storia si chiude davanti agli occhi:
+
+     0,35 s  le chiavi della prigione saltano via dalla cintura del
+             gigante che cade
+     1,75 s  dopo un arco lungo, con la scia d'oro, arrivano alla grata:
+             lampo d'oro, cartello, la grata si alza
+     +0,35   la principessa salta e saluta, e partono i coriandoli
+             (tre raffiche)
+
+   La camera segue le chiavi e poi chiude sul balcone, e due bande nere
+   dall'alto e dal basso dicono "questa è una scena", non un menù. */
+const VITTORIA = { stacco: 0.35, volo: 1.4, fine: 5.6 };
+const _vitMira = new THREE.Vector3();
+const vit = { t: -1, chiavi: null, arrivo: -1, raffiche: 0, scala: 1,
+              da: new THREE.Vector3(), a: new THREE.Vector3(), guarda: new THREE.Vector3() };
+const CORIANDOLI = [0xff5a8a, 0xffd24b, 0x5ad1ff, 0x8dff87, 0xc49bff];
+
+function iniziaVittoria() {
+  vit.t = 0; vit.arrivo = -1; vit.raffiche = 0; vit.chiavi = null;
+  document.body.classList.add('cine');
+  if (tower) vit.a.set(0, tower.height + 3.7, towerZ + 5.1);
+  if (boss && boss.userData.chiavi) {
+    const k = boss.userData.chiavi;
+    world.attach(k);                         // si stacca dal gigante, stessa posizione
+    vit.chiavi = k;
+    vit.da.copy(k.position);
+    vit.scala = k.scale.x;
+    bagliore(k, 0xffd24b, 1.2, 0.8);
+  }
+  vit.guarda.copy(vit.chiavi ? vit.da : vit.a);
+}
+
+function chiudiVittoria() {
+  vit.t = -1;
+  document.body.classList.remove('cine');
+}
+
+function chiaviArrivate() {
+  vit.arrivo = vit.t;
+  if (vit.chiavi) vit.chiavi.visible = false;
+  FX.scintille.emetti(vit.a.x, vit.a.y, vit.a.z, 60, 0xffd24b,
+                      { vel: 9, su: 5, taglia: 0.6, vita: 0.9, grav: 8 });
+  FX.onde.lancia(vit.a.x, vit.a.y - 1.9, vit.a.z - 1, 0xffd24b, 5);
+  flashBanner(t('run.freedBig'), 'good');
+}
+
+function aggiornaVittoria(dt) {
+  if (vit.t < 0) return;
+  vit.t += dt;
+  const k = vit.chiavi;
+
+  /* le chiavi: un saltello, poi l'arco fino alla grata */
+  if (vit.arrivo < 0) {
+    if (k) {
+      const f = clamp((vit.t - VITTORIA.stacco) / VITTORIA.volo, 0, 1);
+      const e = f * f * (3 - 2 * f);
+      k.position.lerpVectors(vit.da, vit.a, e);
+      k.position.y += vit.t < VITTORIA.stacco ? Math.sin(vit.t / VITTORIA.stacco * Math.PI) * 1.2
+                                             : Math.sin(e * Math.PI) * 9;
+      k.rotation.y += dt * 9;
+      /* a metà arco le chiavi sono lontane da tutto: crescono per farsi vedere */
+      k.scale.setScalar(vit.scala * (1 + 1.3 * Math.sin(e * Math.PI)));
+      if (vit.t > VITTORIA.stacco)
+        FX.scintille.emetti(k.position.x, k.position.y, k.position.z, 2, 0xffd24b,
+                            { vel: 1.5, su: 0.5, taglia: 0.35, vita: 0.5, grav: 2 });
+      if (f >= 1) chiaviArrivate();
+    } else if (vit.t > VITTORIA.stacco + VITTORIA.volo) chiaviArrivate();
+  }
+  if (vit.arrivo < 0 || !tower) return;
+  const dopo = vit.t - vit.arrivo;
+
+  /* la grata si alza e sparisce nel tetto */
+  if (tower.grata) {
+    const f = clamp(dopo / 0.7, 0, 1);
+    tower.grata.position.y = tower.height + 1.8 + (1 - Math.pow(1 - f, 3)) * 4.4;
+    tower.grata.visible = f < 1;
+  }
+
+  /* la principessa: salta due volte e saluta col braccio alto */
+  const p = tower.princess;
+  if (p && dopo > 0.35) {
+    const d = dopo - 0.35;
+    p.position.y += Math.abs(Math.sin(d * 5.5)) * 0.9 * Math.max(0, 1 - d / 1.8);
+    const L = p.userData.limbs;
+    L.armR.rotation.set(0, 0, 2.5 + Math.sin(d * 11) * 0.35);
+    L.armL.rotation.set(0, 0, -0.5 - Math.abs(Math.sin(d * 5.5)) * 0.4);
+  }
+
+  /* tre raffiche di coriandoli dal balcone */
+  const quando = [0.35, 0.95, 1.6];
+  if (vit.raffiche < quando.length && dopo > quando[vit.raffiche]) {
+    vit.raffiche++;
+    for (const c of CORIANDOLI)
+      FX.scintille.emetti(vit.a.x + rnd(-1.2, 1.2), vit.a.y + 1.2, vit.a.z + 0.6, 16, c,
+                          { vel: 7, su: 7, taglia: 0.85, vita: 2.2, grav: 5 });
+  }
 }
 
 /* Niente schermata intermedia: si finisce e si è già davanti ai
    potenziamenti, con il riepilogo della corsa appena chiusa. */
 function backToHub() {
   state = 'hub';
+  chiudiVittoria();
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
   hero.userData.falling = false;
@@ -1547,6 +1648,7 @@ function update(dt) {
     tower.princess.position.y = tower.height + 2.2 + Math.sin(runT * 2) * 0.08;
     animateIdle(tower.princess, runT, 0.6);
   }
+  aggiornaVittoria(dt);             // dopo: salto e saluto si sommano al respiro
 
   fadeLabels();
   aggiornaPoi(dt);
@@ -1593,11 +1695,18 @@ function update(dt) {
   const cheer = state === 'over' && run.outcome === 'win';
 
   if (cheer) {
-    // il premio è vedere chi hai liberato: la camera sale sulla torre
-    camera.position.x = lerp(camera.position.x, 7, 1 - Math.pow(0.06, dt));
-    camera.position.y = lerp(camera.position.y, 22, 1 - Math.pow(0.06, dt));
-    camera.position.z = lerp(camera.position.z, towerZ + 26, 1 - Math.pow(0.06, dt));
-    camera.lookAt(0, tower ? tower.height + 2.6 : 28, towerZ);
+    /* il premio è vedere chi hai liberato: la camera segue le chiavi fin
+       sulla torre, poi si avvicina al balcone per la cartolina */
+    const H = tower ? tower.height : 26;
+    const vicino = vit.arrivo >= 0 ? clamp((vit.t - vit.arrivo) / 1.4, 0, 1) : 0;
+    const k = 1 - Math.pow(0.06, dt);
+    camera.position.x = lerp(camera.position.x, lerp(7, 4.2, vicino), k);
+    camera.position.y = lerp(camera.position.y, lerp(22, H + 4.4, vicino), k);
+    camera.position.z = lerp(camera.position.z, towerZ + lerp(26, 15.5, vicino), k);
+    const segui = vit.t >= 0 && vit.arrivo < 0 && vit.chiavi ? vit.chiavi.position
+                : _vitMira.set(0, vit.t >= 0 ? H + 3.4 : H + 2.6, towerZ + (vit.t >= 0 ? 3.9 : 0));
+    vit.guarda.lerp(segui, 1 - Math.pow(0.02, dt));
+    camera.lookAt(vit.guarda);
   } else {
     camera.position.x = lerp(camera.position.x, duel ? run.x + 5 : run.x * 0.4, 1 - Math.pow(0.01, dt));
     camera.position.y = lerp(camera.position.y, menu ? MENU_CAM_Y : duel ? 7.4 : 6.2, 1 - Math.pow(0.02, dt));

@@ -384,8 +384,25 @@ function buildTower(z) {
   p.scale.setScalar(1.5);
   g.add(p);
 
+  /* La grata: la principessa è prigioniera, e per tutta la corsa la si
+     vede dietro le sbarre. Alla vittoria le chiavi del carceriere volano
+     fin qui e la grata si alza — è il momento che chiude la storia. */
+  const grata = new THREE.Group();
+  grata.position.set(0, H + 1.8, 4.75);
+  const ferro = mat(0x3c434d), ferroL = mat(0x6a7480);
+  for (let i = 0; i < 7; i++) {
+    const x = (i - 3) * 0.42;
+    putOn(grata, GEO.cyl8, ferro, x, 0, 0, 0.12, 3.5, 0.12);
+    put(grata, GEO.cone6, ferroL, x, 3.62, 0, 0.16, 0.26, 0.16);   // punte
+  }
+  for (const y of [0.4, 1.9, 3.3]) put(grata, GEO.box, ferro, 0, y, 0, 2.95, 0.14, 0.12);
+  put(grata, GEO.box, mat(C.gold), 0, 1.9, 0.09, 0.34, 0.4, 0.08);   // la serratura
+  addOutline(grata, 0.03);
+  castShadows(grata);
+  g.add(grata);
+
   world.add(g);
-  return { obj: g, princess: p, height: H };
+  return { obj: g, princess: p, height: H, grata };
 }
 
 /* Il dettaglio di ogni zona. Tutto sta entro 13 unità dal centro e mai

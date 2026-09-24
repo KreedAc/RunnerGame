@@ -78,6 +78,14 @@
   .buff b{font-size:13px}
 
   #pops{position:fixed;inset:0;z-index:7;pointer-events:none;overflow:hidden}
+  /* la vittoria è una scena: due bande nere entrano, la plancia esce */
+  #cinema i{position:fixed;left:0;right:0;height:0;z-index:4;background:#05080f;
+    pointer-events:none;transition:height .7s cubic-bezier(.2,.8,.2,1)}
+  #cinema i:first-child{top:0}
+  #cinema i:last-child{bottom:0}
+  body.cine #cinema i{height:10vh}
+  #hud{transition:opacity .4s}
+  body.cine #hud{opacity:0}
   .pop{position:absolute;top:48%;transform:translate(-50%,0);
     font-size:38px;font-weight:900;color:#fff;-webkit-text-stroke:3px rgba(24,20,38,.55);
     animation:popUp .85s ease-out forwards}
@@ -577,6 +585,7 @@
   <div class="du-scritta" id="duScritta">TOCCA QUANDO SI CHIUDE!</div>
 </div>
 <div id="fps" class="hidden"></div>
+<div id="cinema"><i></i><i></i></div>
 <div id="pops"></div>
 <div id="banner"><b></b></div>
 
@@ -724,7 +733,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260924-1453';</script>
+<script>window.BUILD = '260924-1501';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

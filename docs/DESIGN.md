@@ -507,6 +507,25 @@ Il tetto è stato alzato e ristretto apposta: nella prima versione la
 principessa spariva sotto la falda, ed è l'unica cosa che il giocatore vuole
 vedere quando vince.
 
+Poi la vittoria era solo quello: la camera saliva, la principessa stava lì, e
+dopo tre secondi eri nel menù. Adesso è una scena che chiude la storia
+(`iniziaVittoria` / `aggiornaVittoria` in `game.js`):
+
+- per tutta la corsa la principessa si vede **dietro una grata** di ferro sul
+  balcone, con la serratura d'oro: è prigioniera, e si capisce da lontano;
+- il gigante cade e **le chiavi della prigione** gli saltano via dalla
+  cintura, fanno un arco lungo con la scia d'oro (crescono a metà strada, se
+  no a quella distanza non si vedono) e arrivano alla serratura;
+- lampo d'oro, cartello PRINCIPESSA LIBERATA, **la grata si alza**;
+- la principessa **salta e saluta** col braccio alto, e partono tre raffiche
+  di **coriandoli** in cinque colori;
+- la camera segue le chiavi e poi stringe sul balcone; due **bande nere**
+  entrano dall'alto e dal basso e la plancia sparisce, perché questa è una
+  scena e non un menù.
+
+Dura 5,6 secondi invece di 3,4: è il momento per cui si gioca, e si vede una
+volta per torre.
+
 ## 6. La rinascita, e perché serve
 
 Ogni torre chiede il **34% in più** di moltiplicatore rispetto alla precedente

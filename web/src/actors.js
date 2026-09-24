@@ -470,6 +470,7 @@ function buildBoss() {
     chiavi.add(k);
   });
   g.add(chiavi);
+  g.userData.chiavi = chiavi;             // alla vittoria volano alla torre
 
   /* ---- busto a V: petto largo, pettorali, addominali ---- */
   put(g, GEO.cyl, body, 0, 1.3, 0.02, 1.14, 0.5, 0.84);              // vita
