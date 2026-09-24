@@ -713,6 +713,7 @@ function hitEnemy(it) {
     it.sprite.visible = false;
     comboSu();
     oggiConta('nemici', 1);
+    impresaConta('nemici', 1);
   } else if (scudoPara(it.obj, dove)) {
     it.obj.visible = false;
   } else {
@@ -734,6 +735,7 @@ function hitEnemy(it) {
    di sparire in silenzio — perdere una serie deve bruciare un po'. */
 function comboSu() {
   run.combo++;
+  impresaMassimo('serie', run.combo);
   oggiConta('combo', run.combo);
   renderCombo();
   if (run.combo >= 2) pulsa('combo', 'bump');
@@ -745,6 +747,7 @@ function comboSu() {
 }
 
 function comboGiu() {
+  run.ferite = (run.ferite || 0) + 1;         // chiamata a ogni colpo preso: per la corsa pulita
   const eraSerie = run.combo >= 2;
   run.combo = 0;
   if (!eraSerie) { renderCombo(); return; }
@@ -782,6 +785,7 @@ function takePotere(it) {
   it.obj.visible = false;
   if (it.potere === 'furia') refreshThreats();       // le colonne cambiano colore
   oggiConta('poteri', 1);
+  impresaConta('poteri', 1);
   renderPoteri();
 }
 
@@ -1131,6 +1135,7 @@ function apriDuello() {
    ruggito: si deve capire che la seconda metà è un'altra cosa. */
 function infuria() {
   duello.rabbia = true;
+  run.rabbiaVista = true;
   duello.ruggito = RABBIA.ruggito;
   duello.anelli = [];
   duello.attesa = 0.1;
@@ -1248,6 +1253,11 @@ function tocco() {
 }
 
 function colpo(esito) {
+  /* per le imprese: i perfetti di fila, i rossi toccati, i mancati da infuriato */
+  run.perfFila = esito === 'perfetto' ? (run.perfFila || 0) + 1 : 0;
+  if (esito === 'perfetto') impresaMassimo('perfettiFila', run.perfFila);
+  if (esito === 'finta') run.finte = (run.finte || 0) + 1;
+  if (esito === 'mancato' && duello.rabbia) run.mancatiRabbia = (run.mancatiRabbia || 0) + 1;
   const el = $('duello');
   const r = el.getBoundingClientRect();
   const qui = { x: r.left / innerWidth * 100, y: r.top / innerHeight * 100 - 10 };
@@ -1369,6 +1379,7 @@ function startRun() {
   run.buffs = { income: 0, rate: 0, gain: 0 };
   run.poteri = { furia: 0, scudo: 0, corvo: 0 };
   run.scivola = 0;
+  run.ferite = 0; run.perfFila = 0; run.finte = 0; run.mancatiRabbia = 0; run.rabbiaVista = false;
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
   if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
@@ -1510,6 +1521,7 @@ function endRun(outcome) {
 
 function finishRun(outcome) {
   state = 'over';
+  const livelloCorsa = meta.level;
   guidaFinisci();                // una volta sola, anche se è andata male
   run.outcome = outcome;
 
@@ -1539,6 +1551,14 @@ function finishRun(outcome) {
     meta.best = 0; meta.last = 0;
   }
   writeSave(meta);
+
+  /* le imprese della corsa */
+  impresaConta('oro', total);
+  if (outcome === 'win') {
+    impresaMassimo('torre', livelloCorsa);
+    if (themeFor(livelloCorsa).duello === 'finta' && !run.finte) impresaConta('vetroPulito', 1);
+    if (run.rabbiaVista && !run.mancatiRabbia) impresaConta('rabbiaPulita', 1);
+  }
 
   if (outcome === 'win') {
     if (boss) boss.userData.falling = true;
@@ -1798,7 +1818,10 @@ function update(dt) {
       const dalCorvo = run.poteri.corvo > 0 && (it.kind === 'coin' || it.kind === 'gem');
       const touched = it.kind === 'block' ? it.x === lane          // il muro è pieno
                                           : dalCorvo || Math.abs(run.x - it.x) <= HIT_X;
-      if (!touched) continue;                                      // schivato
+      if (!touched) {                                              // schivato
+        if (it.kind === 'trappola') impresaConta('schivate', 1);
+        continue;
+      }
       if (it.kind === 'pillar')      hitPillar(it);
       else if (it.kind === 'enemy')  hitEnemy(it);
       else if (it.kind === 'weapon') takeWeapon(it);
@@ -1811,6 +1834,7 @@ function update(dt) {
 
     if (state === 'run' && run.z <= wallStartZ + wallGap) {
       state = 'wall';
+      if (!run.ferite) impresaConta('pulite', 1);    // tutta la pista senza un graffio
       run.phaseStart = run.power;        // per la seconda occasione
     }
     /* Se per qualsiasi motivo si arriva ai piedi della torre senza aver
@@ -2039,6 +2063,7 @@ if (document.fonts && document.fonts.load) {
     .catch(() => {});
 }
 snapCamera();
+impreseRecupera();               // chi giocava già si vede riconoscere torri e rinascite
 renderHub();
 showScreen('hub');
 setWeapon(hero, meta.up.weapon);

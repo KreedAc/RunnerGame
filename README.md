@@ -151,6 +151,7 @@ web/
   src/fx.js           bagliori, scintille, onde d'urto, aria della zona, scie di velocità
   src/actors.js       eroe, nemici, boss, principessa, armi, animazioni
   src/hub.js          menù, portafoglio, potenziamenti, schermate
+  src/imprese.js      le imprese: tredici traguardi lunghi, con premi
   src/trappole.js     una regola per zona: le trappole della pista
   src/game.js         corsa, ostacoli, muro, duello col boss, ciclo di gioco
   vendor/three.min.js copia locale di three.js (serve al pacchetto offline)
@@ -163,6 +164,7 @@ tools/guida.js        la prima partita guidata, giocata da un robot
 tools/riserva.js      salvataggio di riserva: copia, azzera, ricarica identico; anteprima
 tools/poteri.js       i poteri a tempo: furia, scudo, corvo, giocati a passo fisso
 tools/trappole.js     una regola per zona: ogni zona la sua, e ognuna fa quello che dice
+tools/imprese.js      le imprese: riconosciute a chi giocava già, pagate una volta, nel codice
 tools/misura-home.js  quanti pixel serve il menù e chi se li prende
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
@@ -205,5 +207,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Il gigante si infuria a metà vita: ruggito, occhi rossi, anelli due alla volta
 - [x] Poteri a tempo in pista: furia (colpo ×2), scudo (una rossa gratis), corvo (monete da ogni corsia)
 - [x] Una regola per zona in pista: ghiaccio, tronchi, spuntoni, nebbia, lava, geyser, specchi, fulmini
+- [x] Tredici imprese con premi in diamanti (e il Campione per il giro del regno)
 - [ ] Audio sintetizzato e vibrazione (prossimo)
 - [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)

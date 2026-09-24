@@ -501,6 +501,7 @@ function defaultSave() {
     bottega: { arma: 0, scorta: 0, mira: 0, muro: 0, gemme: 0, pelle: 0 },
     oggi: { giorno: '', fatto: 0, preso: false },   // l'obiettivo del giorno
     regole: {},          // quante volte si è vista annunciare ogni regola di zona
+    imprese: { fatte: {}, conti: {} },   // i traguardi lunghi (imprese.js)
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

@@ -254,7 +254,10 @@ function aggiornaTrappole(dt, tempo) {
 /* ------------------------- QUANDO LA PRENDI ---------------------------- */
 function trappolaPassa(it) {
   const T = it.tipo;
-  if (T === 'spuntoni' || T === 'lava' || T === 'geyser') { if (!it.attiva) return; }
+  if ((T === 'spuntoni' || T === 'lava' || T === 'geyser') && !it.attiva) {
+    impresaConta('schivate', 1);                 // passata al momento giusto
+    return;
+  }
   const dove = puntoSchermo(it.obj, 1.6);
   if (T === 'ghiaccio') {
     /* si scivola nella corsia accanto: dal centro a caso, dai lati verso il centro */

@@ -983,6 +983,33 @@ ogni moneta — i due poteri aiutano solo chi sbaglia, che è il punto. Il
 risultato resta 30 / 26 / 26 corse fino alla torre 10, dentro l'oscillazione
 del caso. `tools/poteri.js` gioca i tre poteri a passo fisso.
 
+## 6h. Le imprese
+
+L'obiettivo del giorno dà un motivo per giocare oggi; mancava un motivo per
+giocare fra un mese. Le imprese (`web/src/imprese.js`) sono tredici, e si
+dividono in due famiglie:
+
+- **quelle che arrivano salendo**: la torre 5, il giro delle otto zone, la
+  torre 10, la prima rinascita, centomila d'oro, cento nemici, dieci poteri,
+  cinquanta trappole evitate;
+- **quelle che chiedono di giocare in un certo modo**: una serie di 15 colpi
+  senza farsi male, dieci perfetti di fila nel duello, una pista intera senza
+  un graffio, il Re di Vetro battuto senza toccare un anello rosso, un
+  gigante infuriato battuto senza mancare un anello dopo il ruggito.
+
+Ognuna paga in diamanti (6-20); il giro del regno regala in più l'aspetto
+del Campione (o 15 diamanti se l'avevi già). Quando se ne fa una scende una
+targhetta d'oro dall'alto, anche in corsa. Il bottone in fondo al menù dice
+a che punto sei (IMPRESE 3/13) e apre il registro: le imprese da fare in
+ordine di quanto manca, con la barra, le fatte in fondo — e sotto il
+salvataggio di riserva, con un collegamento in cima per arrivarci subito.
+
+Chi giocava già prima delle imprese si vede riconoscere all'avvio quello che
+ha già fatto — le torri liberate e le rinascite — con i premi ma senza
+targhette, che tredici di fila all'apertura sarebbero rumore. I contatori
+stanno in `meta.imprese` e viaggiano col codice di riserva.
+`tools/imprese.js` fa il giro.
+
 ## 7. Le due lingue
 
 Il gioco aveva una quarantina di stringhe, tutte scritte a mano in italiano

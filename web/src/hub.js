@@ -88,6 +88,7 @@ function tapRebirth() {
   const gain = runeGain(meta.level);
   meta.runes += gain;
   meta.rebirths++;
+  impresaConta('rinascite', 1);
   meta.coins = 0;
   meta.up = { power: 0, weapon: 0, income: 0 };
   meta.level = 1;
@@ -408,6 +409,7 @@ $('rgChiudi').addEventListener('click', chiudiRegistro);
 $('svCopia').addEventListener('click', copiaCodice);
 $('svIncolla').addEventListener('click', preparaIncolla);
 $('svCarica').addEventListener('click', caricaCodice);
+$('rgVaiSalva').addEventListener('click', () => $('svTit').scrollIntoView({ behavior: 'smooth', block: 'start' }));
 
 /* cinque tocchi sulla marca della build accendono il contatore dei
    fotogrammi: serve a capire su quale telefono il gioco arranca */

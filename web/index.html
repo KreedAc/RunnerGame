@@ -92,6 +92,19 @@
 
   #pops{position:fixed;inset:0;z-index:7;pointer-events:none;overflow:hidden}
   /* la vittoria è una scena: due bande nere entrano, la plancia esce */
+  /* l'impresa appena fatta: una targhetta d'oro che scende dall'alto */
+  #impresaToast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:9;
+    display:flex;align-items:center;gap:10px;padding:9px 14px 9px 12px;border-radius:16px;
+    width:max-content;max-width:min(92vw,400px);pointer-events:none;color:#fff;
+    background:linear-gradient(180deg,#34507a,#1b2d48);border:2px solid #ffd970;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);transform:translate(-50%,-140%);
+    transition:transform .45s cubic-bezier(.2,1.3,.4,1)}
+  #impresaToast.su{transform:translate(-50%,0)}
+  #impresaToast.via{transition-duration:.3s}
+  #impresaToast span{font-size:26px}
+  #impresaToast small{display:block;font-size:10px;font-weight:900;letter-spacing:1.4px;color:#ffd970}
+  #impresaToast b{display:block;font-family:var(--titolo);font-size:17px;line-height:1.1}
+  #impresaToast em{font-style:normal;font-family:var(--titolo);font-size:15px;color:#8fe3ff;white-space:nowrap}
   #cinema i{position:fixed;left:0;right:0;height:0;z-index:4;background:#05080f;
     pointer-events:none;transition:height .7s cubic-bezier(.2,.8,.2,1)}
   #cinema i:first-child{top:0}
@@ -340,6 +353,9 @@
     display:flex;flex-direction:column;align-items:center;gap:8px}
   .rg-imprese.hidden + .rg-sez{margin-top:0;padding-top:0;border-top:0}
   .rg-tit{font-family:var(--titolo);font-size:18px;color:#8fe3ff}
+  .rg-vai{margin-top:8px;padding:5px 12px;border-radius:99px;cursor:pointer;font-family:inherit;
+    font-size:10.5px;font-weight:900;letter-spacing:1px;color:#8fe3ff;
+    background:transparent;border:2px solid rgba(143,227,255,.35)}
   .rg-azioni{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
   .rg-btn{padding:8px 14px;border-radius:99px;cursor:pointer;font-family:inherit;
     font-size:11px;font-weight:900;letter-spacing:1px;color:#fff;
@@ -600,6 +616,7 @@
 </div>
 <div id="fps" class="hidden"></div>
 <div id="cinema"><i></i><i></i></div>
+<div id="impresaToast" class="via"></div>
 <div id="pops"></div>
 <div id="banner"><b></b></div>
 
@@ -620,10 +637,11 @@
     <div class="rg-imprese hidden" id="rgImpreseBox">
       <div class="bt-head" id="rgHead">🏆 IMPRESE</div>
       <div class="bt-sub" id="rgSub"></div>
+      <button class="rg-vai" id="rgVaiSalva" data-t="sv.vai">💾 SALVATAGGIO DI RISERVA ↓</button>
       <div class="bt-list" id="rgImprese"></div>
     </div>
     <div class="rg-sez">
-      <div class="rg-tit" data-t="sv.tit">💾 SALVATAGGIO DI RISERVA</div>
+      <div class="rg-tit" id="svTit" data-t="sv.tit">💾 SALVATAGGIO DI RISERVA</div>
       <div class="bt-sub" data-t="sv.sub">La partita vive in questo browser. Copia il codice e tienilo in una nota: se si cancellano i dati, o cambi telefono, lo incolli qui e riprendi da dove eri.</div>
       <div class="rg-azioni">
         <button class="rg-btn" id="svCopia" data-t="sv.copia">COPIA IL CODICE</button>
@@ -736,7 +754,7 @@
       <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
       <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
     </div>
-    <button class="reset-btn" id="registroBtn">💾 <span id="registroTesto">SALVATAGGIO</span></button>
+    <button class="reset-btn" id="registroBtn">🏆 <span id="registroTesto">IMPRESE</span></button>
   </div>
   <div class="diary hidden" id="diary">
     <div class="dy-lbl" data-t="diary.lbl">TENTATIVI PER TORRE</div>
@@ -747,7 +765,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260924-1529';</script>
+<script>window.BUILD = '260924-1540';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
@@ -757,7 +775,8 @@
      ritrovarsi con metà file nuovi e metà vecchi — che è peggio che
      averli tutti vecchi. Cambiando l'indirizzo, la cache non c'entra più. */
   const FILES = ['src/i18n.js', 'src/core.js', 'src/art.js', 'src/world.js',
-                 'src/fx.js', 'src/actors.js', 'src/hub.js', 'src/trappole.js', 'src/game.js']
+                 'src/fx.js', 'src/actors.js', 'src/hub.js', 'src/imprese.js', 'src/trappole.js',
+                 'src/game.js']
                 .map(f => f + '?v=' + window.BUILD);
   function load(src, cb) {
     const s = document.createElement('script');
