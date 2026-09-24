@@ -402,11 +402,11 @@ function buildRun() {
 
   boss = buildBoss();
   boss.position.set(0, 0, bossZ);
-  boss.scale.setScalar(1.9);
+  boss.scale.setScalar(2.15);                 // un gigante: deve sovrastare l'eroe
   world.add(boss);
 
   bossSprite = labelSprite(fmt(bossHealth(meta.level)), '#ff8f7a', 1.15);
-  bossSprite.position.set(0, 7.2, bossZ);   // sopra corone e corna
+  bossSprite.position.set(0, 8.0, bossZ);   // sopra corone e corna
   world.add(bossSprite);
 
   refreshThreats();

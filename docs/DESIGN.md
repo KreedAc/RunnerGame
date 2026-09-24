@@ -1051,14 +1051,22 @@ che tocca tardi perde in tutte. L'ottava è il Re di Vetro, dove un anello
 finto lasciato chiudere costa un'occasione — ed è giusto che sia il più
 insidioso.
 
-### Il carceriere rifatto
+### Il carceriere rifatto: un gigante del Nord
 
 Accanto al vichingo nuovo il carceriere sembrava di pongo: una palla per il
-torace, una per la testa, due occhi neri, una mazza. Ora ha un corpo curato
-uguale per tutti — mascella sporgente con le zanne, sopracciglia aggrottate,
-occhi accesi col loro alone, bracciali borchiati, cinghie incrociate sul petto,
-grembiule di cuoio e **il mazzo di chiavi della prigione alla cintura**: è lui
-che le tiene, ed è la cosa che racconta la storia senza una parola.
+torace, una per la testa, due occhi neri, una mazza. Ora è un **gigante**, un
+bruto vichingo enorme (scala 2,15 invece di 1,9): petto a V con pettorali e
+addominali, braccia da fabbro con deltoidi, bicipiti e avambracci, elmo con
+gli occhiali di ferro e occhi accesi, barbone a due trecce con gli anelli,
+mantello di pelliccia, **un solo** spallaccio di ferro a lamine (l'altro è di
+cuoio: l'asimmetria lo fa sembrare un guerriero e non un robot), gonna di
+maglia con le falde, bandoliera, cinturone con la fibbia tonda e **il mazzo
+di chiavi della prigione**: è lui che le tiene, ed è la cosa che racconta la
+storia senza una parola.
+
+Nella mitologia del Nord i giganti (jötnar) sono uno per regno, ed è quello
+che servono otto zone: ogni regno sceglie pelle (`boss`), barba e pelliccia
+(`TRATTI` in `actors.js`), un tratto e l'arma.
 
 Sopra, un tratto per zona (`TRATTI` in `actors.js`), con l'arma sua:
 

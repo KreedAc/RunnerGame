@@ -262,82 +262,84 @@ function buildEnemy(kind) {
 /* -------------------------------- BOSS --------------------------------- */
 /* Il carceriere ai piedi della torre. Era un pupazzo: una palla per il
    torace, una per la testa, due occhi neri e una mazza — accanto al
-   vichingo rifatto sembrava modellato col pongo. Adesso ha un corpo solo,
-   curato per tutti (mascella sporgente con le zanne, sopracciglia
-   aggrottate, occhi che brillano, bracciali borchiati, grembiule di cuoio
-   e il mazzo di chiavi della prigione alla cintura: è lui che le tiene), e
-   un TRATTO per zona che ne fa un personaggio: la corona di ghiaccio del
-   Guardiano del Gelo, le corna di cervo del Signore del Bosco, le costole
-   del Re d'Ossa, il cappuccio e le rune dell'Ombra, la lava nelle crepe
-   del Signore del Vulcano, la maschera e i camini del Mangiacenere, i
-   prismi del Re di Vetro, le nubi e il fulmine del Signore del Tuono.
+   vichingo rifatto sembrava modellato col pongo.
+
+   Adesso è un GIGANTE: un bruto vichingo enorme, tutto spalle e braccia,
+   con l'armatura dei nostri ma della sua taglia. Nella mitologia del Nord
+   i giganti (jötnar) sono uno per regno, ed è quello che serve a otto
+   zone: il gigante del gelo, il troll del bosco, il draugr d'ossa, l'ombra
+   delle rune, il gigante di fuoco, quello della cenere, di vetro, del
+   tuono. Stesso corpo per tutti — petto, addominali, bicipiti, avambracci
+   da fabbro, elmo con gli occhiali di ferro, barbone a trecce, mantello di
+   pelliccia, un solo spallaccio di ferro (l'asimmetria è quella che lo fa
+   sembrare un guerriero vero e non un robot), gonna di maglia con le
+   falde di cuoio, e il mazzo di chiavi della prigione alla cintura: è lui
+   che le tiene. Poi il regno decide la pelle, la barba, la pelliccia, il
+   TRATTO (corona, corna, rune, fiamme...) e l'arma.
 
    Il carceriere sta ai piedi della torre e GUARDA l'eroe che arriva:
    è costruito rivolto verso +Z e non va girato. */
 const OSSO = 0xf2ead6;
 
-/* ogni tratto: colore degli occhi, arma, e cosa aggiunge al corpo */
+/* ogni regno: occhi, barba, pelliccia del mantello */
 const TRATTI = {
-  'bs.ice'  : { occhi: 0xbff4ff, arma: 'cristallo' },
-  'bs.wood' : { occhi: 0xffe066, arma: 'tronco' },
-  'bs.bone' : { occhi: 0xff5a4a, arma: 'femore' },
-  'bs.rune' : { occhi: 0xd6b8ff, arma: 'bastone' },
-  'bs.lava' : { occhi: 0xffd23c, arma: 'magma' },
-  'bs.ash'  : { occhi: 0xff8f3c, arma: 'mannaia' },
-  'bs.glass': { occhi: 0x9ff0ff, arma: 'prisma' },
-  'bs.sky'  : { occhi: 0xfff27a, arma: 'tuono' }
+  'bs.ice'  : { occhi: 0xbff4ff, barba: 0xe6f2fb, pelo: 0xf4f8fb },
+  'bs.wood' : { occhi: 0xffe066, barba: 0x8a4a1e, pelo: 0x6b5a3a },
+  'bs.bone' : { occhi: 0xff5a4a, barba: 0xb8b09c, pelo: 0x5a524a },
+  'bs.rune' : { occhi: 0xd6b8ff, barba: 0x2c2440, pelo: 0x3c3250 },
+  'bs.lava' : { occhi: 0xffd23c, barba: 0xff7a2a, pelo: 0x3a2a24 },
+  'bs.ash'  : { occhi: 0xff8f3c, barba: 0x4a4642, pelo: 0x6e6862 },
+  'bs.glass': { occhi: 0x9ff0ff, barba: 0xd6ecff, pelo: 0xe4ecf8 },
+  'bs.sky'  : { occhi: 0xfff27a, barba: 0xf2f4f8, pelo: 0x8a9ac0 }
 };
 
-/* un arco (mezzo toro): le costole del Re d'Ossa, le cinghie sul petto */
+/* un arco (mezzo toro): le costole del draugr */
 const GEO_ARCO = new THREE.TorusGeometry(0.5, 0.07, 6, 14, Math.PI);
 
 function buildBoss() {
   const g = new THREE.Group();
   const key = C.bossKey || 'bs.ice';
   const T = TRATTI[key] || TRATTI['bs.ice'];
-  const body  = mat(C.boss);
+  const tinta = (c, k) => mat(new THREE.Color(c).lerp(new THREE.Color(0xffffff), k).getHex());
+  const body  = mat(C.boss);                 // la pelle del gigante
   const dark  = mat(C.bossDark);
-  const lite  = mat(new THREE.Color(C.boss).lerp(new THREE.Color(0xffffff), 0.22).getHex());
+  const lite  = tinta(C.boss, 0.2);          // i muscoli in luce
   const iron  = mat(0x5a6470);
   const ironD = mat(0x3c434d);
   const cuoio = mat(0x5a3c28);
   const cuoioD= mat(0x3e281a);
   const oro   = mat(C.gold);
   const osso  = mat(OSSO);
+  const barba = mat(T.barba);
+  const pelo  = mat(T.pelo), peloL = tinta(T.pelo, 0.25);
   const occhi = accesa(T.occhi);
   const anime = [];                       // piccole animazioni del tratto
 
-  /* ---- gambe: brache, ginocchiere, stivaloni ---- */
-  const legL = limb(g, dark, -0.36, 0.86, 0, 0.46, 0.86);
-  const legR = limb(g, dark,  0.36, 0.86, 0, 0.46, 0.86);
+  /* ---- gambe: brache, fasce incrociate, stivaloni con la pelliccia ---- */
+  const legL = limb(g, dark, -0.36, 0.86, 0, 0.5, 0.86);
+  const legR = limb(g, dark,  0.36, 0.86, 0, 0.5, 0.86);
   for (const leg of [legL, legR]) {
-    put(leg, GEO.sph,  iron,  0, -0.34, 0.2, 0.34, 0.3, 0.2);          // ginocchiera
-    put(leg, GEO.cyl,  cuoio, 0, -0.66, 0, 0.54, 0.34, 0.54);          // gambale
-    put(leg, GEO.cyl,  cuoioD,0, -0.5, 0, 0.58, 0.07, 0.58);           // risvolto
-    put(leg, GEO.box,  cuoio, 0, -0.8, 0.1, 0.52, 0.16, 0.72);         // piede
-    put(leg, GEO.sph8, cuoio, 0, -0.8, 0.44, 0.5, 0.18, 0.3);          // punta
+    for (const [y, r] of [[-0.14, 0.18], [-0.26, -0.18], [-0.38, 0.18]])
+      put(leg, GEO.cyl, cuoio, 0, y, 0, 0.54, 0.07, 0.54).rotation.z = r;
+    put(leg, GEO.cyl,  cuoio, 0, -0.68, 0, 0.56, 0.3, 0.56);          // gambale
+    put(leg, GEO.sph,  pelo,  0, -0.52, 0, 0.66, 0.16, 0.66);         // risvolto di pelliccia
+    put(leg, GEO.box,  cuoio, 0, -0.8, 0.1, 0.54, 0.16, 0.74);        // piede
+    put(leg, GEO.sph8, cuoio, 0, -0.8, 0.46, 0.52, 0.18, 0.3);        // punta
   }
 
-  /* ---- busto: torace, pancia, grembiule, cinghie, cintura ---- */
-  put(g, GEO.sph, body, 0, 1.44, -0.04, 1.56, 1.24, 1.0);             // torace
-  put(g, GEO.sph, lite, 0, 1.2, 0.16, 1.12, 0.86, 0.76);              // pancia
-  put(g, GEO.box, cuoio, 0, 0.66, 0.4, 0.62, 0.62, 0.08).rotation.x = -0.12;   // grembiule
-  put(g, GEO.box, cuoioD,0, 0.37, 0.44, 0.64, 0.06, 0.09).rotation.x = -0.12;
-  put(g, GEO.box, cuoio, 0, 0.7, -0.42, 0.7, 0.5, 0.08);              // e dietro
-  put(g, GEO.cyl, ironD, 0, 1.0, 0, 1.36, 0.26, 1.02);                // cintura
-  const fibbia = put(g, GEO.box, iron, 0, 1.0, 0.53, 0.34, 0.3, 0.08);
-  for (const k of [-1, 1]) put(g, GEO.sph8, ironD, k * 0.08, 1.03, 0.58, 0.07, 0.07, 0.04);
-  void fibbia;
-  /* due cinghie incrociate sul petto con l'anello al centro */
-  for (const k of [-1, 1]) {
-    put(g, GEO.box, cuoioD, 0, 1.5, 0.47, 0.16, 1.1, 0.06).rotation.set(-0.35, 0, k * 0.62);
+  /* ---- fianchi: gonna di maglia, falde di cuoio, cinturone ---- */
+  put(g, GEO.taper, ironD, 0, 0.8, 0, 1.36, 0.52, 1.04);
+  for (const a of [-0.95, -0.48, 0, 0.48, 0.95]) {
+    const f = put(g, GEO.box, cuoio, Math.sin(a) * 0.6, 0.72, Math.cos(a) * 0.5, 0.32, 0.46, 0.06);
+    f.rotation.set(-0.1, a, 0);
   }
-  const anello = put(g, GEO.ring, iron, 0, 1.52, 0.55, 0.36, 0.36, 0.6);
-  void anello;
+  put(g, GEO.cyl, cuoioD, 0, 1.06, 0, 1.34, 0.26, 1.04);             // cinturone
+  put(g, GEO.cyl12, iron, 0, 1.06, 0.52, 0.38, 0.08, 0.38).rotation.x = Math.PI / 2;   // fibbia tonda
+  put(g, GEO.cyl12, oro, 0, 1.06, 0.57, 0.2, 0.04, 0.2).rotation.x = Math.PI / 2;
 
-  /* il mazzo di chiavi della prigione, al fianco sinistro (suo) */
+  /* il mazzo di chiavi della prigione, al fianco */
   const chiavi = new THREE.Group();
-  chiavi.position.set(0.6, 0.92, 0.36);
+  chiavi.position.set(0.62, 0.96, 0.4);
   put(chiavi, GEO.ring, iron, 0, 0, 0, 0.42, 0.42, 0.7).rotation.y = 0.4;
   [[-0.08, 0.1], [0.04, -0.12], [0.14, 0.25]].forEach(([x, rz]) => {
     const k = new THREE.Group();
@@ -351,46 +353,79 @@ function buildBoss() {
   });
   g.add(chiavi);
 
-  /* ---- spalle: gobba scura e spallacci di ferro ---- */
-  put(g, GEO.sph, dark, 0, 1.94, -0.08, 1.7, 0.56, 1.0);
+  /* ---- busto a V: petto largo, pettorali, addominali ---- */
+  put(g, GEO.cyl, body, 0, 1.3, 0.02, 1.14, 0.5, 0.84);              // vita
+  put(g, GEO.sph, body, 0, 1.68, 0, 1.74, 1.0, 1.02);                // torace
+  for (const k of [-1, 1]) put(g, GEO.sph, lite, k * 0.3, 1.74, 0.34, 0.62, 0.42, 0.32);   // pettorali
+  for (let r = 0; r < 3; r++) for (const k of [-1, 1])
+    put(g, GEO.sph8, lite, k * 0.13, 1.46 - r * 0.14, 0.4, 0.21, 0.13, 0.1);               // addominali
+  /* la bandoliera di traverso e il disco di ferro sul cuore */
+  put(g, GEO.box, cuoioD, 0.04, 1.62, 0.47, 0.2, 1.3, 0.07).rotation.set(-0.25, 0, -0.62);
+  put(g, GEO.cyl12, iron, -0.28, 1.86, 0.5, 0.3, 0.07, 0.3).rotation.x = Math.PI / 2 - 0.3;
+  /* il mantello di pelliccia: dietro, e un collo di ciuffi sulle spalle */
+  put(g, GEO.sph, pelo, 0, 1.56, -0.4, 1.6, 1.4, 0.46);
+  put(g, GEO.sph, pelo, 0, 2.1, -0.06, 1.46, 0.44, 0.96);
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2;
+    if (Math.cos(a) > 0.8) continue;                                // davanti c'è la barba
+    put(g, GEO.sph8, i % 2 ? peloL : pelo, Math.sin(a) * 0.62, 2.14 + (i % 2) * 0.04,
+        Math.cos(a) * 0.42 - 0.06, 0.34, 0.26, 0.32);
+  }
+
+  /* ---- spalle: uno spallaccio di ferro a lamine, l'altro di cuoio ---- */
   const spallacci = [];
   for (const k of [-1, 1]) {
     const sp = new THREE.Group();
-    sp.position.set(k * 0.86, 2.02, 0);
-    put(sp, GEO.sph, iron,  0, 0, 0, 0.66, 0.5, 0.72);
-    put(sp, GEO.cyl, ironD, 0, -0.08, 0, 0.7, 0.07, 0.76);
-    for (const z of [-0.2, 0.2]) put(sp, GEO.sph8, oro, k * 0.2, 0.16, z, 0.07, 0.07, 0.07);
+    sp.position.set(k * 0.92, 2.06, 0);
+    if (k > 0) {
+      put(sp, GEO.sph, iron,  0, 0, 0, 0.74, 0.52, 0.78);
+      put(sp, GEO.cyl, ironD, 0, -0.1, 0, 0.78, 0.08, 0.82);
+      put(sp, GEO.cyl, ironD, 0.04, -0.24, 0, 0.72, 0.08, 0.78);
+      for (const z of [-0.22, 0, 0.22]) put(sp, GEO.sph8, oro, 0.26, 0.12, z, 0.08, 0.08, 0.08);
+    } else {
+      put(sp, GEO.sph, cuoio, 0, -0.02, 0, 0.62, 0.42, 0.68);
+      put(sp, GEO.cyl, cuoioD, 0, -0.1, 0, 0.66, 0.06, 0.72);
+    }
     g.add(sp);
     spallacci.push(sp);
   }
 
-  /* ---- braccia: bracciali borchiati, pugni ---- */
-  const armL = limb(g, body, -0.9, 1.9, 0, 0.44, 1.06);
-  const armR = limb(g, body,  0.9, 1.9, 0, 0.44, 1.06);
+  /* ---- braccia da fabbro: deltoide, bicipite, avambraccio, bracciale ---- */
+  const armL = limb(g, body, -0.96, 1.98, 0, 0.46, 1.02);
+  const armR = limb(g, body,  0.96, 1.98, 0, 0.46, 1.02);
   for (const arm of [armL, armR]) {
-    put(arm, GEO.cyl, cuoio, 0, -0.74, 0, 0.5, 0.36, 0.5);
-    for (const y of [-0.58, -0.9]) put(arm, GEO.cyl, ironD, 0, y, 0, 0.53, 0.05, 0.53);
-    for (let i = 0; i < 4; i++) {
-      const a = i / 4 * Math.PI * 2 + 0.4;
-      put(arm, GEO.cone6, iron, Math.sin(a) * 0.26, -0.74, Math.cos(a) * 0.26, 0.08, 0.12, 0.08)
-        .rotation.set(Math.cos(a) * 1.5, 0, -Math.sin(a) * 1.5);
-    }
-    put(arm, GEO.sph, lite, 0, -1.08, 0, 0.5, 0.46, 0.5);             // pugno
+    put(arm, GEO.sph, body,  0, -0.14, 0, 0.58, 0.52, 0.58);          // deltoide
+    put(arm, GEO.sph, lite,  0, -0.4, 0.1, 0.46, 0.46, 0.42);         // bicipite
+    put(arm, GEO.taper, body, 0, -0.72, 0, 0.6, 0.44, 0.6).rotation.x = Math.PI;   // avambraccio
+    put(arm, GEO.cyl, ironD, 0, -0.86, 0, 0.58, 0.24, 0.58);          // bracciale
+    put(arm, GEO.box, iron,  0, -0.86, 0.26, 0.2, 0.26, 0.08);
+    put(arm, GEO.cyl, cuoio, 0, -0.73, 0, 0.6, 0.05, 0.6);
+    put(arm, GEO.sph, lite,  0, -1.1, 0, 0.54, 0.5, 0.54);            // pugno
   }
 
-  /* ---- testa: cranio, mascella con zanne, sopracciglia, occhi accesi ---- */
-  put(g, GEO.sph, body, 0, 2.46, 0, 0.84, 0.78, 0.8);
-  put(g, GEO.sph, lite, 0, 2.24, 0.16, 0.76, 0.4, 0.62);             // mascella
+  /* ---- testa: collo taurino, elmo con gli occhiali, barbone a trecce ---- */
+  put(g, GEO.cyl, body, 0, 2.2, 0.04, 0.54, 0.22, 0.52);
+  put(g, GEO.sph, body, 0, 2.5, 0.06, 0.74, 0.72, 0.72);
+  put(g, GEO.sph, lite, 0, 2.38, 0.42, 0.16, 0.14, 0.14);            // naso
   for (const k of [-1, 1]) {
-    put(g, GEO.cone6, osso, k * 0.2, 2.42, 0.4, 0.1, 0.24, 0.1).rotation.x = -0.25;   // zanne
-    put(g, GEO.box, dark, k * 0.17, 2.6, 0.35, 0.3, 0.1, 0.16).rotation.z = k * 0.3;  // sopracciglia
-    const occhio = put(g, GEO.sph, occhi, k * 0.17, 2.51, 0.34, 0.15, 0.1, 0.08);
-    bagliore(occhio, T.occhi, key === 'bs.rune' ? 5.5 : 4.5, key === 'bs.rune' ? 0.5 : 0.35);   // scala locale: l'occhio è piccolo
-    put(g, GEO.cone6, body, k * 0.46, 2.5, -0.02, 0.14, 0.3, 0.1).rotation.z = -k * 1.25;  // orecchie
+    const occhio = put(g, GEO.sph, occhi, k * 0.15, 2.47, 0.36, 0.12, 0.08, 0.06);
+    bagliore(occhio, T.occhi, key === 'bs.rune' ? 6.5 : 5.5, key === 'bs.rune' ? 0.5 : 0.35);
+    put(g, GEO.ring, ironD, k * 0.15, 2.47, 0.39, 0.34, 0.3, 0.4);   // gli occhiali dell'elmo
   }
-  put(g, GEO.sph, lite, 0, 2.44, 0.4, 0.18, 0.14, 0.14);             // naso
-  const testa = new THREE.Group();                                   // le corone ci si appoggiano
-  testa.position.set(0, 2.74, 0);
+  put(g, GEO.sph, iron,  0, 2.64, 0.04, 0.8, 0.62, 0.78);            // calotta
+  put(g, GEO.cyl, ironD, 0, 2.66, 0.04, 0.1, 0.62, 0.8).rotation.x = Math.PI / 2;  // cresta
+  put(g, GEO.cyl, ironD, 0, 2.56, 0.04, 0.82, 0.1, 0.8);             // bordo
+  put(g, GEO.box, iron,  0, 2.44, 0.42, 0.08, 0.26, 0.06);           // nasale
+  /* barbone: massa, baffi, due trecce con l'anello di ferro */
+  put(g, GEO.sph, barba, 0, 2.2, 0.3, 0.74, 0.5, 0.44);
+  put(g, GEO.cone6, barba, 0, 1.95, 0.36, 0.52, 0.42, 0.32).rotation.x = Math.PI;
+  for (const k of [-1, 1]) {
+    put(g, GEO.sph8, barba, k * 0.15, 2.33, 0.44, 0.3, 0.1, 0.14).rotation.z = k * -0.3;
+    for (let i = 0; i < 3; i++) put(g, GEO.sph8, barba, k * 0.13, 1.8 - i * 0.12, 0.42, 0.15, 0.14, 0.14);
+    put(g, GEO.cyl8, iron, k * 0.13, 1.44, 0.42, 0.13, 0.07, 0.13);
+  }
+  const testa = new THREE.Group();                                   // corone e corna ci si appoggiano
+  testa.position.set(0, 2.84, 0.04);
   g.add(testa);
 
   /* ---- il tratto della zona ---- */
@@ -402,9 +437,9 @@ function buildBoss() {
       [[0, 0.52], [0.26, 0.38], [-0.26, 0.38], [0.44, 0.26], [-0.44, 0.26]].forEach(([x, h], i) =>
         put(testa, GEO.cone6, i % 2 ? azzurro : ghiaccio, x, 0.08 + h / 2, 0.12, 0.16, h, 0.16)
           .rotation.z = -x * 0.5);
-      for (let i = 0; i < 5; i++)                                     // barba di ghiaccioli
-        put(g, GEO.cone6, ghiaccio, (i - 2) * 0.12, 2.0, 0.36, 0.09, 0.2 + (i % 2) * 0.1, 0.09)
-          .rotation.x = Math.PI;
+      for (let i = 0; i < 5; i++)                                     // ghiaccioli nella barba
+        put(g, GEO.cone6, ghiaccio, (i - 2) * 0.11, 1.84 - Math.abs(i - 2) * 0.06, 0.44, 0.08,
+            0.2 + (i % 2) * 0.1, 0.08).rotation.x = Math.PI;
       spallacci.forEach((sp, k) => [[0, 0.46], [0.16, 0.32]].forEach(([z, h]) =>
         put(sp, GEO.octa, ghiaccio, (k ? 1 : -1) * 0.12, 0.28, z - 0.08, 0.16, h, 0.16)));
       put(arma, GEO.cyl, cuoio, 0, -0.3, 0, 0.16, 1.4, 0.16);
@@ -442,10 +477,10 @@ function buildBoss() {
         put(testa, GEO.sph8, osso, Math.sin(a) * 0.42, 0.1 + h, Math.cos(a) * 0.4, 0.13, 0.13, 0.13);
       }
       for (let i = 0; i < 3; i++) {                                   // costole sul petto
-        const c = put(g, GEO_ARCO, osso, 0, 1.72 - i * 0.2, 0.3, 0.9 - i * 0.1, 0.62, 0.5);
+        const c = put(g, GEO_ARCO, osso, 0, 1.78 - i * 0.18, 0.4, 0.94 - i * 0.1, 0.62, 0.5);
         c.rotation.set(-Math.PI / 2 + 0.2, 0, Math.PI);
       }
-      put(g, GEO.box, osso, 0, 1.52, 0.5, 0.1, 0.6, 0.06);            // sterno
+      put(g, GEO.box, osso, 0, 1.6, 0.6, 0.1, 0.6, 0.06);             // sterno
       spallacci.forEach((sp, k) => put(sp, GEO.sph, osso, 0, 0.12, 0, 0.5, 0.38, 0.5));   // teschi-spallacci
       put(arma, GEO.cyl, osso, 0, -0.1, 0, 0.18, 1.7, 0.18);          // femore
       for (const y of [-0.95, 0.75]) for (const k of [-1, 1])
@@ -455,7 +490,9 @@ function buildBoss() {
       const viola = accesa(0xc9a8ff);
       put(g, GEO.sph, dark, 0, 2.56, -0.14, 1.02, 1.02, 0.96);       // cappuccio
       put(g, GEO.cone, dark, 0, 3.18, -0.28, 0.6, 0.6, 0.5).rotation.x = -0.5;
-      put(g, GEO.box, viola, 0, 1.0, 0.58, 0.14, 0.2, 0.02).userData.noOutline = true;   // runa sulla fibbia
+      put(g, GEO.box, viola, 0, 1.06, 0.6, 0.12, 0.18, 0.02).userData.noOutline = true;   // runa sulla fibbia
+      for (const arm of [armL, armR]) for (const [y, r] of [[-0.3, 0.5], [-0.46, -0.5], [-0.62, 0.5]])
+        put(arm, GEO.box, viola, 0, y, 0.25, 0.04, 0.16, 0.02).rotation.z = r;          // rune tatuate
       const cerchio = new THREE.Group();                              // rune che gli girano attorno
       cerchio.position.y = 1.7;
       for (let i = 0; i < 4; i++) {
@@ -499,8 +536,8 @@ function buildBoss() {
     },
     'bs.ash'() {
       const cenere = mat(0x8a8680), fumo = mat(0xb6b0a8);
-      put(g, GEO.box, iron, 0, 2.3, 0.36, 0.62, 0.36, 0.14);          // maschera a grata
-      for (let i = 0; i < 4; i++) put(g, GEO.box, ironD, (i - 1.5) * 0.13, 2.3, 0.44, 0.05, 0.26, 0.02);
+      put(g, GEO.box, iron, 0, 2.32, 0.46, 0.6, 0.3, 0.12);           // maschera a grata
+      for (let i = 0; i < 4; i++) put(g, GEO.box, ironD, (i - 1.5) * 0.13, 2.32, 0.53, 0.05, 0.22, 0.02);
       put(testa, GEO.cyl, iron, 0, 0, 0, 0.9, 0.2, 0.84);
       for (let i = 0; i < 6; i++) {
         const a = (i / 5 - 0.5) * 2.2;
@@ -534,7 +571,7 @@ function buildBoss() {
       spallacci.forEach((sp, k) => [[0, 0.62, 0], [0.14, 0.4, 0.2], [-0.1, 0.44, -0.2]].forEach(([x, h, z]) =>
         put(sp, GEO.octa, vetro, (k ? 1 : -1) * (0.1 + x), 0.2 + h / 2, z, 0.18, h, 0.18)
           .rotation.z = (k ? -1 : 1) * 0.3));
-      put(g, GEO.octa, accesa(0xbff4ff), 0, 1.52, 0.58, 0.2, 0.3, 0.1);   // la gemma sul petto
+      put(g, GEO.octa, accesa(0xbff4ff), -0.28, 1.86, 0.58, 0.18, 0.28, 0.1);   // la gemma sul disco
       put(arma, GEO.cyl, oro, 0, -0.3, 0, 0.14, 1.4, 0.14);
       put(arma, GEO.octa, vetroD, 0, 0.6, 0, 0.66, 0.8, 0.66);
       for (let i = 0; i < 4; i++) {
