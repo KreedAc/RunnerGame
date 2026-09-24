@@ -9,7 +9,7 @@ const world = new THREE.Group();
 scene.add(world);
 
 function clearWorld() {
-  while (world.children.length) world.remove(world.children[0]);
+  while (world.children.length) { sciogli(world.children[0]); world.remove(world.children[0]); }
 }
 
 /* ------------------------------ SENTIERO ------------------------------ */

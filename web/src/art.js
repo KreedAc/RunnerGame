@@ -219,7 +219,12 @@ function addOutline(group, k) {
   const thickness = k === undefined ? 0.04 : k;
   const shells = [];
   group.traverse(o => {
-    if (o.isMesh && !o.userData.noOutline && !(o.material && o.material.transparent)) shells.push(o);
+    if (!o.isMesh || o.userData.noOutline || (o.material && o.material.transparent)) return;
+    /* rivetti e borchie: il bordo sarebbe sotto il pixel, e il guscio
+       costerebbe una draw call per niente */
+    const s = o.scale;
+    if (Math.min(Math.abs(s.x), Math.abs(s.y), Math.abs(s.z)) < 0.075) return;
+    shells.push(o);
   });
   for (const src of shells) {
     const shell = new THREE.Mesh(src.geometry, inkPer(src.material));
@@ -232,5 +237,67 @@ function addOutline(group, k) {
     shell.userData.noOutline = true;   // non contornare il contorno
     src.parent.add(shell);
   }
-  return group;
+  return fondi(group);
+}
+
+/* ------------------------------ FUSIONE -------------------------------
+   Il vichingo e il carceriere rifatti hanno ~160 pezzi l'uno, e col
+   contorno il doppio: 300 draw call per un personaggio sono troppe per un
+   telefono. Ma quasi tutti i pezzi non si muovono mai rispetto al loro
+   genitore (l'elmo sta sulla testa, le borchie sul bracciale): per ogni
+   nodo, i figli fermi con lo stesso materiale diventano UNA mesh sola.
+   Braccia, gambe, scudo e arma restano gruppi a sé, quindi l'animazione
+   non se ne accorge; chi si muove da solo lo dice con userData.vivo.
+   Le geometrie fuse sono nuove: sciogli() le libera quando l'attore esce
+   di scena. */
+function fondi(root) {
+  const nodi = [];
+  root.traverse(o => nodi.push(o));
+  for (const n of nodi) {
+    const gruppi = new Map();
+    for (const c of n.children) {
+      if (!c.isMesh || c.children.length || c.userData.vivo) continue;
+      c.updateMatrix();
+      if (c.matrix.determinant() <= 0) continue;           // uno specchiato girerebbe le facce
+      const k = c.material.uuid + '|' + c.renderOrder + '|' + (c.userData.noOutline ? 1 : 0);
+      if (!gruppi.has(k)) gruppi.set(k, []);
+      gruppi.get(k).push(c);
+    }
+    for (const lista of gruppi.values()) {
+      if (lista.length < 2) continue;
+      const parti = lista.map(c => {
+        const gg = c.geometry.index ? c.geometry.toNonIndexed() : c.geometry.clone();
+        return gg.applyMatrix4(c.matrix);
+      });
+      const conUv = parti.every(p => p.attributes.uv);
+      let nv = 0;
+      parti.forEach(p => { nv += p.attributes.position.count; });
+      const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3);
+      const uv = conUv ? new Float32Array(nv * 2) : null;
+      let o = 0;
+      for (const p of parti) {
+        pos.set(p.attributes.position.array, o * 3);
+        nor.set(p.attributes.normal.array, o * 3);
+        if (uv) uv.set(p.attributes.uv.array, o * 2);
+        o += p.attributes.position.count;
+        p.dispose();
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      if (uv) geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      geo.computeBoundingSphere();
+      geo.userData.fusa = true;
+      const m = new THREE.Mesh(geo, lista[0].material);
+      m.renderOrder = lista[0].renderOrder;
+      m.userData.noOutline = !!lista[0].userData.noOutline;
+      lista.forEach(c => n.remove(c));
+      n.add(m);
+    }
+  }
+  return root;
+}
+
+function sciogli(root) {
+  if (root) root.traverse(o => { if (o.isMesh && o.geometry.userData.fusa) o.geometry.dispose(); });
 }

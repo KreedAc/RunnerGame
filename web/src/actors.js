@@ -260,47 +260,325 @@ function buildEnemy(kind) {
 }
 
 /* -------------------------------- BOSS --------------------------------- */
-/* Il carceriere ai piedi della torre. Stesso schema, tutto più grosso e
-   più largo di spalle: deve leggersi come "muro" già da lontano. */
+/* Il carceriere ai piedi della torre. Era un pupazzo: una palla per il
+   torace, una per la testa, due occhi neri e una mazza — accanto al
+   vichingo rifatto sembrava modellato col pongo. Adesso ha un corpo solo,
+   curato per tutti (mascella sporgente con le zanne, sopracciglia
+   aggrottate, occhi che brillano, bracciali borchiati, grembiule di cuoio
+   e il mazzo di chiavi della prigione alla cintura: è lui che le tiene), e
+   un TRATTO per zona che ne fa un personaggio: la corona di ghiaccio del
+   Guardiano del Gelo, le corna di cervo del Signore del Bosco, le costole
+   del Re d'Ossa, il cappuccio e le rune dell'Ombra, la lava nelle crepe
+   del Signore del Vulcano, la maschera e i camini del Mangiacenere, i
+   prismi del Re di Vetro, le nubi e il fulmine del Signore del Tuono.
+
+   Il carceriere sta ai piedi della torre e GUARDA l'eroe che arriva:
+   è costruito rivolto verso +Z e non va girato. */
+const OSSO = 0xf2ead6;
+
+/* ogni tratto: colore degli occhi, arma, e cosa aggiunge al corpo */
+const TRATTI = {
+  'bs.ice'  : { occhi: 0xbff4ff, arma: 'cristallo' },
+  'bs.wood' : { occhi: 0xffe066, arma: 'tronco' },
+  'bs.bone' : { occhi: 0xff5a4a, arma: 'femore' },
+  'bs.rune' : { occhi: 0xd6b8ff, arma: 'bastone' },
+  'bs.lava' : { occhi: 0xffd23c, arma: 'magma' },
+  'bs.ash'  : { occhi: 0xff8f3c, arma: 'mannaia' },
+  'bs.glass': { occhi: 0x9ff0ff, arma: 'prisma' },
+  'bs.sky'  : { occhi: 0xfff27a, arma: 'tuono' }
+};
+
+/* un arco (mezzo toro): le costole del Re d'Ossa, le cinghie sul petto */
+const GEO_ARCO = new THREE.TorusGeometry(0.5, 0.07, 6, 14, Math.PI);
+
 function buildBoss() {
   const g = new THREE.Group();
-  const body = mat(C.boss);
-  const dark = mat(C.bossDark);
-  const iron = mat(0x555f6b);
+  const key = C.bossKey || 'bs.ice';
+  const T = TRATTI[key] || TRATTI['bs.ice'];
+  const body  = mat(C.boss);
+  const dark  = mat(C.bossDark);
+  const lite  = mat(new THREE.Color(C.boss).lerp(new THREE.Color(0xffffff), 0.22).getHex());
+  const iron  = mat(0x5a6470);
+  const ironD = mat(0x3c434d);
+  const cuoio = mat(0x5a3c28);
+  const cuoioD= mat(0x3e281a);
+  const oro   = mat(C.gold);
+  const osso  = mat(OSSO);
+  const occhi = accesa(T.occhi);
+  const anime = [];                       // piccole animazioni del tratto
 
-  const legL = limb(g, dark, -0.34, 0.86, 0, 0.44, 0.86);
-  const legR = limb(g, dark,  0.34, 0.86, 0, 0.44, 0.86);
-
-  put(g, GEO.sph, body, 0, 1.42, 0, 1.56, 1.24, 1.02);      // torace
-  put(g, GEO.cyl, iron, 0, 1.02, 0, 1.34, 0.24, 0.94);      // cintura
-  put(g, GEO.sph, dark, 0, 1.92, 0, 1.70, 0.56, 1.06);      // spalloni
-
-  const armL = limb(g, body, -0.82, 1.86, 0, 0.42, 1.06);
-  const armR = limb(g, body,  0.82, 1.86, 0, 0.42, 1.06);
-
-  put(g, GEO.sph, body, 0, 2.42, 0, 0.86, 0.80, 0.80);      // testa
-  eyes(g, 2.48, 0.36, 0.20, 0.14);
-  put(g, GEO.cyl, iron, 0, 2.76, 0, 0.94, 0.26, 0.88);      // corona di ferro
-  for (const s of [-1, 1]) {
-    const spike = put(g, GEO.cone6, iron, s * 0.34, 3.00, 0, 0.18, 0.42, 0.18);
-    spike.rotation.z = s * -0.25;
+  /* ---- gambe: brache, ginocchiere, stivaloni ---- */
+  const legL = limb(g, dark, -0.36, 0.86, 0, 0.46, 0.86);
+  const legR = limb(g, dark,  0.36, 0.86, 0, 0.46, 0.86);
+  for (const leg of [legL, legR]) {
+    put(leg, GEO.sph,  iron,  0, -0.34, 0.2, 0.34, 0.3, 0.2);          // ginocchiera
+    put(leg, GEO.cyl,  cuoio, 0, -0.66, 0, 0.54, 0.34, 0.54);          // gambale
+    put(leg, GEO.cyl,  cuoioD,0, -0.5, 0, 0.58, 0.07, 0.58);           // risvolto
+    put(leg, GEO.box,  cuoio, 0, -0.8, 0.1, 0.52, 0.16, 0.72);         // piede
+    put(leg, GEO.sph8, cuoio, 0, -0.8, 0.44, 0.5, 0.18, 0.3);          // punta
   }
 
-  // mazza ferrata nella destra
-  const club = new THREE.Group();
-  put(club, GEO.cyl, mat(0x6b4a35), 0, -0.35, 0, 0.16, 1.3, 0.16);
-  put(club, GEO.sph, iron, 0, 0.42, 0, 0.62, 0.6, 0.62);
-  for (let i = 0; i < 6; i++) {
-    const a = i / 6 * Math.PI * 2;
-    const sp = put(club, GEO.cone6, iron, Math.cos(a) * 0.3, 0.42, Math.sin(a) * 0.3, 0.16, 0.3, 0.16);
-    sp.rotation.z = -Math.cos(a) * 1.2;
-    sp.rotation.x =  Math.sin(a) * 1.2;
+  /* ---- busto: torace, pancia, grembiule, cinghie, cintura ---- */
+  put(g, GEO.sph, body, 0, 1.44, -0.04, 1.56, 1.24, 1.0);             // torace
+  put(g, GEO.sph, lite, 0, 1.2, 0.16, 1.12, 0.86, 0.76);              // pancia
+  put(g, GEO.box, cuoio, 0, 0.66, 0.4, 0.62, 0.62, 0.08).rotation.x = -0.12;   // grembiule
+  put(g, GEO.box, cuoioD,0, 0.37, 0.44, 0.64, 0.06, 0.09).rotation.x = -0.12;
+  put(g, GEO.box, cuoio, 0, 0.7, -0.42, 0.7, 0.5, 0.08);              // e dietro
+  put(g, GEO.cyl, ironD, 0, 1.0, 0, 1.36, 0.26, 1.02);                // cintura
+  const fibbia = put(g, GEO.box, iron, 0, 1.0, 0.53, 0.34, 0.3, 0.08);
+  for (const k of [-1, 1]) put(g, GEO.sph8, ironD, k * 0.08, 1.03, 0.58, 0.07, 0.07, 0.04);
+  void fibbia;
+  /* due cinghie incrociate sul petto con l'anello al centro */
+  for (const k of [-1, 1]) {
+    put(g, GEO.box, cuoioD, 0, 1.5, 0.47, 0.16, 1.1, 0.06).rotation.set(-0.35, 0, k * 0.62);
   }
-  club.position.set(0, -1.0, 0.25);
-  club.rotation.x = -0.5;
-  armR.add(club);
+  const anello = put(g, GEO.ring, iron, 0, 1.52, 0.55, 0.36, 0.36, 0.6);
+  void anello;
+
+  /* il mazzo di chiavi della prigione, al fianco sinistro (suo) */
+  const chiavi = new THREE.Group();
+  chiavi.position.set(0.6, 0.92, 0.36);
+  put(chiavi, GEO.ring, iron, 0, 0, 0, 0.42, 0.42, 0.7).rotation.y = 0.4;
+  [[-0.08, 0.1], [0.04, -0.12], [0.14, 0.25]].forEach(([x, rz]) => {
+    const k = new THREE.Group();
+    k.position.set(x, -0.14, 0.03);
+    k.rotation.z = rz;
+    put(k, GEO.ring, oro, 0, -0.02, 0, 0.18, 0.18, 0.3);
+    put(k, GEO.cyl8, oro, 0, -0.2, 0, 0.05, 0.3, 0.05);
+    put(k, GEO.box,  oro, 0.04, -0.3, 0, 0.08, 0.06, 0.03);
+    put(k, GEO.box,  oro, 0.03, -0.22, 0, 0.06, 0.04, 0.03);
+    chiavi.add(k);
+  });
+  g.add(chiavi);
+
+  /* ---- spalle: gobba scura e spallacci di ferro ---- */
+  put(g, GEO.sph, dark, 0, 1.94, -0.08, 1.7, 0.56, 1.0);
+  const spallacci = [];
+  for (const k of [-1, 1]) {
+    const sp = new THREE.Group();
+    sp.position.set(k * 0.86, 2.02, 0);
+    put(sp, GEO.sph, iron,  0, 0, 0, 0.66, 0.5, 0.72);
+    put(sp, GEO.cyl, ironD, 0, -0.08, 0, 0.7, 0.07, 0.76);
+    for (const z of [-0.2, 0.2]) put(sp, GEO.sph8, oro, k * 0.2, 0.16, z, 0.07, 0.07, 0.07);
+    g.add(sp);
+    spallacci.push(sp);
+  }
+
+  /* ---- braccia: bracciali borchiati, pugni ---- */
+  const armL = limb(g, body, -0.9, 1.9, 0, 0.44, 1.06);
+  const armR = limb(g, body,  0.9, 1.9, 0, 0.44, 1.06);
+  for (const arm of [armL, armR]) {
+    put(arm, GEO.cyl, cuoio, 0, -0.74, 0, 0.5, 0.36, 0.5);
+    for (const y of [-0.58, -0.9]) put(arm, GEO.cyl, ironD, 0, y, 0, 0.53, 0.05, 0.53);
+    for (let i = 0; i < 4; i++) {
+      const a = i / 4 * Math.PI * 2 + 0.4;
+      put(arm, GEO.cone6, iron, Math.sin(a) * 0.26, -0.74, Math.cos(a) * 0.26, 0.08, 0.12, 0.08)
+        .rotation.set(Math.cos(a) * 1.5, 0, -Math.sin(a) * 1.5);
+    }
+    put(arm, GEO.sph, lite, 0, -1.08, 0, 0.5, 0.46, 0.5);             // pugno
+  }
+
+  /* ---- testa: cranio, mascella con zanne, sopracciglia, occhi accesi ---- */
+  put(g, GEO.sph, body, 0, 2.46, 0, 0.84, 0.78, 0.8);
+  put(g, GEO.sph, lite, 0, 2.24, 0.16, 0.76, 0.4, 0.62);             // mascella
+  for (const k of [-1, 1]) {
+    put(g, GEO.cone6, osso, k * 0.2, 2.42, 0.4, 0.1, 0.24, 0.1).rotation.x = -0.25;   // zanne
+    put(g, GEO.box, dark, k * 0.17, 2.6, 0.35, 0.3, 0.1, 0.16).rotation.z = k * 0.3;  // sopracciglia
+    const occhio = put(g, GEO.sph, occhi, k * 0.17, 2.51, 0.34, 0.15, 0.1, 0.08);
+    bagliore(occhio, T.occhi, key === 'bs.rune' ? 5.5 : 4.5, key === 'bs.rune' ? 0.5 : 0.35);   // scala locale: l'occhio è piccolo
+    put(g, GEO.cone6, body, k * 0.46, 2.5, -0.02, 0.14, 0.3, 0.1).rotation.z = -k * 1.25;  // orecchie
+  }
+  put(g, GEO.sph, lite, 0, 2.44, 0.4, 0.18, 0.14, 0.14);             // naso
+  const testa = new THREE.Group();                                   // le corone ci si appoggiano
+  testa.position.set(0, 2.74, 0);
+  g.add(testa);
+
+  /* ---- il tratto della zona ---- */
+  const arma = new THREE.Group();
+  const tratti = {
+    'bs.ice'() {
+      const ghiaccio = mat(0xdff6ff, true), azzurro = mat(0x8fd6f2, true);
+      put(testa, GEO.cyl, iron, 0, 0, 0, 0.9, 0.18, 0.84);
+      [[0, 0.52], [0.26, 0.38], [-0.26, 0.38], [0.44, 0.26], [-0.44, 0.26]].forEach(([x, h], i) =>
+        put(testa, GEO.cone6, i % 2 ? azzurro : ghiaccio, x, 0.08 + h / 2, 0.12, 0.16, h, 0.16)
+          .rotation.z = -x * 0.5);
+      for (let i = 0; i < 5; i++)                                     // barba di ghiaccioli
+        put(g, GEO.cone6, ghiaccio, (i - 2) * 0.12, 2.0, 0.36, 0.09, 0.2 + (i % 2) * 0.1, 0.09)
+          .rotation.x = Math.PI;
+      spallacci.forEach((sp, k) => [[0, 0.46], [0.16, 0.32]].forEach(([z, h]) =>
+        put(sp, GEO.octa, ghiaccio, (k ? 1 : -1) * 0.12, 0.28, z - 0.08, 0.16, h, 0.16)));
+      put(arma, GEO.cyl, cuoio, 0, -0.3, 0, 0.16, 1.4, 0.16);
+      put(arma, GEO.octa, azzurro, 0, 0.62, 0, 0.62, 1.0, 0.62);
+      for (const k of [-1, 1]) put(arma, GEO.octa, ghiaccio, k * 0.3, 0.5, 0, 0.26, 0.52, 0.26)
+        .rotation.z = -k * 0.6;
+    },
+    'bs.wood'() {
+      const legno = mat(0x6b4a35), foglia = mat(C.tree || 0x3f8a3a, true), fungo = mat(0xd9483b);
+      put(testa, GEO.cyl, legno, 0, -0.02, 0, 0.88, 0.14, 0.82);
+      for (const k of [-1, 1]) {                                      // corna di cervo
+        put(testa, GEO.cyl8, legno, k * 0.42, 0.3, 0, 0.16, 0.8, 0.16).rotation.z = -k * 0.6;
+        put(testa, GEO.cyl8, legno, k * 0.74, 0.78, 0, 0.13, 0.6, 0.13).rotation.z = -k * 0.2;
+        put(testa, GEO.cyl8, legno, k * 0.5, 0.74, 0, 0.11, 0.44, 0.11).rotation.z = k * 0.35;
+        put(testa, GEO.cyl8, legno, k * 0.98, 0.64, 0, 0.1, 0.4, 0.1).rotation.z = -k * 1.1;
+        put(testa, GEO.cyl8, legno, k * 0.86, 1.12, 0, 0.09, 0.3, 0.09).rotation.z = -k * 0.5;
+      }
+      spallacci.forEach(sp => {
+        for (let i = 0; i < 4; i++) put(sp, GEO.sph8, foglia, (i - 1.5) * 0.14, 0.24 + (i % 2) * 0.06,
+                                        (i % 2 ? 0.14 : -0.14), 0.3, 0.2, 0.3);
+      });
+      put(spallacci[0], GEO.cyl8, mat(OSSO), 0.1, 0.36, 0.1, 0.06, 0.14, 0.06);
+      put(spallacci[0], GEO.sph, fungo, 0.1, 0.44, 0.1, 0.2, 0.12, 0.2);
+      put(arma, GEO.taper, legno, 0, 0.1, 0, 0.34, 1.9, 0.34).rotation.x = Math.PI;   // il tronco
+      put(arma, GEO.cyl8, legno, 0.18, 0.5, 0, 0.1, 0.36, 0.1).rotation.z = -0.9;     // rametto
+      for (const [x, y] of [[-0.12, 0.8], [0.1, 0.95]]) put(arma, GEO.sph8, foglia, x, y, 0.1, 0.24, 0.18, 0.24);
+      put(arma, GEO.sph, fungo, -0.16, 0.3, 0.12, 0.16, 0.1, 0.16);
+    },
+    'bs.bone'() {
+      put(testa, GEO.cyl, osso, 0, 0, 0, 0.9, 0.16, 0.84);           // corona d'ossa
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 6 - 0.5) * 2.4;
+        const h = i === 3 ? 0.5 : 0.32;
+        put(testa, GEO.cyl8, osso, Math.sin(a) * 0.42, 0.08 + h / 2, Math.cos(a) * 0.4, 0.07, h, 0.07);
+        put(testa, GEO.sph8, osso, Math.sin(a) * 0.42, 0.1 + h, Math.cos(a) * 0.4, 0.13, 0.13, 0.13);
+      }
+      for (let i = 0; i < 3; i++) {                                   // costole sul petto
+        const c = put(g, GEO_ARCO, osso, 0, 1.72 - i * 0.2, 0.3, 0.9 - i * 0.1, 0.62, 0.5);
+        c.rotation.set(-Math.PI / 2 + 0.2, 0, Math.PI);
+      }
+      put(g, GEO.box, osso, 0, 1.52, 0.5, 0.1, 0.6, 0.06);            // sterno
+      spallacci.forEach((sp, k) => put(sp, GEO.sph, osso, 0, 0.12, 0, 0.5, 0.38, 0.5));   // teschi-spallacci
+      put(arma, GEO.cyl, osso, 0, -0.1, 0, 0.18, 1.7, 0.18);          // femore
+      for (const y of [-0.95, 0.75]) for (const k of [-1, 1])
+        put(arma, GEO.sph, osso, k * 0.12, y, 0, 0.34, 0.3, 0.3);
+    },
+    'bs.rune'() {
+      const viola = accesa(0xc9a8ff);
+      put(g, GEO.sph, dark, 0, 2.56, -0.14, 1.02, 1.02, 0.96);       // cappuccio
+      put(g, GEO.cone, dark, 0, 3.18, -0.28, 0.6, 0.6, 0.5).rotation.x = -0.5;
+      put(g, GEO.box, viola, 0, 1.0, 0.58, 0.14, 0.2, 0.02).userData.noOutline = true;   // runa sulla fibbia
+      const cerchio = new THREE.Group();                              // rune che gli girano attorno
+      cerchio.position.y = 1.7;
+      for (let i = 0; i < 4; i++) {
+        const a = i / 4 * Math.PI * 2;
+        const r = new THREE.Group();
+        r.position.set(Math.sin(a) * 1.35, (i % 2) * 0.4, Math.cos(a) * 1.1);
+        put(r, GEO.box, viola, 0, 0, 0, 0.08, 0.34, 0.06);
+        put(r, GEO.box, viola, 0.06, 0.08, 0, 0.16, 0.06, 0.06).rotation.z = 0.6;
+        bagliore(r, 0xb690ff, 0.9, 0.4);
+        cerchio.add(r);
+      }
+      g.add(cerchio);
+      anime.push(t => { cerchio.rotation.y = t * 0.7; });
+      put(arma, GEO.cyl8, cuoioD, 0, 0.1, 0, 0.12, 2.4, 0.12);       // bastone
+      put(arma, GEO.ring, ironD, 0, 1.2, 0, 0.6, 0.6, 0.5).rotation.y = Math.PI / 2;
+      const gemma = put(arma, GEO.octa, viola, 0, 1.25, 0, 0.3, 0.46, 0.3);
+      bagliore(gemma, 0xb690ff, 5, 0.6);
+    },
+    'bs.lava'() {
+      const brace = accesa(C.lavaHot || 0xffa23c), ossidiana = mat(0x2a2024);
+      for (const k of [-1, 1]) {                                      // corna grandi, curve
+        put(testa, GEO.taper, ossidiana, k * 0.44, 0.08, 0, 0.26, 0.4, 0.26).rotation.z = -k * 1.2;
+        put(testa, GEO.taper, ossidiana, k * 0.66, 0.3, 0, 0.2, 0.34, 0.2).rotation.z = -k * 0.5;
+        put(testa, GEO.cone6, ossidiana, k * 0.72, 0.6, 0, 0.16, 0.34, 0.16).rotation.z = k * 0.15;
+      }
+      const fiamme = new THREE.Group();                               // capelli di fuoco
+      fiamme.position.y = 0.02;
+      [[0, 0.5, brace], [0.2, 0.36, accesa(0xffd23c)], [-0.2, 0.38, accesa(0xffd23c)]].forEach(([x, h, m]) =>
+        put(fiamme, GEO.cone6, m, x, h / 2, -0.05, 0.22, h, 0.22).userData.noOutline = true);
+      bagliore(fiamme, 0xff8a3c, 2.2, 0.6, 0.3);
+      testa.add(fiamme);
+      anime.push(t => { fiamme.scale.y = 1 + Math.sin(t * 11) * 0.12 + Math.sin(t * 17) * 0.06; });
+      /* crepe di lava sul petto e sulle braccia */
+      [[-0.3, 1.5, 0.45, 0.5], [0.24, 1.32, 0.52, -0.7], [0.05, 1.7, 0.44, 1.2]].forEach(([x, y, z, r]) =>
+        put(g, GEO.box, brace, x, y, z, 0.05, 0.36, 0.05).rotation.z = r);
+      for (const arm of [armL, armR]) put(arm, GEO.box, brace, 0.1, -0.3, 0.2, 0.04, 0.3, 0.04).rotation.z = 0.4;
+      put(arma, GEO.cyl, cuoioD, 0, -0.3, 0, 0.16, 1.4, 0.16);
+      put(arma, GEO.box, ossidiana, 0, 0.56, 0, 0.9, 0.52, 0.52);     // martello di magma
+      for (const x of [-0.24, 0.24]) put(arma, GEO.box, brace, x, 0.56, 0, 0.06, 0.54, 0.54);
+      bagliore(arma, 0xff8a3c, 2.4, 0.5, 0.56);
+    },
+    'bs.ash'() {
+      const cenere = mat(0x8a8680), fumo = mat(0xb6b0a8);
+      put(g, GEO.box, iron, 0, 2.3, 0.36, 0.62, 0.36, 0.14);          // maschera a grata
+      for (let i = 0; i < 4; i++) put(g, GEO.box, ironD, (i - 1.5) * 0.13, 2.3, 0.44, 0.05, 0.26, 0.02);
+      put(testa, GEO.cyl, iron, 0, 0, 0, 0.9, 0.2, 0.84);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 5 - 0.5) * 2.2;
+        put(testa, GEO.box, ironD, Math.sin(a) * 0.4, 0.2, Math.cos(a) * 0.38, 0.1, 0.3, 0.06).rotation.y = a;
+      }
+      const sbuffi = [];
+      for (const k of [-1, 1]) {                                      // camini sulla schiena
+        put(g, GEO.cyl12, ironD, k * 0.36, 2.4, -0.5, 0.26, 0.9, 0.26);
+        put(g, GEO.cyl12, iron, k * 0.36, 2.86, -0.5, 0.32, 0.1, 0.32);
+        for (let i = 0; i < 3; i++) {
+          const s = put(g, GEO.sph8, i ? fumo : cenere, k * 0.36, 3.1 + i * 0.3, -0.5, 0.3 + i * 0.1);
+          s.userData.vivo = s.userData.noOutline = true;              // sale da solo: niente fusione né guscio
+          sbuffi.push([s, i, k]);
+        }
+      }
+      anime.push(t => sbuffi.forEach(([s, i, k]) => {
+        const f = (t * 0.6 + i / 3 + (k > 0 ? 0.5 : 0)) % 1;
+        s.position.y = 3.0 + f * 1.0;
+        s.scale.setScalar(0.24 + f * 0.36);
+      }));
+      put(arma, GEO.cyl, cuoio, 0, -0.4, 0, 0.14, 1.2, 0.14);         // la mannaia
+      put(arma, GEO.box, iron, 0.26, 0.54, 0, 0.62, 0.9, 0.08);
+      put(arma, GEO.box, mat(0xd6dde4), 0.58, 0.54, 0, 0.06, 0.9, 0.09);
+      put(arma, GEO.sph8, ironD, 0.1, 0.84, 0.05, 0.1, 0.1, 0.06);
+    },
+    'bs.glass'() {
+      const vetro = mat(0xcfe8ff, true), vetroD = mat(0x8fb4ea, true);
+      put(testa, GEO.cyl, oro, 0, 0, 0, 0.9, 0.16, 0.84);
+      [[0, 0.8], [0.3, 0.56], [-0.3, 0.56], [0.5, 0.36], [-0.5, 0.36]].forEach(([x, h], i) =>
+        put(testa, GEO.octa, i % 2 ? vetroD : vetro, x, 0.08 + h / 2, 0.06, 0.2, h, 0.2));
+      spallacci.forEach((sp, k) => [[0, 0.62, 0], [0.14, 0.4, 0.2], [-0.1, 0.44, -0.2]].forEach(([x, h, z]) =>
+        put(sp, GEO.octa, vetro, (k ? 1 : -1) * (0.1 + x), 0.2 + h / 2, z, 0.18, h, 0.18)
+          .rotation.z = (k ? -1 : 1) * 0.3));
+      put(g, GEO.octa, accesa(0xbff4ff), 0, 1.52, 0.58, 0.2, 0.3, 0.1);   // la gemma sul petto
+      put(arma, GEO.cyl, oro, 0, -0.3, 0, 0.14, 1.4, 0.14);
+      put(arma, GEO.octa, vetroD, 0, 0.6, 0, 0.66, 0.8, 0.66);
+      for (let i = 0; i < 4; i++) {
+        const a = i / 4 * Math.PI * 2;
+        put(arma, GEO.octa, vetro, Math.sin(a) * 0.3, 0.6, Math.cos(a) * 0.3, 0.16, 0.5, 0.16)
+          .rotation.set(Math.cos(a) * 1.2, 0, -Math.sin(a) * 1.2);
+      }
+    },
+    'bs.sky'() {
+      const nube = mat(0xe8eef8), nubeD = mat(0x9aa8c4), lampo = accesa(0xfff27a);
+      const corona = new THREE.Group();                               // nubi che girano
+      for (let i = 0; i < 7; i++) {
+        const a = i / 7 * Math.PI * 2;
+        put(corona, GEO.sph8, i % 2 ? nubeD : nube, Math.sin(a) * 0.5, 0.06 + (i % 3) * 0.05,
+            Math.cos(a) * 0.46, 0.34, 0.26, 0.34);
+      }
+      testa.add(corona);
+      anime.push(t => { corona.rotation.y = t * 0.5; });
+      for (const k of [-1, 0, 1]) {                                   // tre saette dritte
+        const s = new THREE.Group();
+        s.position.set(k * 0.3, 0.2, 0);
+        put(s, GEO.box, lampo, 0, 0.14, 0, 0.08, 0.3, 0.06).rotation.z = 0.4;
+        put(s, GEO.box, lampo, 0.02, 0.36, 0, 0.08, 0.26, 0.06).rotation.z = -0.4;
+        s.scale.setScalar(k ? 0.8 : 1.1);
+        testa.add(s);
+      }
+      bagliore(testa, 0xfff27a, 1.8, 0.35, 0.4);
+      put(g, GEO.box, dark, 0, 1.4, -0.56, 1.4, 1.6, 0.06).rotation.x = 0.12;   // mantello
+      put(arma, GEO.cyl, cuoio, 0, -0.3, 0, 0.14, 1.4, 0.14);         // martello del tuono
+      put(arma, GEO.box, iron, 0, 0.58, 0, 0.84, 0.5, 0.5);
+      for (const x of [-0.34, 0.34]) put(arma, GEO.box, ironD, x, 0.58, 0, 0.1, 0.56, 0.56);
+      put(arma, GEO.box, lampo, 0, 0.58, 0.26, 0.1, 0.34, 0.02).rotation.z = 0.5;
+      bagliore(arma, 0xfff27a, 1.8, 0.4, 0.58);
+    }
+  };
+  (tratti[key] || tratti['bs.ice'])();
+
+  /* l'arma nella destra: stessa presa e stessa carica per tutti */
+  arma.position.set(0.22, -1.08, 0.28);
+  arma.rotation.set(-0.5, 0, -0.32);          // la testa in alto e in fuori, non dietro il braccio
+  armR.add(arma);
 
   g.userData.limbs = { armL, armR, legL, legR };
+  g.userData.anima = t => anime.forEach(f => f(t));
   addOutline(g, 0.05);
   castShadows(g);
   return g;
@@ -428,6 +706,7 @@ function setWeapon(actor, tier) {
   if (!hand) return;
   if (actor.userData.weaponObj) {
     hand.remove(actor.userData.weaponObj);
+    sciogli(actor.userData.weaponObj);
     actor.userData.weaponObj = null;
   }
   const w = buildWeapon(tier);

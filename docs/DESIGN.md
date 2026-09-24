@@ -975,8 +975,9 @@ torre era sempre lo stesso omone rosa. È l'unico avversario del gioco e la cosa
 che si guarda più da vicino: vederlo identico otto volte faceva sembrare uguali
 anche le otto torri.
 
-Adesso ogni tema porta `boss`, `bossDark` e `bossKey`: stessa stazza, stessa
-corona di ferro, stessa mazza — cambiano i colori e il nome. Il Guardiano del
+Adesso ogni tema porta `boss`, `bossDark` e `bossKey`: stessa stazza, colori
+e nome della zona — e, da quando il vichingo è stato rifatto, anche un
+**tratto** suo (vedi sotto). Il Guardiano del
 Gelo, il Signore del Bosco, il Re d'Ossa, l'Ombra di Rúna, il Signore del
 Vulcano, il Mangiacenere, il Re di Vetro, il Signore del Tuono.
 
@@ -1049,6 +1050,40 @@ carceriere: il robot che tocca a tempo vince in sette zone su otto, quello
 che tocca tardi perde in tutte. L'ottava è il Re di Vetro, dove un anello
 finto lasciato chiudere costa un'occasione — ed è giusto che sia il più
 insidioso.
+
+### Il carceriere rifatto
+
+Accanto al vichingo nuovo il carceriere sembrava di pongo: una palla per il
+torace, una per la testa, due occhi neri, una mazza. Ora ha un corpo curato
+uguale per tutti — mascella sporgente con le zanne, sopracciglia aggrottate,
+occhi accesi col loro alone, bracciali borchiati, cinghie incrociate sul petto,
+grembiule di cuoio e **il mazzo di chiavi della prigione alla cintura**: è lui
+che le tiene, ed è la cosa che racconta la storia senza una parola.
+
+Sopra, un tratto per zona (`TRATTI` in `actors.js`), con l'arma sua:
+
+| Zona | Tratto | Arma |
+|---|---|---|
+| Gelo | corona di cristalli, barba di ghiaccioli | mazza di cristallo |
+| Bosco | corna di cervo, foglie e un fungo sugli spallacci | tronco |
+| Ossa | corona d'ossa, costole sul petto | femore |
+| Rúna | cappuccio, rune che gli girano attorno | bastone con la gemma |
+| Vulcano | corna d'ossidiana, capelli di fuoco, crepe di lava | martello di magma |
+| Cenere | maschera a grata, due camini che fumano | mannaia |
+| Vetro | corona di prismi, cristalli sulle spalle | mazza di vetro |
+| Tuono | corona di nubi che gira, tre saette, mantello | martello del tuono |
+
+Le piccole animazioni (rune, fiamme, nubi, fumo) passano da
+`boss.userData.anima(t)`. Il numero della vita è salito a 7,2 per stare sopra
+corone e corna.
+
+**Il conto delle draw call.** Eroe e carceriere sono arrivati a ~160 pezzi
+l'uno, il doppio col contorno. `fondi()` (in `art.js`, chiamata da
+`addOutline`) fonde per ogni nodo i figli fermi con lo stesso materiale: le
+braccia, le gambe, lo scudo e l'arma restano gruppi a sé e l'animazione non
+se ne accorge. Risultato: eroe da 163 a 61 mesh, carceriere da ~160 a ~80.
+Le geometrie fuse sono nuove, e `sciogli()` le libera quando l'attore esce di
+scena (`clearWorld`, cambio aspetto, cambio arma).
 
 ## 7d. La home in uno schermo
 

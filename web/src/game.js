@@ -86,6 +86,7 @@ function rifaiEroe() {
   hero.rotation.x = vecchio.rotation.x;
   scene.add(hero);
   scene.remove(vecchio);
+  sciogli(vecchio);
   setWeapon(hero, run.weapon);
 }
 
@@ -405,7 +406,7 @@ function buildRun() {
   world.add(boss);
 
   bossSprite = labelSprite(fmt(bossHealth(meta.level)), '#ff8f7a', 1.15);
-  bossSprite.position.set(0, 6.4, bossZ);
+  bossSprite.position.set(0, 7.2, bossZ);   // sopra corone e corna
   world.add(bossSprite);
 
   refreshThreats();
@@ -1484,6 +1485,7 @@ function update(dt) {
     } else {
       animateIdle(boss, runT, 1.3);
       animaCarceriere(dt);
+      if (boss.userData.anima) boss.userData.anima(runT);
     }
   }
   if (tower && tower.princess) {

@@ -627,7 +627,7 @@ function applyTheme(theme) {
   /* Anche il carceriere è del posto: stessa stazza e stessa mazza, colori
      e nome della zona. È l'unico avversario del gioco, e vederlo sempre
      identico faceva sembrare uguali anche le otto torri. */
-  C.boss = theme.boss; C.bossDark = theme.bossDark;
+  C.boss = theme.boss; C.bossDark = theme.bossDark; C.bossKey = theme.bossKey;
   /* e anche la torre: era la stessa torre grigia col tetto rosa in tutte
      e otto le zone, cioè proprio la cosa che si va a conquistare */
   C.torre = theme.torre;
