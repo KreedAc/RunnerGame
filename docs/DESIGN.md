@@ -669,6 +669,18 @@ del carceriere nel simulatore era `1 − quota del muro`: uguale per
 coincidenza (0,38 = 1 − 0,62) finché qualcuno non toccava uno dei due numeri.
 Adesso si legge da `bossHealth`.
 
+**La rabbia.** Il duello era un ritmo solo dall'inizio alla fine. Adesso,
+quando la vita del carceriere scende sotto la metà, il gigante si infuria:
+il duello si ferma per il ruggito (0,9 s, senza che le forze scendano:
+quel tempo non è tuo e non va pagato), si piega all'indietro con le braccia
+al cielo, gli occhi diventano rossi, un alone rosso gli pulsa addosso, e la
+scritta dice ORA DUE ALLA VOLTA. Da lì gli anelli arrivano in coppia, a 0,4 s
+l'uno dall'altro, ciascuno col 60% del peso — come il Mangiacenere, che il
+duello doppio ce l'ha sempre e infuriato accorcia invece le pause. Più cose
+da fare, stesso valore in media: il simulatore, che fa la stessa cosa
+(`RABBIA` in `core.js`), dà 29 / 25 / 26 corse fino alla torre 10, contro
+29 / 25 / 25 senza.
+
 ## 6c-bis. Gli aspetti, e perché non danno niente
 
 I diamanti compravano una cosa sola, la seconda occasione. Adesso ne comprano

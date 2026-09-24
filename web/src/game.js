@@ -819,6 +819,13 @@ function updateBossFight(dt) {
     return;
   }
   if (!duello.aperto) apriDuello();
+  /* a metà vita si infuria: il duello si ferma per il ruggito, e le forze
+     non scendono intanto — il tempo del ruggito non è tuo, non va pagato */
+  if (!duello.rabbia && run.bossHp > 0 && run.bossHp <= run.bossHpIni * RABBIA.soglia) infuria();
+  if (duello.ruggito > 0) {
+    duello.ruggito -= dt;
+    return;
+  }
   aggiornaDuello(dt);
   if (boss) caricaCarceriere(dt);
 
@@ -946,11 +953,52 @@ function apriDuello() {
   duello.attesa = DUELLO.pausa;
   duello.primo = true;
   duello.dx = duello.dy = 0;
+  duello.rabbia = false;
+  duello.ruggito = 0;
   /* la prima scritta dice come combatte QUESTO carceriere: "non toccare
      quelli rossi" serve prima del primo rosso, non dopo */
   $('duScritta').textContent = t('du.h.' + nome);
   $('duScritta').classList.remove('via');
   $('duello').classList.remove('hidden');
+}
+
+/* Il gigante si infuria. Lo stile del duello si somma a quello della zona:
+   due anelli alla volta, ciascuno a peso ridotto; chi ce l'ha già doppio
+   (il Mangiacenere) accorcia invece le pause. Occhi rossi, alone rosso,
+   ruggito: si deve capire che la seconda metà è un'altra cosa. */
+function infuria() {
+  duello.rabbia = true;
+  duello.ruggito = RABBIA.ruggito;
+  duello.anelli = [];
+  duello.attesa = 0.1;
+  const S = duello.stile;
+  duello.stile = S.doppio
+    ? Object.assign({}, S, { pausaDa: RABBIA.pausa * 0.5, pausaA: RABBIA.pausa })
+    : Object.assign({}, S, { doppio: RABBIA.doppio, peso: RABBIA.peso });
+  duello.primo = true;                 // la scritta resta fino al primo anello
+  $('duScritta').textContent = t('du.h.rabbia');
+  $('duScritta').classList.remove('via');
+  ['duAnello', 'duAnello2'].forEach(id => { $(id).style.opacity = 0; });
+  $('duello').classList.remove('ora');
+
+  flashBanner(t('du.rabbia'), 'bad');
+  impatto(0.9);
+  if (boss) {
+    const U = boss.userData;
+    U.urlo = 1;
+    if (!U.infuriato) {
+      U.infuriato = true;
+      for (const o of U.occhi || []) {
+        o.material = accesa(0xff2a1a);
+        o.children.forEach(c => { c.visible = false; });
+        bagliore(o, 0xff3a2a, 8, 0.8);
+      }
+      if (U.furia) U.furia.visible = true;
+    }
+    FX.onde.lancia(0, 0.15, bossZ, 0xff3a2a, 7);
+    FX.scintille.emetti(0, 4.5, bossZ + 0.6, 40, 0xff5a3a,
+                        { vel: 9, su: 6, taglia: 0.6, vita: 0.8, grav: 10 });
+  }
 }
 
 function chiudiDuello() {
@@ -1100,6 +1148,17 @@ function animaCarceriere(dt) {
                           { vel: 5, su: 3, taglia: 0.4, vita: 0.35, grav: 10 });
     }
   }
+  /* il ruggito: indietro col busto, braccia al cielo */
+  if (U.urlo > 0) {
+    U.urlo = Math.max(0, U.urlo - dt / RABBIA.ruggito);
+    const f = Math.sin((1 - U.urlo) * Math.PI);
+    boss.rotation.x = -0.28 * f;
+    L.armL.rotation.set(-0.4 * f, 0, -1.9 * f);
+    L.armR.rotation.set(-0.4 * f, 0, 1.9 * f);
+    if (!MENO_MOTO && scossa < 0.3 * f) { scossa = 0.3 * f; scossaDir.set(0, 1, 0); }
+    return;
+  }
+  if (U.furia && U.furia.visible) U.furia.scale.setScalar(1 + 0.12 * Math.sin(tempoMondo * 9));
   if (U.incassa > 0) {
     U.incassa = Math.max(0, U.incassa - dt * 3.2);
     boss.rotation.x = -0.3 * Math.sin(U.incassa * Math.PI);   // all'indietro, via da te

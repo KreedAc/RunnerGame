@@ -74,6 +74,14 @@ const G = {
     critP   : num(core, /DUELLO[\s\S]*?critP:\s*(\d*\.?\d+)/, 'DUELLO.critP'),
     critB   : num(core, /DUELLO[\s\S]*?critB:\s*(\d*\.?\d+)/, 'DUELLO.critB')
   },
+  /* la rabbia a metà vita */
+  rabbia: {
+    soglia : num(core, /RABBIA\s*=\s*\{[^}]*soglia:\s*(\d*\.?\d+)/, 'RABBIA.soglia'),
+    ruggito: num(core, /RABBIA\s*=\s*\{[^}]*ruggito:\s*(\d*\.?\d+)/, 'RABBIA.ruggito'),
+    doppio : num(core, /RABBIA\s*=\s*\{[^}]*doppio:\s*(\d*\.?\d+)/, 'RABBIA.doppio'),
+    peso   : num(core, /RABBIA\s*=\s*\{[^}]*peso:\s*(\d*\.?\d+)/, 'RABBIA.peso'),
+    pausa  : num(core, /RABBIA\s*=\s*\{[^}]*pausa:\s*(\d*\.?\d+)/, 'RABBIA.pausa')
+  },
 
   buffAttacco: num(core, /rate\s*:\s*\{[^}]*step:\s*(\d*\.?\d+)/, 'buff attacco'),
   buffPotenza: num(core, /gain\s*:\s*\{[^}]*step:\s*(\d*\.?\d+)/, 'buff potenza'),
@@ -269,22 +277,23 @@ const FATICA = { base: 1, svelto: 0.9, storto: 0.85, ombra: 0.7,
 const ABBOCCA = { perfetto: 0.05, umano: 0.2, ingenuo: 0.45 };
 
 function duello(P, B, stile, livello) {
-  const D = G.duello;
+  const D = G.duello, R = G.rabbia;
   const nome = STILE_ZONA[(livello - 1) % STILE_ZONA.length];
-  const S = STILI[nome];
+  let S = STILI[nome];
   const f = FATICA[nome] || 1;
   const q = [MIRA[stile][0] * f, MIRA[stile][1] * f];
-  const peso = S.peso || 1;
   const giro = S.giro || D.giro;
   const ritmo = Math.max(P, B) / D.durata;           // le due forze scendono insieme
   const alBersaglio = (D.da - 1) / (D.da - D.a) * giro;
   const pausa = () => S.pausaA ? fra(S.pausaDa, S.pausaA) : D.pausa;
+  let rabbia = false, ruggito = 0;
 
   /* gli istanti in cui si tocca: per ogni giro uno, o due col doppio */
   let t = 0, prossimo = pausa() + alBersaglio, secondo = -1, primoGiro = true;
   let p = P, b = B;
   const dt = 1 / 60;
   const tira = finto => {
+    const peso = S.peso || 1;
     if (finto) { if (caso() < ABBOCCA[stile]) b += B * D.critB * peso; return; }
     const r = caso();
     if (r < q[0]) b -= B * D.critP * peso;
@@ -292,6 +301,16 @@ function duello(P, B, stile, livello) {
   };
   while (p > 0 && b > 0) {
     t += dt;
+    /* come nel gioco: a metà vita il ruggito ferma tutto, poi due alla volta */
+    if (!rabbia && b <= B * R.soglia) {
+      rabbia = true;
+      ruggito = R.ruggito;
+      S = S.doppio ? Object.assign({}, S, { pausaDa: R.pausa * 0.5, pausaA: R.pausa })
+                   : Object.assign({}, S, { doppio: R.doppio, peso: R.peso });
+      secondo = -1;
+      prossimo = t + R.ruggito + 0.1 + alBersaglio;
+    }
+    if (ruggito > 0) { ruggito -= dt; continue; }
     p -= ritmo * dt;
     b -= ritmo * dt;
     if (t >= prossimo) {

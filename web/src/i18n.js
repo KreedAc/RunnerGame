@@ -67,6 +67,8 @@ const STRINGS = {
     'du.buono'    : 'BUONO!',
     'du.mancato'  : 'MANCATO',
     'du.finta'    : 'FINTA!',
+    'du.rabbia'   : 'SI È INFURIATO!',
+    'du.h.rabbia' : 'ORA DUE ALLA VOLTA!',
     /* come combatte ciascun carceriere: la prima cosa che leggi */
     'du.h.base'   : 'TOCCA QUANDO SI CHIUDE!',
     'du.h.svelto' : 'È SVELTO: TIENITI PRONTO!',
@@ -243,6 +245,8 @@ const STRINGS = {
     'du.buono'    : 'GOOD!',
     'du.mancato'  : 'MISS',
     'du.finta'    : 'FAKE!',
+    'du.rabbia'   : 'HE IS ENRAGED!',
+    'du.h.rabbia' : 'TWO AT A TIME NOW!',
     'du.h.base'   : 'TAP WHEN IT CLOSES!',
     'du.h.svelto' : 'HE\'S QUICK: GET READY!',
     'du.h.storto' : 'NO RHYTHM: WATCH THE RING!',

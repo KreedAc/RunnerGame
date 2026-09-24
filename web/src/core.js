@@ -304,6 +304,15 @@ const DUELLO = {
   critP: 0.07, critB: 0.035, ritardo: 0.05
 };
 
+/* LA RABBIA. A metà vita il gigante si infuria: il duello si ferma per il
+   ruggito (senza che le forze scendano), poi gli anelli arrivano due alla
+   volta, a `doppio` secondi l'uno dall'altro, e ciascuno vale `peso` di un
+   colpo — come il Mangiacenere, che il duello doppio ce l'ha sempre, e che
+   infuriato accorcia invece le pause. Più cose da fare, stesso valore in
+   media: il duello diventa una battaglia in due tempi senza cambiare quanto
+   costa la torre. Una riga sola: la legge anche il simulatore. */
+const RABBIA = { soglia: 0.5, ruggito: 0.9, doppio: 0.4, peso: 0.6, pausa: 0.08 };
+
 /* Ogni carceriere combatte a modo suo. Le otto zone avevano colori e nomi
    diversi ma si giocavano uguali; il duello è il posto giusto per
    cambiarle, perché è lì che il giocatore ha il dito pronto.

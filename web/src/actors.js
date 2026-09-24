@@ -526,9 +526,11 @@ function buildBoss() {
   put(g, GEO.cyl, body, 0, 2.2, 0.04, 0.54, 0.22, 0.52);
   put(g, GEO.sph, body, 0, 2.5, 0.06, 0.74, 0.72, 0.72);
   put(g, GEO.sph, lite, 0, 2.38, 0.42, 0.16, 0.14, 0.14);            // naso
+  const gliOcchi = [];
   for (const k of [-1, 1]) {
     const occhio = put(g, GEO.sph, occhi, k * 0.15, 2.47, 0.36, 0.12, 0.08, 0.06);
     bagliore(occhio, T.occhi, key === 'bs.rune' ? 6.5 : 5.5, key === 'bs.rune' ? 0.5 : 0.35);
+    gliOcchi.push(occhio);
     put(g, GEO.ring, ironD, k * 0.15, 2.47, 0.39, 0.34, 0.3, 0.4);   // gli occhiali dell'elmo
   }
   put(g, GEO.sph, iron,  0, 2.64, 0.04, 0.8, 0.62, 0.78);            // calotta
@@ -735,6 +737,14 @@ function buildBoss() {
 
   g.userData.limbs = { armL, armR, legL, legR };
   g.userData.anima = t => anime.forEach(f => f(t));
+  g.userData.occhi = gliOcchi;
+  /* l'alone della rabbia: spento finché non si infuria */
+  const furia = new THREE.Group();
+  furia.position.y = 1.7;
+  bagliore(furia, 0xff3a2a, 5.5, 0.4);
+  furia.visible = false;
+  g.add(furia);
+  g.userData.furia = furia;
   addOutline(g, 0.05);
   castShadows(g);
   return g;

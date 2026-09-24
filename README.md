@@ -199,5 +199,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Nemici e principessa rifatti nello stesso stile (nemici clonati da uno stampo per tipo)
 - [x] Salvataggio di riserva (codice da copiare), anteprima della riga dopo, contatore FPS nascosto
 - [x] Scena della vittoria: le chiavi volano alla grata, la grata si alza, la principessa salta e saluta, coriandoli
+- [x] Il gigante si infuria a metà vita: ruggito, occhi rossi, anelli due alla volta
 - [ ] Audio sintetizzato e vibrazione (prossimo)
 - [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)
