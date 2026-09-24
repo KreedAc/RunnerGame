@@ -22,37 +22,58 @@ function pathMaterial(total) {
      zona. I filari fanno anche il lavoro delle bande: scorrendo sotto i
      piedi dicono quanto vai veloce.
 
-     128×128 pixel per 8×8 unità di pista: una potenza di due, così la GPU
-     può farne le versioni ridotte per la distanza (senza, il lastricato
-     lontano sfarfalla in un moiré). */
-  const S = 128, FILA = 16;                       // un filare = un'unità
+     1024×1024 pixel per 8×8 unità di pista. Era 128: sedici pixel per
+     metro, e vicino alla camera ogni pixel finiva ingrandito sei-otto
+     volte — il disegno era giusto ma sfocato, come una foto a bassa
+     risoluzione. Il motivo è lo stesso (le misure sono in "unità da 128"
+     e si moltiplicano per K), il dettaglio no: bordo smussato con la luce
+     in alto e l'ombra in basso, e una grana leggera sulla pietra, che è
+     quello che fa sembrare nitida una superficie anche da vicino.
+     Resta una potenza di due, così la GPU può farne le versioni ridotte
+     per la distanza (senza, il lastricato lontano sfarfalla in un moiré). */
+  const S = 1024, K = S / 128, FILA = 16 * K;     // un filare = un'unità
   const c = document.createElement('canvas');
   c.width = c.height = S;
   const g = c.getContext('2d');
   const base = new THREE.Color(C.ground);
   const fuga = new THREE.Color(C.groundEdge);
   const css = (col, k) => 'rgb(' + [col.r, col.g, col.b].map(v => Math.round(clamp(v * k, 0, 1) * 255)).join(',') + ')';
+  const tondo = (x, y, w, h, r) => {
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);
+    g.fill();
+  };
+  /* una pietra: ombra sotto, corpo, luce sopra, grana. Disegnata anche
+     spostata di ±S, così quella tagliata dal bordo rientra dall'altro lato
+     e la ripetizione non mostra la cucitura. */
+  const pietra = (x, y, w, h, k) => {
+    for (const dx of [0, -S, S]) {
+      const px = x + dx;
+      if (px + w < 0 || px > S) continue;
+      g.fillStyle = css(base, k * 0.9);  tondo(px, y + K * 0.35, w, h, K * 1.6);         // ombra
+      g.fillStyle = css(base, k);        tondo(px, y, w, h - K * 0.3, K * 1.6);          // pietra
+      g.fillStyle = css(base, k * 1.07); tondo(px + K, y + K * 0.4, w - 2 * K, K * 1.6, K);   // luce
+    }
+  };
 
   g.fillStyle = css(fuga, 0.92);
   g.fillRect(0, 0, S, S);
   for (let y = 0; y < S; y += FILA) {
     /* sfalsati come i mattoni: la fuga di un filare cade a metà pietra del
-       successivo. Le larghezze sommano sempre a S, altrimenti la
-       ripetizione mostrerebbe la cucitura. */
-    let x = (y / FILA) % 2 ? -rint(9, 15) : 0;
+       successivo. Le larghezze sommano sempre a S. */
+    let x = (y / FILA) % 2 ? -rint(9, 15) * K : 0;
     while (x < S) {
-      const w = Math.min(rint(20, 34), S - x);
+      const w = Math.min(rint(20, 34) * K, S - x);
       const k = 0.94 + Math.random() * 0.1;            // ogni pietra il suo tono
-      g.fillStyle = css(base, k);
-      g.fillRect(x + 1.5, y + 1.5, w - 3, FILA - 3);
-      g.fillStyle = css(base, k * 1.05);               // un filo di luce sul bordo alto
-      g.fillRect(x + 1.5, y + 1.5, w - 3, 2);
-      if (x < 0) {                                     // la pietra tagliata a sinistra
-        g.fillStyle = css(base, k);                    // rientra da destra
-        g.fillRect(S + x + 1.5, y + 1.5, -x - 1.5, FILA - 3);
-      }
+      pietra(x + 1.2 * K, y + 1.2 * K, w - 2.4 * K, FILA - 2.4 * K, k);
       x += w;
     }
+  }
+  /* la grana: puntini chiari e scuri, piccoli. Da lontano i mipmap li
+     mediano via; da vicino tolgono alla pietra l'aria di plastica. */
+  for (let i = 0; i < 5000; i++) {
+    g.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,.03)' : 'rgba(255,255,255,.035)';
+    g.fillRect(Math.random() * S, Math.random() * S, K * 0.5 + Math.random() * K, K * 0.5 + Math.random() * K);
   }
 
   if (pathTex) pathTex.dispose();
@@ -60,7 +81,7 @@ function pathMaterial(total) {
   pathTex.wrapS = pathTex.wrapT = THREE.RepeatWrapping;
   pathTex.minFilter = THREE.LinearMipmapLinearFilter;
   pathTex.magFilter = THREE.LinearFilter;
-  pathTex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  pathTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   pathTex.repeat.set(CFG.trackWidth / 8, total / 8);
 
   if (!pathMat) pathMat = toon();

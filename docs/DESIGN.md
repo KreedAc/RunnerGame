@@ -494,6 +494,11 @@ che brilla, che si vede anche da giù.
 
 **La pista** è un lastricato disegnato su canvas (file di pietre sfalsate con
 tono e luce propri, mipmap e filtro anisotropo) invece della trama a quadri.
+La prima versione era 128×128 pixel per 8×8 metri: sedici pixel per metro,
+ingranditi sei-otto volte vicino alla camera — il disegno giusto, ma sfocato
+come una foto a bassa risoluzione. Ora è 1024×1024 con lo stesso motivo, più
+bordo smussato, ombra sotto ogni pietra e una grana leggera; filtro
+anisotropo fino a 8.
 
 ## 5. Il momento della vittoria
 
