@@ -56,6 +56,20 @@
      un bonus lungo ("⚔️ Attacco +20%") le si sovrapponeva */
   #buffRail{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 196px);
     display:flex;flex-direction:column;gap:6px}
+  /* l'anteprima: la riga DOPO quella che hai davanti, per pensare due
+     mosse avanti. A destra, di fronte ai bonus. */
+  #poi{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 196px);
+    display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 6px 6px;
+    border-radius:12px;background:rgba(16,32,52,.6);border:2px solid rgba(255,255,255,.18)}
+  #poi small{font-size:9px;font-weight:900;letter-spacing:1.3px;color:rgba(255,255,255,.6)}
+  #poiRiga{display:flex;gap:4px}
+  .poi-c{min-width:30px;height:24px;padding:0 4px;border-radius:7px;display:grid;
+    place-items:center;font-family:var(--titolo);font-size:13px;color:#fff;
+    background:rgba(255,255,255,.08);font-variant-numeric:tabular-nums}
+  .poi-c.si{background:rgba(70,190,100,.55)}
+  .poi-c.no{background:rgba(224,101,79,.6)}
+  .poi-c.arma{background:rgba(255,210,75,.6);color:#3a2000}
+  .poi-c.trap{background:rgba(140,90,220,.6)}
   .buff{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:11px;
     background:rgba(16,32,52,.68);border:2px solid;color:#fff;
     font-size:11px;font-weight:800;letter-spacing:.2px}
@@ -297,6 +311,46 @@
     font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1.2px;
     color:rgba(255,255,255,.7);background:transparent;border:2px solid rgba(255,255,255,.2)}
 
+  /* il registro: stessa carta della bottega, in oro invece che viola */
+  .registro .bt-card{border-color:rgba(255,210,75,.45);
+    background:linear-gradient(180deg,#2c4466,#16263e)}
+  .registro .bt-head{color:#ffd970}
+  .rg-sez{margin-top:12px;padding-top:12px;border-top:2px solid rgba(255,255,255,.1);
+    display:flex;flex-direction:column;align-items:center;gap:8px}
+  .rg-imprese.hidden + .rg-sez{margin-top:0;padding-top:0;border-top:0}
+  .rg-tit{font-family:var(--titolo);font-size:18px;color:#8fe3ff}
+  .rg-azioni{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .rg-btn{padding:8px 14px;border-radius:99px;cursor:pointer;font-family:inherit;
+    font-size:11px;font-weight:900;letter-spacing:1px;color:#fff;
+    background:rgba(143,227,255,.14);border:2px solid rgba(143,227,255,.45)}
+  .rg-btn:active{transform:translateY(2px)}
+  .rg-btn.oro{color:#3a2000;border-color:#fff3c0;
+    background:linear-gradient(180deg,#ffd970,#f5a91d)}
+  .rg-btn.armata{background:linear-gradient(180deg,#ff9d8a,#d9503c);color:#fff}
+  .rg-codice{width:100%;height:74px;resize:none;padding:8px;border-radius:12px;
+    font:600 10.5px/1.35 ui-monospace,monospace;color:#dff6ff;word-break:break-all;
+    background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.18)}
+  .rg-msg{min-height:14px;font-size:11px;font-weight:800;color:#8dff87}
+  .rg-msg.no{color:#ff9d8a}
+  .imp{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:14px;
+    text-align:left;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1)}
+  .imp.fatta{border-color:rgba(255,210,75,.55);background:rgba(255,210,75,.12)}
+  .imp-ico{font-size:21px;width:28px;text-align:center}
+  .imp:not(.fatta) .imp-ico{filter:grayscale(1);opacity:.55}
+  .imp-testo{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .imp-testo b{font-size:12.5px;font-weight:900;letter-spacing:.2px}
+  .imp-testo small{font-size:10.5px;font-weight:700;opacity:.72}
+  .imp-barra{height:5px;border-radius:99px;background:rgba(0,0,0,.35);overflow:hidden}
+  .imp-barra i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,#8ff0ff,#ffd24b)}
+  .imp-premio{font-family:var(--titolo);font-size:14px;color:#8fe3ff;white-space:nowrap}
+  .imp.fatta .imp-premio{color:#ffd970}
+
+  /* il contatore dei fotogrammi: cinque tocchi sulla marca della build */
+  #fps{position:fixed;left:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);z-index:9;
+    padding:3px 7px;border-radius:8px;background:rgba(0,0,0,.6);color:#8dff87;
+    font:700 11px/1.2 ui-monospace,monospace;pointer-events:none;white-space:pre}
+
   .revive{position:fixed;inset:0;z-index:5;display:flex;align-items:center;
     justify-content:center;padding:20px;background:rgba(8,16,28,.72)}
   .rv-card{width:100%;max-width:330px;padding:20px 18px 14px;border-radius:24px;
@@ -507,6 +561,7 @@
   <div id="progressWrap"><div id="progress"></div></div>
   <div id="combo" class="hidden"><b id="comboN">×2</b><span id="comboBonus"></span></div>
   <div id="buffRail"></div>
+  <div id="poi" class="hidden"><small data-t="poi.lbl">DOPO</small><div id="poiRiga"></div></div>
 </div>
 <!-- la prima partita guidata: una riga alla volta -->
 <div id="guida" class="hidden">
@@ -521,6 +576,7 @@
   <div class="du-anello" id="duAnello2"></div>
   <div class="du-scritta" id="duScritta">TOCCA QUANDO SI CHIUDE!</div>
 </div>
+<div id="fps" class="hidden"></div>
 <div id="pops"></div>
 <div id="banner"><b></b></div>
 
@@ -531,6 +587,31 @@
     <div class="bt-sub" id="btSub"></div>
     <div class="bt-list" id="btList"></div>
     <button class="bt-chiudi" id="btChiudi" data-t="bt.chiudi">CHIUDI</button>
+  </div>
+</div>
+
+<!-- il registro: le imprese e il salvataggio di riserva. Si apre dal
+     bottone in fondo al menù. -->
+<div class="bottega registro hidden" id="registro">
+  <div class="bt-card">
+    <div class="rg-imprese hidden" id="rgImpreseBox">
+      <div class="bt-head" id="rgHead">🏆 IMPRESE</div>
+      <div class="bt-sub" id="rgSub"></div>
+      <div class="bt-list" id="rgImprese"></div>
+    </div>
+    <div class="rg-sez">
+      <div class="rg-tit" data-t="sv.tit">💾 SALVATAGGIO DI RISERVA</div>
+      <div class="bt-sub" data-t="sv.sub">La partita vive in questo browser. Copia il codice e tienilo in una nota: se si cancellano i dati, o cambi telefono, lo incolli qui e riprendi da dove eri.</div>
+      <div class="rg-azioni">
+        <button class="rg-btn" id="svCopia" data-t="sv.copia">COPIA IL CODICE</button>
+        <button class="rg-btn" id="svIncolla" data-t="sv.incolla">CARICA UN CODICE</button>
+      </div>
+      <textarea class="rg-codice hidden" id="svCodice" spellcheck="false" autocomplete="off"></textarea>
+      <div class="rg-msg" id="svMsg"></div>
+      <button class="rg-btn oro hidden" id="svCarica" data-t="sv.carica">CARICA</button>
+      <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
+    </div>
+    <button class="bt-chiudi" id="rgChiudi" data-t="bt.chiudi">CHIUDI</button>
   </div>
 </div>
 
@@ -632,7 +713,7 @@
       <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
       <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
     </div>
-    <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
+    <button class="reset-btn" id="registroBtn">💾 <span id="registroTesto">SALVATAGGIO</span></button>
   </div>
   <div class="diary hidden" id="diary">
     <div class="dy-lbl" data-t="diary.lbl">TENTATIVI PER TORRE</div>
@@ -643,7 +724,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260924-0822';</script>
+<script>window.BUILD = '260924-1453';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

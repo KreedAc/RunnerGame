@@ -168,6 +168,21 @@ const STRINGS = {
     'b.attack'    : 'Attacco',
     'b.power'     : 'Potenza',
 
+    'poi.lbl'     : 'DOPO',
+    /* --- il salvataggio di riserva --- */
+    'sv.bottone'  : 'SALVATAGGIO',
+    'sv.tit'      : '💾 SALVATAGGIO DI RISERVA',
+    'sv.sub'      : 'La partita vive in questo browser. Copia il codice e tienilo in una nota: se si cancellano i dati, o cambi telefono, lo incolli qui e riprendi da dove eri.',
+    'sv.copia'    : 'COPIA IL CODICE',
+    'sv.incolla'  : 'CARICA UN CODICE',
+    'sv.carica'   : 'CARICA',
+    'sv.sicuro'   : 'SICURO? SOVRASCRIVE TUTTO',
+    'sv.copiato'  : 'Copiato! Incollalo in una nota.',
+    'sv.seleziona': 'Tieni premuto sul codice e copialo.',
+    'sv.qui'      : 'Incolla qui sopra il codice.',
+    'sv.rotto'    : 'Questo codice non è valido.',
+    'sv.fatto'    : 'PARTITA CARICATA!',
+
     /* --- zone --- */
     'z.ice'       : 'VALLE GELATA',
     'z.wood'      : 'BOSCO ROSSO',
@@ -327,6 +342,21 @@ const STRINGS = {
     'z.ash'       : 'ASH MARSH',
     'z.glass'     : 'GLASS FOREST',
     'z.sky'       : 'BROKEN SKY',
+
+    'poi.lbl'     : 'NEXT',
+    /* --- backup save --- */
+    'sv.bottone'  : 'BACKUP',
+    'sv.tit'      : '💾 BACKUP SAVE',
+    'sv.sub'      : 'Your game lives in this browser. Copy the code and keep it in a note: if the data gets wiped, or you change phone, paste it here and pick up where you left off.',
+    'sv.copia'    : 'COPY THE CODE',
+    'sv.incolla'  : 'LOAD A CODE',
+    'sv.carica'   : 'LOAD',
+    'sv.sicuro'   : 'SURE? IT OVERWRITES EVERYTHING',
+    'sv.copiato'  : 'Copied! Paste it into a note.',
+    'sv.seleziona': 'Long-press the code and copy it.',
+    'sv.qui'      : 'Paste the code above.',
+    'sv.rotto'    : 'This code is not valid.',
+    'sv.fatto'    : 'GAME LOADED!',
 
     'bs.ice'      : 'THE FROST WARDEN!',
     'bs.wood'     : 'THE LORD OF THE WOODS!',

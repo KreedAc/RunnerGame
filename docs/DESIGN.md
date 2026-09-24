@@ -902,6 +902,31 @@ scostamento della camera sia tornato esattamente a zero. Verificata
 rompendola apposta: con la proiezione guasta la prova fallisce su quattro
 numeri.
 
+## 6f. Il salvataggio di riserva, l'anteprima, il contatore
+
+**Il salvataggio di riserva.** La partita vive nel localStorage del browser:
+pulire i dati, cambiare telefono o aprire il link da un'altra app la cancella,
+e chi prova il gioco per qualche giorno rischia di perdere tutto. Dal bottone
+💾 in fondo al menù si apre il registro: COPIA IL CODICE mette negli appunti
+la partita intera (JSON in base64 con una firma FNV in coda), CARICA UN CODICE
+la rimette. La firma serve a dire "questo codice è rotto" — un pezzo perso nel
+copia-incolla — invece di caricare mezza partita; spazi e a capo di una nota
+si ignorano. Caricare chiede due tocchi, perché sovrascrive tutto, e passa
+dalla stessa riparazione dei numeri del caricamento normale (`daSalvato`).
+Nel registro sta anche RICOMINCIA DA CAPO: cancellare tutto e mettere al
+sicuro tutto sono la stessa faccenda, e lì non si tocca per sbaglio.
+`tools/riserva.js` fa il giro completo.
+
+**L'anteprima.** I numeri di una riga si leggono quando è già vicina: si
+decideva una mossa alla volta. In corsa, a destra, tre caselline mostrano la
+riga DOPO quella che hai davanti, in ordine di corsia e col colore della
+portata (verde, rosso, ⚔ l'arma, 👹 i nemici). Nel muro no: lì i numeri sono
+vicini e bastano.
+
+**Il contatore.** Cinque tocchi sulla marca della build accendono in basso a
+sinistra fotogrammi al secondo, densità di pixel e draw call. Serve a capire,
+con un telefono vero in mano, dove il gioco arranca.
+
 ## 7. Le due lingue
 
 Il gioco aveva una quarantina di stringhe, tutte scritte a mano in italiano
@@ -1238,7 +1263,6 @@ Se su fascia bassa non regge, in ordine di resa:
    browser che oggi si mangia un pezzo di schermo, e funziona offline. È anche
    la strada più corta per il Play Store: una PWA si impacchetta come TWA con
    Bubblewrap, senza riscrivere niente.
-3. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
-
 Fatto, e tolto da questa lista: i diamanti si spendono (seconda occasione,
-aspetti), c'è un obiettivo al giorno, e la prima partita insegna giocando.
+aspetti), c'è un obiettivo al giorno, la prima partita insegna giocando, e
+l'anteprima della riga successiva (§6f).

@@ -102,6 +102,17 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
     }, 16);
   });
 
+  /* Il renderer software fa pochi fotogrammi, e a ogni fotogramma il gioco
+     avanza al massimo 0,05 s: su una macchina carica la corsa durava più
+     di tre minuti. La spinta fa avanzare la logica a passo fisso, come nelle
+     altre prove, e rende la durata indipendente dagli FPS. */
+  await p.evaluate(() => {
+    const G = window.BlockyRun;
+    window.__spinta = setInterval(() => {
+      if (['run', 'wall', 'boss'].includes(G.state)) for (let i = 0; i < 4; i++) update(1 / 60);
+    }, 50);
+  });
+
   /* se compare la seconda occasione si accetta: va provata anche quella */
   const finita = p.waitForFunction(
     () => ['over', 'hub'].includes(window.BlockyRun.state), null, { timeout: 180000 });

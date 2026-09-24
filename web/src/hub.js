@@ -135,6 +135,7 @@ function tapReset() {
   Object.assign(meta, defaultSave());
   writeSave(meta);
   flashBanner(t('reset.done'));
+  chiudiRegistro();
   if (rebuildHook) rebuildHook();
   renderHub();
 }
@@ -254,6 +255,78 @@ function apriBottega() {
 }
 function chiudiBottega() { $('bottega').classList.add('hidden'); }
 
+/* ------------------------------ IL REGISTRO ---------------------------
+   Imprese e salvataggio di riserva, in un pannello solo che si apre dal
+   fondo del menù. Il "ricomincia da capo" sta qui dentro: cancellare tutto
+   e mettere al sicuro tutto sono due facce della stessa cosa, e fuori dal
+   menù principale non si tocca per sbaglio. */
+let caricaArmato = false;
+
+function apriRegistro() {
+  caricaArmato = false;
+  $('svCodice').classList.add('hidden');
+  $('svCarica').classList.add('hidden');
+  $('svCarica').classList.remove('armata');
+  $('svCarica').textContent = t('sv.carica');
+  svMsg('');
+  if (typeof renderImprese === 'function') renderImprese();
+  renderReset();
+  $('registro').classList.remove('hidden');
+}
+function chiudiRegistro() { $('registro').classList.add('hidden'); }
+
+function svMsg(txt, male) {
+  $('svMsg').textContent = txt;
+  $('svMsg').classList.toggle('no', !!male);
+}
+
+function copiaCodice() {
+  writeSave(meta);
+  const codice = codiceSalvataggio(meta);
+  const box = $('svCodice');
+  box.value = codice;
+  box.readOnly = true;
+  box.classList.remove('hidden');
+  $('svCarica').classList.add('hidden');
+  caricaArmato = false;
+  const aMano = () => { box.focus(); box.select(); svMsg(t('sv.seleziona')); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(codice).then(() => svMsg(t('sv.copiato')), aMano);
+  } else aMano();
+}
+
+function preparaIncolla() {
+  const box = $('svCodice');
+  box.value = '';
+  box.readOnly = false;
+  box.classList.remove('hidden');
+  $('svCarica').classList.remove('hidden', 'armata');
+  $('svCarica').textContent = t('sv.carica');
+  caricaArmato = false;
+  svMsg(t('sv.qui'));
+  box.focus();
+}
+
+/* come il ricomincia: due tocchi, perché sovrascrive tutto */
+function caricaCodice() {
+  const nuovo = leggiCodice($('svCodice').value);
+  if (!nuovo) { svMsg(t('sv.rotto'), true); caricaArmato = false; return; }
+  if (!caricaArmato) {
+    caricaArmato = true;
+    $('svCarica').classList.add('armata');
+    $('svCarica').textContent = t('sv.sicuro');
+    svMsg('');
+    return;
+  }
+  for (const k of Object.keys(meta)) delete meta[k];
+  Object.assign(meta, nuovo);
+  writeSave(meta);
+  chiudiRegistro();
+  flashBanner(t('sv.fatto'), 'good');
+  if (rebuildHook) rebuildHook();
+  renderHub();
+}
+
 /* ------------------------------ DIARIO --------------------------------
    Quanti tentativi è costata ogni torre. Non serve al gioco: serve a
    tarare la difficoltà su una partita vera invece che sul simulatore,
@@ -287,6 +360,7 @@ function renderHub() {
   renderRebirth();
   renderReset();
   renderDiary();
+  renderRegistroBtn();
   renderOggi();
 
   /* Alla prima partita servono le regole; dopo serve il risultato.
@@ -329,9 +403,30 @@ document.querySelectorAll('.up-card').forEach(card => {
 });
 $('rebirthCard').addEventListener('click', tapRebirth);
 $('resetBtn').addEventListener('click', tapReset);
+$('registroBtn').addEventListener('click', apriRegistro);
+$('rgChiudi').addEventListener('click', chiudiRegistro);
+$('svCopia').addEventListener('click', copiaCodice);
+$('svIncolla').addEventListener('click', preparaIncolla);
+$('svCarica').addEventListener('click', caricaCodice);
+
+/* cinque tocchi sulla marca della build accendono il contatore dei
+   fotogrammi: serve a capire su quale telefono il gioco arranca */
+let tocchiBuild = 0, tocchiTimer = 0;
+$('buildTag').addEventListener('click', () => {
+  tocchiBuild++;
+  clearTimeout(tocchiTimer);
+  tocchiTimer = setTimeout(() => { tocchiBuild = 0; }, 2500);
+  if (tocchiBuild >= 5) { tocchiBuild = 0; $('fps').classList.toggle('hidden'); }
+});
 $('runePill').addEventListener('click', apriBottega);
 $('btChiudi').addEventListener('click', chiudiBottega);
 $('buildTag').textContent = 'BUILD ' + (window.BUILD || 'dev');
+
+/* il bottone in fondo: le imprese quando ci sono, il salvataggio sempre */
+function renderRegistroBtn() {
+  $('registroTesto').textContent = typeof impreseTesto === 'function'
+    ? impreseTesto() : t('sv.bottone');
+}
 
 /* le bandierine: quella attiva si accende, l'altra cambia lingua */
 function renderLangs() {

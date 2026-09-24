@@ -502,16 +502,55 @@ function sanaNumeri(dato, modello) {
   return dato;
 }
 
+/* un salvataggio letto da fuori (localStorage o codice di riserva):
+   i campi che mancano prendono il valore di partenza, quelli rotti anche */
+function daSalvato(s) {
+  const base = defaultSave();
+  return sanaNumeri(Object.assign(base, s, { up: Object.assign(base.up, s.up) }),
+                    defaultSave());
+}
+
 function loadSave() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultSave();
-    const s = JSON.parse(raw);
-    const base = defaultSave();
-    return sanaNumeri(Object.assign(base, s, { up: Object.assign(base.up, s.up) }),
-                      defaultSave());
+    return daSalvato(JSON.parse(raw));
   } catch (e) {
     return defaultSave();
+  }
+}
+
+/* ---------------------- IL SALVATAGGIO DI RISERVA ----------------------
+   La partita vive nel localStorage del browser: pulire i dati, cambiare
+   telefono o aprire il link da un'altra app la cancella. Il codice è il
+   salvataggio in chiaro, in base64, con una firma in coda: si copia in una
+   nota e si reincolla. La firma serve a dire "questo codice è rotto" (un
+   pezzo mancato nel copia-incolla) invece di caricare mezza partita. */
+const CODICE_TESTA = 'TDG1';
+
+function firma(txt) {
+  let h = 2166136261;                                   // FNV-1a, 32 bit
+  for (let i = 0; i < txt.length; i++) { h ^= txt.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
+}
+
+function codiceSalvataggio(m) {
+  const json = JSON.stringify(m);
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+  return CODICE_TESTA + '.' + b64 + '.' + firma(b64);
+}
+
+/* null se il codice non è buono: nessuna eccezione esce di qui */
+function leggiCodice(txt) {
+  try {
+    const pezzi = String(txt).replace(/\s+/g, '').split('.');
+    if (pezzi.length !== 3 || pezzi[0] !== CODICE_TESTA) return null;
+    if (firma(pezzi[1]) !== pezzi[2]) return null;
+    const s = JSON.parse(decodeURIComponent(escape(atob(pezzi[1]))));
+    if (!s || typeof s !== 'object' || Array.isArray(s)) return null;
+    return daSalvato(s);
+  } catch (e) {
+    return null;
   }
 }
 

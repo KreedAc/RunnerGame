@@ -159,6 +159,7 @@ tools/smoke.js        gioca una corsa e controlla che nessun numero impazzisca
 tools/skins.js        compra, indossa e salva un aspetto: il giro dei diamanti
 tools/bottega.js      bottega delle rune e obiettivo del giorno: il giro delle rune
 tools/guida.js        la prima partita guidata, giocata da un robot
+tools/riserva.js      salvataggio di riserva: copia, azzera, ricarica identico; anteprima
 tools/misura-home.js  quanti pixel serve il menù e chi se li prende
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
@@ -196,5 +197,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Eroe rifatto nel dettaglio, contorni sottili del colore del pezzo, lastricato sulla pista
 - [x] Carceriere rifatto: un gigante vichingo muscoloso in armatura, diverso per regno (tratto, barba, arma), con le chiavi della prigione alla cintura
 - [x] Nemici e principessa rifatti nello stesso stile (nemici clonati da uno stampo per tipo)
+- [x] Salvataggio di riserva (codice da copiare), anteprima della riga dopo, contatore FPS nascosto
 - [ ] Audio sintetizzato e vibrazione (prossimo)
 - [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)

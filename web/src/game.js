@@ -1380,6 +1380,60 @@ addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') run.targetX = clamp(run.targetX + 1.2, -CFG.laneLimit, CFG.laneLimit);
 });
 
+/* ------------------------- L'ANTEPRIMA DELLA RIGA ----------------------
+   I numeri di una riga si leggono quando è già vicina: si decide una mossa
+   alla volta. L'anteprima mostra la riga DOPO quella che hai davanti, in
+   ordine di corsia, col colore della portata: così si può pensare "vado a
+   sinistra adesso perché dopo la verde è a sinistra". Solo nella pista:
+   nel muro i numeri sono vicini e bastano. */
+let poiChiave = '', poiTempo = 0;
+
+function aggiornaPoi(dt) {
+  const el = $('poi');
+  const mostra = state === 'run' && !guida.attiva;
+  el.classList.toggle('hidden', !mostra);
+  if (!mostra) { poiChiave = ''; return; }
+  if ((poiTempo -= dt) > 0) return;
+  poiTempo = 0.12;
+  /* le file davanti, dalla più vicina: fra le cose che occupano una corsia */
+  const conta = it => !it.done && it.z < run.z &&
+    (it.kind === 'pillar' || it.kind === 'enemy' || it.kind === 'weapon' || it.kind === 'trappola');
+  const zs = [...new Set(items.filter(conta).map(it => it.z))].sort((a, b) => b - a);
+  const z = zs[1];
+  if (z === undefined) { el.classList.add('hidden'); return; }
+  const dmg = damage();
+  const celle = CFG.laneX.map(x => {
+    const it = items.find(i => conta(i) && i.z === z && Math.abs(i.x - x) < 0.5);
+    if (!it) return ['', '·'];
+    if (it.kind === 'weapon') return ['arma', '⚔'];
+    if (it.kind === 'trappola') return ['trap', trappolaIcona(it)];
+    const ok = dmg >= it.hp;
+    return [ok ? 'si' : 'no', (it.kind === 'enemy' ? '👹' : '') + fmt(it.hp)];
+  });
+  const chiave = celle.map(c => c.join(':')).join('|');
+  if (chiave === poiChiave) return;
+  poiChiave = chiave;
+  $('poiRiga').innerHTML = celle.map(([k, v]) =>
+    '<span class="poi-c ' + k + '">' + v + '</span>').join('');
+}
+
+/* le trappole dei biomi le riempie più avanti trappole.js; qui basta
+   un'icona di ripiego */
+let trappolaIcona = () => '⚠';
+
+/* ------------------------ IL CONTATORE DEI FOTOGRAMMI ------------------ */
+let fpsN = 0, fpsT = 0;
+function aggiornaFps(dtVero) {
+  const el = $('fps');
+  if (el.classList.contains('hidden')) return;
+  fpsN++; fpsT += dtVero;
+  if (fpsT < 0.5) return;
+  el.textContent = Math.round(fpsN / fpsT) + ' fps · ' +
+    renderer.getPixelRatio().toFixed(2) + 'x · ' +
+    renderer.info.render.calls + ' dc';
+  fpsN = 0; fpsT = 0;
+}
+
 /* --------------------------------- LOOP -------------------------------- */
 const HIT_X = 1.15;
 
@@ -1495,6 +1549,7 @@ function update(dt) {
   }
 
   fadeLabels();
+  aggiornaPoi(dt);
 
   /* --- nemici abbattuti, raccolte, scaglie --- */
   for (const it of items) {
@@ -1656,6 +1711,7 @@ buildRun();
      sempre, anche se il telefono va a dieci fotogrammi. */
   const dtVero = clock.getDelta();
   adattaRisoluzione(dtVero);
+  aggiornaFps(dtVero);
   let dt = Math.min(dtVero, 0.05);
   if (fermo > 0) { fermo = Math.max(0, fermo - dt); dt *= 0.1; }
   /* la prima partita aspetta il tuo dito: davanti alla prima rossa il
