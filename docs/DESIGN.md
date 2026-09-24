@@ -870,6 +870,42 @@ La minaccia non la porta il colore ma il numero rosso sopra la testa e la
 corona: così il carceriere del Cielo Spezzato può essere azzurro senza
 sembrare un amico.
 
+**E combatte a modo suo.** I colori distinguevano le zone, il gioco no. Il
+duello è il posto giusto per cambiarle, perché è lì che il giocatore ha il dito
+pronto. Ogni tema porta `duello: '<stile>'`, e `STILI_DUELLO` in `core.js`
+dice cosa cambia:
+
+| zona | carceriere | stile | cosa succede |
+|---|---|---|---|
+| Valle Gelata | Guardiano del Gelo | base | il duello normale: si impara qui |
+| Bosco Rosso | Signore del Bosco | svelto | l'anello si chiude in 0,76 s invece di 0,9 |
+| Dune d'Ossa | Re d'Ossa | storto | pause casuali fra 0,06 e 0,75 s: niente ritmo |
+| Notte di Rúna | Ombra di Rúna | ombra | a metà strada l'anello sparisce e il bersaglio non si accende: si conta |
+| Bocca di Fuoco | Signore del Vulcano | lampo | 0,62 s: velocissimo |
+| Palude di Cenere | Mangiacenere | doppio | due anelli a 0,32 s l'uno dall'altro, ciascuno vale 0,6 |
+| Foresta di Vetro | Re di Vetro | finta | un anello su tre è rosso: toccarlo gli ridà vita |
+| Cielo Spezzato | Signore del Tuono | salto | il bersaglio si sposta fino a 75 px a ogni anello |
+
+La prima scritta del duello dice come combatte *quel* carceriere — "non
+toccare quelli rossi" serve prima del primo rosso, non dopo.
+
+Il doppio vale 0,6 a colpo perché due anelli per giro sarebbero stati un
+regalo. Il simulatore gioca ogni stile con una mira peggiorata di una
+percentuale stimata (`FATICA`: ombra 0,7, lampo 0,75…) e con una probabilità
+di toccare i finti (`ABBOCCA`): la salita fino alla torre 10 passa da 25,5 a
+25,0 corse, dentro il rumore. Il duello pesa solo sugli scontri in bilico, e
+gli stili cambiano *come* li vinci, non quanti.
+
+Per provarli c'era un problema: con la grafica emulata il browser di prova fa
+dieci fotogrammi al secondo, e un robot che deve toccare in una finestra di
+80 ms a quella velocità la salta quasi sempre. La prova giusta non aspetta i
+fotogrammi: chiama `update(1/60)` a mano, in un ciclo, dentro un'unica
+chiamata. È deterministica e dura un secondo. Risultato, a 85% della vita del
+carceriere: il robot che tocca a tempo vince in sette zone su otto, quello
+che tocca tardi perde in tutte. L'ottava è il Re di Vetro, dove un anello
+finto lasciato chiudere costa un'occasione — ed è giusto che sia il più
+insidioso.
+
 ## 7d. La home in uno schermo
 
 Con le otto zone, le bandierine, gli aspetti e il diario, il menù era arrivato

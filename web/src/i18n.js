@@ -63,10 +63,19 @@ const STRINGS = {
     'co.bonus'    : '+{0}% POTENZA',
 
     /* --- il duello --- */
-    'du.tocca'    : 'TOCCA QUANDO SI CHIUDE!',
     'du.perfetto' : 'PERFETTO!',
     'du.buono'    : 'BUONO!',
     'du.mancato'  : 'MANCATO',
+    'du.finta'    : 'FINTA!',
+    /* come combatte ciascun carceriere: la prima cosa che leggi */
+    'du.h.base'   : 'TOCCA QUANDO SI CHIUDE!',
+    'du.h.svelto' : 'È SVELTO: TIENITI PRONTO!',
+    'du.h.storto' : 'NON HA RITMO: GUARDA L\'ANELLO!',
+    'du.h.ombra'  : 'L\'ANELLO SVANISCE: CONTA!',
+    'du.h.lampo'  : 'VELOCE COME LA LAVA!',
+    'du.h.doppio' : 'DUE ANELLI DI FILA!',
+    'du.h.finta'  : 'NON TOCCARE QUELLI ROSSI!',
+    'du.h.salto'  : 'IL BERSAGLIO SI SPOSTA!',
 
     /* --- rinascita --- */
     'rb.head'     : '🔮 RINASCITA',
@@ -179,10 +188,18 @@ const STRINGS = {
 
     'co.bonus'    : '+{0}% POWER',
 
-    'du.tocca'    : 'TAP WHEN IT CLOSES!',
     'du.perfetto' : 'PERFECT!',
     'du.buono'    : 'GOOD!',
     'du.mancato'  : 'MISS',
+    'du.finta'    : 'FAKE!',
+    'du.h.base'   : 'TAP WHEN IT CLOSES!',
+    'du.h.svelto' : 'HE\'S QUICK: GET READY!',
+    'du.h.storto' : 'NO RHYTHM: WATCH THE RING!',
+    'du.h.ombra'  : 'THE RING FADES: COUNT!',
+    'du.h.lampo'  : 'FAST AS LAVA!',
+    'du.h.doppio' : 'TWO RINGS IN A ROW!',
+    'du.h.finta'  : 'DON\'T TAP THE RED ONES!',
+    'du.h.salto'  : 'THE TARGET MOVES!',
     'run.record'  : 'NEW RECORD!',
 
     'rb.head'     : '🔮 REBIRTH',

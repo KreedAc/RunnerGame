@@ -105,6 +105,25 @@ const G = {
   premioVinta: num(game, /outcome === 'win' \? Math\.round\((\d+)\s*\*\s*meta\.level/, 'premio vittoria')
 };
 
+/* Gli stili del duello, una riga ciascuno in STILI_DUELLO, e quale stile
+   tocca a ogni zona, nell'ordine delle zone. */
+const STILI = (() => {
+  const blocco = core.match(/STILI_DUELLO\s*=\s*\{([\s\S]*?)\n\};/);
+  if (!blocco) { console.error('Il simulatore non trova più STILI_DUELLO.'); process.exit(1); }
+  const out = {};
+  for (const m of blocco[1].matchAll(/^\s*(\w+)\s*:\s*\{([^}]*)\}/gm)) {
+    const s = {};
+    for (const kv of m[2].matchAll(/(\w+):\s*(-?\d*\.?\d+)/g)) s[kv[1]] = parseFloat(kv[2]);
+    out[m[1]] = s;
+  }
+  return out;
+})();
+const STILE_ZONA = [...core.matchAll(/duello:\s*'(\w+)'/g)].map(m => m[1]);
+if (!STILE_ZONA.length || STILE_ZONA.some(n => !STILI[n])) {
+  console.error('Una zona ha uno stile di duello che STILI_DUELLO non conosce.');
+  process.exit(1);
+}
+
 /* Una costante può esistere in core.js e non essere usata da nessuna
    parte: è successo con CHEST_PRICE e CHEST_LOOT, definite e mai
    collegate, e il simulatore misurava allegramente un gioco diverso da
@@ -225,7 +244,7 @@ function corsa(m, stile) {
   }
 
   const esito = rotti >= G.righeMuro
-    ? duello(Math.max(0, potenza), vitaBoss(m.level), stile) : 'muro';
+    ? duello(Math.max(0, potenza), vitaBoss(m.level), stile, m.level) : 'muro';
   oro += Math.round(rotti * u * G.bloccoValore * molOro());
   if (esito === 'vinta') oro += Math.round(G.premioVinta * m.level * molOro());
   return { esito, alMuro, alBoss: Math.max(0, potenza), rotti, oro };
@@ -241,25 +260,48 @@ const MIRA = {
   ingenuo : [0.10, 0.30]
 };
 
-function duello(P, B, stile) {
+/* Quanto ogni stile peggiora la mira, rispetto al carceriere normale.
+   STIMATO, non misurato — come MIRA. Un anello che svanisce o uno
+   velocissimo si prendono peggio di uno che si chiude con calma. */
+const FATICA = { base: 1, svelto: 0.9, storto: 0.85, ombra: 0.7,
+                 lampo: 0.75, doppio: 0.9, finta: 0.9, salto: 0.85 };
+/* e quante volte un giocatore tocca un anello finto invece di lasciarlo */
+const ABBOCCA = { perfetto: 0.05, umano: 0.2, ingenuo: 0.45 };
+
+function duello(P, B, stile, livello) {
   const D = G.duello;
-  const q = MIRA[stile];
+  const nome = STILE_ZONA[(livello - 1) % STILE_ZONA.length];
+  const S = STILI[nome];
+  const f = FATICA[nome] || 1;
+  const q = [MIRA[stile][0] * f, MIRA[stile][1] * f];
+  const peso = S.peso || 1;
+  const giro = S.giro || D.giro;
   const ritmo = Math.max(P, B) / D.durata;           // le due forze scendono insieme
-  const alBersaglio = (D.da - 1) / (D.da - D.a) * D.giro;
-  const passo = alBersaglio + D.pausa;               // da un tocco al successivo
-  let t = 0, prossimo = D.pausa + alBersaglio;
+  const alBersaglio = (D.da - 1) / (D.da - D.a) * giro;
+  const pausa = () => S.pausaA ? fra(S.pausaDa, S.pausaA) : D.pausa;
+
+  /* gli istanti in cui si tocca: per ogni giro uno, o due col doppio */
+  let t = 0, prossimo = pausa() + alBersaglio, secondo = -1, primoGiro = true;
   let p = P, b = B;
   const dt = 1 / 60;
+  const tira = finto => {
+    if (finto) { if (caso() < ABBOCCA[stile]) b += B * D.critB * peso; return; }
+    const r = caso();
+    if (r < q[0]) b -= B * D.critP * peso;
+    else if (r < q[0] + q[1]) b -= B * D.critB * peso;
+  };
   while (p > 0 && b > 0) {
     t += dt;
     p -= ritmo * dt;
     b -= ritmo * dt;
     if (t >= prossimo) {
-      const r = caso();
-      if (r < q[0]) b -= B * D.critP;
-      else if (r < q[0] + q[1]) b -= B * D.critB;
-      prossimo += passo;
+      const finto = !!S.finta && !primoGiro && caso() < S.finta;
+      tira(finto);
+      primoGiro = false;
+      if (S.doppio && !finto) secondo = prossimo + S.doppio;
+      prossimo += (S.doppio && !finto ? S.doppio : 0) + pausa() + alBersaglio;
     }
+    if (secondo > 0 && t >= secondo) { tira(false); secondo = -1; }
   }
   /* come nel gioco: il boss cade se arriva a zero, anche insieme a te */
   return b <= 0 ? 'vinta' : 'boss';

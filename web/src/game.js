@@ -822,31 +822,61 @@ function updateBossFight(dt) {
 }
 
 /* ------------------------------ IL DUELLO ------------------------------
-   Un anello si stringe sul bersaglio, a metà strada fra te e il carceriere.
-   Tocchi — dove vuoi, lo schermo intero è il bottone — quando combacia:
-   perfetto o buono è un colpo critico, che toglie al carceriere una fetta
-   della vita con cui era partito. Le costanti stanno in DUELLO (core.js)
-   perché il simulatore le deve leggere.
+   Un anello si stringe sul bersaglio sul petto del carceriere. Tocchi —
+   dove vuoi, lo schermo intero è il bottone — quando combacia: perfetto o
+   buono è un colpo critico, che toglie al carceriere una fetta della vita
+   con cui era partito. Le costanti stanno in DUELLO e STILI_DUELLO
+   (core.js) perché il simulatore le deve leggere.
 
-   L'anello è DOM e non 3D: deve essere nitido, sempre sopra a tutto, e
-   non deve mai finire dietro alla mazza del carceriere. */
-const duello = { aperto: false, anello: -1, pausa: 0, primo: true };
+   Ogni zona ha il suo stile (vedi STILI_DUELLO): per questo gli anelli
+   sono una lista e non uno solo — il Mangiacenere ne tira due di fila.
+   Un anello con t < 0 esiste già ma non è ancora comparso.
+
+   Gli anelli sono DOM e non 3D: devono essere nitidi, sempre sopra a
+   tutto, e non finire mai dietro alla mazza del carceriere. */
+const duello = { aperto: false, anelli: [], attesa: 0, primo: true, stile: {}, dx: 0, dy: 0 };
 const _duPos = new THREE.Vector3();
-const alBersaglio = () => (DUELLO.da - 1) / (DUELLO.da - DUELLO.a) * DUELLO.giro;
+const giroOra = () => duello.stile.giro || DUELLO.giro;
+const alBersaglio = () => (DUELLO.da - 1) / (DUELLO.da - DUELLO.a) * giroOra();
+const pausaOra = () => duello.stile.pausaA
+  ? rnd(duello.stile.pausaDa, duello.stile.pausaA) : DUELLO.pausa;
 
 function apriDuello() {
+  const nome = themeFor(meta.level).duello || 'base';
+  duello.stile = STILI_DUELLO[nome] || {};
   duello.aperto = true;
-  duello.anello = -1;                    // -1: fra un anello e l'altro
-  duello.pausa = DUELLO.pausa;
+  duello.anelli = [];
+  duello.attesa = DUELLO.pausa;
   duello.primo = true;
-  $('duScritta').textContent = t('du.tocca');
+  duello.dx = duello.dy = 0;
+  /* la prima scritta dice come combatte QUESTO carceriere: "non toccare
+     quelli rossi" serve prima del primo rosso, non dopo */
+  $('duScritta').textContent = t('du.h.' + nome);
   $('duScritta').classList.remove('via');
   $('duello').classList.remove('hidden');
 }
 
 function chiudiDuello() {
   duello.aperto = false;
+  duello.anelli = [];
   $('duello').classList.add('hidden');
+}
+
+function nasceAnello() {
+  const S = duello.stile;
+  const finto = !!S.finta && !duello.primo && Math.random() < S.finta;
+  duello.anelli.push({ t: 0, finto });
+  if (S.doppio && !finto) duello.anelli.push({ t: -S.doppio, finto: false });
+  if (S.salto && !duello.primo) {
+    duello.dx = rnd(-S.salto, S.salto);
+    duello.dy = rnd(-S.salto * 0.6, S.salto * 0.6);
+  }
+}
+
+function togliAnello(a) {
+  duello.anelli.splice(duello.anelli.indexOf(a), 1);
+  if (!duello.anelli.length) duello.attesa = pausaOra();
+  if (duello.primo) { duello.primo = false; $('duScritta').classList.add('via'); }
 }
 
 function aggiornaDuello(dt) {
@@ -854,44 +884,79 @@ function aggiornaDuello(dt) {
      dal numero della tua potenza, che a metà strada finiva coperto */
   _duPos.set(0.3, 2.3, bossZ + 0.6).project(camera);
   const el = $('duello');
-  el.style.left = ((_duPos.x + 1) / 2 * 100) + '%';
-  el.style.top  = ((1 - (_duPos.y + 1) / 2) * 100) + '%';
+  el.style.left = 'calc(' + ((_duPos.x + 1) / 2 * 100) + '% + ' + duello.dx.toFixed(0) + 'px)';
+  el.style.top  = 'calc(' + ((1 - (_duPos.y + 1) / 2) * 100) + '% + ' + duello.dy.toFixed(0) + 'px)';
 
-  if (duello.anello < 0) {
-    duello.pausa -= dt;
-    if (duello.pausa <= 0) duello.anello = 0;
-  } else {
-    duello.anello += dt;
-    if (duello.anello >= DUELLO.giro) esitoColpo('mancato');   // chiuso senza un tocco
+  if (!duello.anelli.length) {
+    duello.attesa -= dt;
+    if (duello.attesa <= 0) nasceAnello();
   }
-  const s = duello.anello < 0 ? 0
-          : DUELLO.da - (DUELLO.da - DUELLO.a) * duello.anello / DUELLO.giro;
-  const anello = $('duAnello');
-  anello.style.transform = 'translate(-50%,-50%) scale(' + s.toFixed(3) + ')';
-  anello.style.opacity = duello.anello < 0 ? 0 : 1;
-  /* il bersaglio si accende quando è il momento: chi non ha ancora capito
-     il ritmo lo impara dal colore */
-  const scarto = duello.anello < 0 ? 9 : Math.abs(duello.anello - alBersaglio());
-  el.classList.toggle('ora', scarto <= DUELLO.perfetto);
+  const giro = giroOra();
+  for (const a of duello.anelli.slice()) {
+    a.t += dt;
+    if (a.t >= giro) {                    // chiuso senza un tocco
+      togliAnello(a);
+      if (!a.finto) colpo('mancato');
+    }
+  }
+
+  /* due elementi per due anelli al massimo: il primo in lista sul primo */
+  const S = duello.stile;
+  let ora = false;
+  ['duAnello', 'duAnello2'].forEach((id, k) => {
+    const a = duello.anelli[k];
+    const e = $(id);
+    if (!a || a.t < 0) { e.style.opacity = 0; return; }
+    const s = DUELLO.da - (DUELLO.da - DUELLO.a) * a.t / giro;
+    e.style.transform = 'translate(-50%,-50%) scale(' + s.toFixed(3) + ')';
+    e.classList.toggle('finto', a.finto);
+    /* l'Ombra di Rúna: a metà strada l'anello si spegne, e si conta */
+    e.style.opacity = S.svanisce && a.t > S.svanisce * giro ? 0.06 : 1;
+    if (!a.finto && Math.abs(a.t - alBersaglio()) <= DUELLO.perfetto) ora = true;
+  });
+  /* il bersaglio si accende quando è il momento — tranne con l'Ombra, dove
+     lo farebbe l'anello invisibile al posto tuo */
+  el.classList.toggle('ora', ora && !S.svanisce);
 }
 
 function tocco() {
-  if (!duello.aperto || state !== 'boss' || duello.anello < 0) return;
-  const scarto = Math.abs(duello.anello - alBersaglio());
-  esitoColpo(scarto <= DUELLO.perfetto ? 'perfetto'
-           : scarto <= DUELLO.buono    ? 'buono' : 'mancato');
+  if (!duello.aperto || state !== 'boss') return;
+  /* si giudica l'anello più vicino al suo momento giusto: con due anelli
+     in volo non si deve indovinare quale dei due si sta toccando */
+  let a = null, scarto = Infinity;
+  for (const x of duello.anelli) {
+    if (x.t < 0) continue;
+    const d = Math.abs(x.t - alBersaglio());
+    if (d < scarto) { scarto = d; a = x; }
+  }
+  if (!a) return;
+  togliAnello(a);
+  if (a.finto) { colpo('finta'); return; }
+  colpo(scarto <= DUELLO.perfetto ? 'perfetto'
+      : scarto <= DUELLO.buono    ? 'buono' : 'mancato');
 }
 
-function esitoColpo(esito) {
-  duello.anello = -1;
-  duello.pausa = DUELLO.pausa;
-  if (duello.primo) { duello.primo = false; $('duScritta').classList.add('via'); }
+function colpo(esito) {
   const el = $('duello');
-  const qui = { x: parseFloat(el.style.left), y: parseFloat(el.style.top) - 10 };
+  const r = el.getBoundingClientRect();
+  const qui = { x: r.left / innerWidth * 100, y: r.top / innerHeight * 100 - 10 };
   if (esito === 'mancato') { popup(t('du.mancato'), '#aab6c6', qui); return; }
 
+  const peso = duello.stile.peso || 1;
+  if (esito === 'finta') {
+    /* il Re di Vetro ti ha ingannato: si riprende un colpo buono */
+    const su = Math.max(1, Math.round(run.bossHpIni * DUELLO.critB * peso));
+    run.bossHp += su;
+    popup(t('du.finta'), '#ff8f7a', qui);
+    if (boss) popup('+' + fmt(su), '#ff8f7a', puntoSchermo(boss, 3.6));
+    setLabel(bossSprite, fmt(run.bossHp), '#ff8f7a');
+    impatto(0.5);
+    pulsa('powerPill', 'giu');
+    return;
+  }
+
   const perfetto = esito === 'perfetto';
-  const via = Math.max(1, Math.round(run.bossHpIni * (perfetto ? DUELLO.critP : DUELLO.critB)));
+  const via = Math.max(1, Math.round(run.bossHpIni * (perfetto ? DUELLO.critP : DUELLO.critB) * peso));
   run.bossHp = Math.max(0, run.bossHp - via);
   popup(t(perfetto ? 'du.perfetto' : 'du.buono'), perfetto ? '#ffd24b' : '#8fe3ff', qui);
   if (boss) popup('−' + fmt(via), '#ff8f7a', puntoSchermo(boss, 3.6));
