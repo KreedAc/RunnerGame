@@ -15,21 +15,53 @@ function clearWorld() {
 /* ------------------------------ SENTIERO ------------------------------ */
 let pathMat = null, pathTex = null;
 function pathMaterial(total) {
-  /* Bande morbide lungo la corsia: senza, il terreno è una lastra piatta
-     e alla velocità di corsa non si percepisce nessun movimento. */
+  /* Il lastricato. Il sentiero è la superficie che si vede di più in tutto
+     il gioco — metà schermo, sempre — ed era un colore piatto con due
+     bande ogni nove metri. Adesso sono pietre a filari sfalsati, con le
+     fughe e un tono leggermente diverso per ciascuna, nel colore della
+     zona. I filari fanno anche il lavoro delle bande: scorrendo sotto i
+     piedi dicono quanto vai veloce.
+
+     128×128 pixel per 8×8 unità di pista: una potenza di due, così la GPU
+     può farne le versioni ridotte per la distanza (senza, il lastricato
+     lontano sfarfalla in un moiré). */
+  const S = 128, FILA = 16;                       // un filare = un'unità
   const c = document.createElement('canvas');
-  c.width = 8; c.height = 64;
+  c.width = c.height = S;
   const g = c.getContext('2d');
-  const hexOf = n => '#' + n.toString(16).padStart(6, '0');
-  g.fillStyle = hexOf(C.ground); g.fillRect(0, 0, 8, 64);
-  g.globalAlpha = 0.34; g.fillStyle = hexOf(C.groundEdge); g.fillRect(0, 0, 8, 5);
-  g.globalAlpha = 0.16; g.fillRect(0, 32, 8, 3);
+  const base = new THREE.Color(C.ground);
+  const fuga = new THREE.Color(C.groundEdge);
+  const css = (col, k) => 'rgb(' + [col.r, col.g, col.b].map(v => Math.round(clamp(v * k, 0, 1) * 255)).join(',') + ')';
+
+  g.fillStyle = css(fuga, 0.92);
+  g.fillRect(0, 0, S, S);
+  for (let y = 0; y < S; y += FILA) {
+    /* sfalsati come i mattoni: la fuga di un filare cade a metà pietra del
+       successivo. Le larghezze sommano sempre a S, altrimenti la
+       ripetizione mostrerebbe la cucitura. */
+    let x = (y / FILA) % 2 ? -rint(9, 15) : 0;
+    while (x < S) {
+      const w = Math.min(rint(20, 34), S - x);
+      const k = 0.94 + Math.random() * 0.1;            // ogni pietra il suo tono
+      g.fillStyle = css(base, k);
+      g.fillRect(x + 1.5, y + 1.5, w - 3, FILA - 3);
+      g.fillStyle = css(base, k * 1.05);               // un filo di luce sul bordo alto
+      g.fillRect(x + 1.5, y + 1.5, w - 3, 2);
+      if (x < 0) {                                     // la pietra tagliata a sinistra
+        g.fillStyle = css(base, k);                    // rientra da destra
+        g.fillRect(S + x + 1.5, y + 1.5, -x - 1.5, FILA - 3);
+      }
+      x += w;
+    }
+  }
 
   if (pathTex) pathTex.dispose();
   pathTex = new THREE.CanvasTexture(c);
   pathTex.wrapS = pathTex.wrapT = THREE.RepeatWrapping;
-  pathTex.minFilter = pathTex.magFilter = THREE.LinearFilter;
-  pathTex.repeat.set(1, total / 9);
+  pathTex.minFilter = THREE.LinearMipmapLinearFilter;
+  pathTex.magFilter = THREE.LinearFilter;
+  pathTex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  pathTex.repeat.set(CFG.trackWidth / 8, total / 8);
 
   if (!pathMat) pathMat = toon();
   pathMat.map = pathTex;

@@ -168,7 +168,13 @@ function spawnWeaponPickup(x, z, tier) {
   const model = buildWeaponModel(tier);
   model.scale.setScalar(2.3);
   model.rotation.z = 0.42;
-  addOutline(model, 0.05);
+  /* il modello ha l'origine nel pugno e quasi tutta l'arma sopra: per
+     girare su sé stessa invece che attorno al manico va centrata sulla sua
+     forma vera */
+  model.updateMatrixWorld(true);
+  const centro = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3());
+  model.position.sub(centro);
+  addOutline(model, 0.03);
   swirl.add(model);
   g.add(swirl);
 
@@ -813,6 +819,7 @@ function updateBossFight(dt) {
   }
   if (!duello.aperto) apriDuello();
   aggiornaDuello(dt);
+  if (boss) caricaCarceriere(dt);
 
   const step = run.clash * dt;
   run.power  = Math.max(0, run.power - step);
@@ -1057,9 +1064,44 @@ function colpo(esito) {
   impatto(perfetto ? 0.7 : 0.45);
   run.swing = 0.35;
   run.schiaccia = 0.8;
+  if (boss) boss.userData.incassa = perfetto ? 1 : 0.65;
   FX.scintille.emetti(0, 2.7, bossZ + 1.6, perfetto ? 36 : 18, perfetto ? 0xffd24b : 0x8fe3ff,
                       { vel: 10, su: 5, taglia: 0.55, vita: 0.6 });
   if (perfetto) FX.onde.lancia(0, 0.15, bossZ + 1, 0xffd24b, 4.5);
+}
+
+/* Il carceriere nel duello stava fermo: tu lo colpivi e lui respirava.
+   Adesso picchia a ritmo — alza la mazza, la cala, torna in guardia — e i
+   tuoi colpi critici li incassa piegandosi all'indietro. Solo animazione:
+   i numeri li decide il duello, qui si fa vedere chi sta vincendo. */
+const lerpA = (a, b, k) => a + (b - a) * clamp(k, 0, 1);
+
+function caricaCarceriere(dt) {
+  const U = boss.userData;
+  U.carica = (U.carica || 0) + dt;
+  if (U.carica > 0.95 && !(U.colpo > 0)) { U.carica = 0; U.colpo = 1; U.arrivato = false; }
+}
+
+function animaCarceriere(dt) {
+  const U = boss.userData, L = U.limbs;
+  if (U.colpo > 0) {
+    U.colpo = Math.max(0, U.colpo - dt * 1.9);
+    const f = 1 - U.colpo;
+    /* su piano, giù di colpo, poi indietro in guardia */
+    L.armR.rotation.x = f < 0.5 ? lerpA(0, -2.6, f / 0.5)
+                      : f < 0.68 ? lerpA(-2.6, -1.0, (f - 0.5) / 0.18)
+                      : lerpA(-1.0, 0, (f - 0.68) / 0.32);
+    if (!U.arrivato && f > 0.68 && state === 'boss') {
+      U.arrivato = true;                       // la mazza arriva: l'eroe la sente
+      run.schiaccia = Math.max(run.schiaccia, 0.55);
+      FX.scintille.emetti(run.x, 2.1, run.z - 1.2, 10, 0xff8f7a,
+                          { vel: 5, su: 3, taglia: 0.4, vita: 0.35, grav: 10 });
+    }
+  }
+  if (U.incassa > 0) {
+    U.incassa = Math.max(0, U.incassa - dt * 3.2);
+    boss.rotation.x = -0.3 * Math.sin(U.incassa * Math.PI);   // all'indietro, via da te
+  } else if (!U.falling) boss.rotation.x = 0;
 }
 
 /* lo schermo intero è il bottone; da tastiera, spazio o invio */
@@ -1412,7 +1454,8 @@ function update(dt) {
   if (run.swing > 0) {
     run.swing = Math.max(0, run.swing - dt * 3);
     const L = hero.userData.limbs;
-    if (L) L.armR.rotation.x = -2.2 * Math.sin(run.swing / 0.35 * Math.PI);
+    /* il fendente parte dal braccio che impugna */
+    if (L) hero.userData.hand.rotation.x = -2.2 * Math.sin(run.swing / 0.35 * Math.PI);
   }
   if (hero.userData.falling) hero.rotation.x = lerp(hero.rotation.x, 1.4, 1 - Math.pow(0.02, dt));
 
@@ -1440,6 +1483,7 @@ function update(dt) {
       if (bossSprite) bossSprite.visible = false;
     } else {
       animateIdle(boss, runT, 1.3);
+      animaCarceriere(dt);
     }
   }
   if (tower && tower.princess) {

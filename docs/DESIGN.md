@@ -374,15 +374,13 @@ Il look a blocchi è stato abbandonato. Cosa è cambiato davvero:
   restano lisci: il contrasto fra i due li stacca dallo sfondo.
 - **Ombre proiettate.** Una luce direzionale con riquadro d'ombra stretto
   (±26 unità) che **insegue l'eroe**: senza inseguirlo le ombre sparirebbero
-  dopo venti metri. È il singolo cambiamento che ha alzato di più la resa.
-- **Ombre proiettate.** Una luce direzionale con riquadro d'ombra stretto
-  (±26 unità) che **insegue l'eroe**: senza inseguirlo le ombre sparirebbero
   dopo venti metri. È il singolo cambiamento che ha alzato di più la resa, e si
   spegne con `CFG.shadows = false` se una fascia bassa non regge.
 - **Contorni sui personaggi** (`addOutline`). Guscio rovesciato: una copia di
-  ogni mesh, ingrandita di 0.1 e disegnata solo dalle facce interne. È quello
-  che dà il bordo scuro dei giochi cartoon senza post-processing, e costa solo
-  il doppio delle mesh su una decina di attori.
+  ogni mesh, appena più grande e disegnata solo dalle facce interne. È quello
+  che dà il bordo dei giochi cartoon senza post-processing, e costa solo il
+  doppio delle mesh su una decina di attori. Com'era all'inizio (nero, 0,09 su
+  tutto) non regge più: vedi §4c.
 - **Poche geometrie riusate.** Otto primitive in `GEO` per tutto il gioco.
   Personaggi, torre, cristalli e blocchi sono le stesse forme scalate.
 - **Cielo a sfumatura** invece del colore piatto, e nebbia intonata
@@ -450,6 +448,40 @@ la potenza pulsa in verde quando sale e trema in rosso quando scende; l'eroe
 si piega nelle curve e si schiaccia sui colpi con un rimbalzo; le monete che
 stai per prendere ti vengono incontro — solo quelle: la calamita è una cosa
 che si vede, non una regola, e la raccolta resta decisa dalla corsia.
+
+## 4c. Il vichingo rifatto, e il pennarello messo via
+
+Il mondo è cresciuto (bande di luce, bagliori, lastricato), l'eroe no: era
+fatto di cilindri lisci col contorno nero spesso 0,09 su **ogni** pezzo. Su un
+polpaccio largo 0,27 il bordo valeva un terzo del pezzo, e l'eroe sembrava
+disegnato col pennarello su un fondale dipinto. Due correzioni:
+
+- **Il contorno prende il colore del pezzo**, scurito e spinto un poco verso
+  il blu notte del cielo (`inkPer`): la pelle ha un bordo bruno, l'acciaio uno
+  ardesia. Lo spessore scende (0,035 eroe, 0,04 nemici, 0,05 boss) e ha un
+  tetto al 14% del lato più corto del pezzo, così rivetti e borchie non
+  annegano nel bordo.
+- **Il dettaglio va dove guarda la camera, cioè dietro.** Treccia sulla nuca,
+  cinghia dello scudo a tracolla, scudo con assi, borchie e cerchio di ferro,
+  stringhe incrociate sui polpacci, risvolti di pelliccia sugli stivali,
+  bracciali borchiati, borsa alla cintura, collo di pelliccia a ciuffi.
+  L'elmo sta alto e la barba sotto il naso: gli occhi, l'unica cosa del viso
+  che si legge a quella scala, non vanno coperti.
+
+Ogni aspetto porta anche un **segno** oltre ai colori (`segno` in `SKINS`):
+la Brace ha lo scudo che arde, la Brina ghiaccioli sugli spallacci, la Guardia
+Notturna un pennacchio viola, il Campione ali d'oro al posto delle corna.
+Restano solo estetica: nessun segno cambia un numero.
+
+**L'arma.** L'impugnatura era un cilindro lungo quanto l'arma che sporgeva
+sotto il pugno, col pomolo a metà: ora l'origine del modello è il pugno, il
+manico scende di poco sotto (pomolo in fondo) e sale fin dove serve; ascia e
+martello hanno il manico lungo, la spada una guardia vera. E l'arma è passata
+nella mano **destra**: il modello è costruito guardando +Z e poi girato, e il
+braccio che il codice chiamava destro a schermo finiva a sinistra.
+
+**La pista** è un lastricato disegnato su canvas (file di pietre sfalsate con
+tono e luce propri, mipmap e filtro anisotropo) invece della trama a quadri.
 
 ## 5. Il momento della vittoria
 

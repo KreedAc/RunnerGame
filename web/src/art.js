@@ -189,24 +189,45 @@ function receiveShadows(root) {
 /* ------------------------------ CONTORNO ------------------------------ */
 /* Guscio rovesciato: una copia leggermente più grande di ogni mesh,
    disegnata solo dalle facce interne. È quello che dà ai personaggi il
-   bordo scuro dei giochi cartoon, senza post-processing.                */
-const inkMat = new THREE.MeshBasicMaterial({ color: C.ink, side: THREE.BackSide });
+   bordo dei giochi cartoon, senza post-processing.
+
+   Era nero puro e spesso 0,09 unità su OGNI pezzo: su un polpaccio largo
+   0,27 il bordo valeva un terzo del pezzo, e l'eroe sembrava disegnato col
+   pennarello — bene quando il mondo era piatto, stonato adesso che il mondo
+   ha luce, bande e bagliori. Oggi:
+
+   - il colore del bordo è il colore del pezzo, scurito e spinto un poco
+     verso il blu notte: la pelle ha un bordo bruno, l'acciaio uno ardesia,
+     e tutti insieme restano una famiglia;
+   - lo spessore ha un tetto in proporzione al pezzo (il 14% del suo lato
+     più corto): i pezzi piccoli non annegano più nel contorno. */
+const ink = new THREE.Color(C.ink);
+const inkCache = new Map();
+function inkPer(material) {
+  const col = material && material.color ? material.color : ink;
+  const k = col.getHex();
+  let m = inkCache.get(k);
+  if (!m) {
+    const c = col.clone().multiplyScalar(0.38).lerp(ink, 0.35);
+    m = new THREE.MeshBasicMaterial({ color: c, side: THREE.BackSide });
+    inkCache.set(k, m);
+  }
+  return m;
+}
 
 function addOutline(group, k) {
-  const thickness = k === undefined ? 0.1 : k;
+  const thickness = k === undefined ? 0.04 : k;
   const shells = [];
   group.traverse(o => {
-    if (o.isMesh && !o.userData.noOutline) shells.push(o);
+    if (o.isMesh && !o.userData.noOutline && !(o.material && o.material.transparent)) shells.push(o);
   });
   for (const src of shells) {
-    const shell = new THREE.Mesh(src.geometry, inkMat);
+    const shell = new THREE.Mesh(src.geometry, inkPer(src.material));
     shell.position.copy(src.position);
     shell.rotation.copy(src.rotation);
-    shell.scale.set(
-      src.scale.x + thickness,
-      src.scale.y + thickness,
-      src.scale.z + thickness
-    );
+    const s = src.scale;
+    const d = Math.min(thickness, 0.14 * Math.min(Math.abs(s.x), Math.abs(s.y), Math.abs(s.z)));
+    shell.scale.set(s.x + Math.sign(s.x) * d, s.y + Math.sign(s.y) * d, s.z + Math.sign(s.z) * d);
     shell.renderOrder = -1;
     shell.userData.noOutline = true;   // non contornare il contorno
     src.parent.add(shell);

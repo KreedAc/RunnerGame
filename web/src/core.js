@@ -177,21 +177,28 @@ const weaponName = tier => t(WEAPONS[clamp(tier, 0, WEAPONS.length - 1)].key);
    Non sono modelli nuovi: l'eroe è lo stesso vichingo, ridipinto. Undici
    colori a testa, nessuna geometria in più, e la silhouette — che è quello
    che si legge davvero a schermo — resta riconoscibile in tutte. */
+/* capelli: il colore della treccia che scende dall'elmo — da dietro, che è
+   come si vede l'eroe, è la cosa che lo fa sembrare una persona.
+   segno: il dettaglio che distingue l'aspetto oltre ai colori (vedi
+   segnoAspetto in actors.js). */
 const SKINS = [
   { key: 'sk.viking', gems: 0,
     hero: 0x9c5a2c, heroDark: 0x6f3c1c, cloth: 0x2f9e8f, clothDark: 0x1f6f66,
     metal: 0xb9c4d0, metalDark: 0x7d8896, horn: 0xe6dcc8, boot: 0x4a3626,
-    shield: 0xc94a3f, shieldLine: 0xeee4d0, trim: 0xffc93c },
+    shield: 0xc94a3f, shieldLine: 0xeee4d0, trim: 0xffc93c,
+    capelli: 0xd9ac55, segno: '' },
 
   { key: 'sk.ember', gems: 15,
     hero: 0x7a3a22, heroDark: 0x4e2414, cloth: 0xd4551f, clothDark: 0x8f3410,
     metal: 0x5a5158, metalDark: 0x37323a, horn: 0xffb05a, boot: 0x2e2226,
-    shield: 0x2c2228, shieldLine: 0xff8a3c, trim: 0xff7a2a },
+    shield: 0x2c2228, shieldLine: 0xff8a3c, trim: 0xff7a2a,
+    capelli: 0xb4481f, segno: 'brace' },
 
   { key: 'sk.frost', gems: 35,
     hero: 0xcfe0ee, heroDark: 0x9ab4cc, cloth: 0x3f8fd0, clothDark: 0x2a6aa0,
     metal: 0xe4f2ff, metalDark: 0xa8c4dc, horn: 0xffffff, boot: 0x5a7590,
-    shield: 0x2f6ea8, shieldLine: 0xdff2ff, trim: 0x9fe4ff },
+    shield: 0x2f6ea8, shieldLine: 0xdff2ff, trim: 0x9fe4ff,
+    capelli: 0xeef2f4, segno: 'brina' },
 
   /* La prima versione era viola dalla testa ai piedi e la sagoma spariva:
      una skin deve restare leggibile a schermo piccolo, quindi ogni tinta
@@ -199,12 +206,14 @@ const SKINS = [
   { key: 'sk.night', gems: 70,
     hero: 0x2e2742, heroDark: 0x1b1628, cloth: 0x4a2f7c, clothDark: 0x2b1a4e,
     metal: 0x9aa8d8, metalDark: 0x5e6a96, horn: 0xe8e0ff, boot: 0x1d1828,
-    shield: 0x1b1628, shieldLine: 0xb9a8ff, trim: 0xffd24b },
+    shield: 0x1b1628, shieldLine: 0xb9a8ff, trim: 0xffd24b,
+    capelli: 0x2a2433, segno: 'pennacchio' },
 
   { key: 'sk.gold', gems: 120,
     hero: 0x8a6a2a, heroDark: 0x5e4718, cloth: 0xf0e4c8, clothDark: 0xc4b492,
     metal: 0xffc93c, metalDark: 0xc48f14, horn: 0xfff0c0, boot: 0x6b5320,
-    shield: 0xffc93c, shieldLine: 0x8a6a2a, trim: 0xffe89a }
+    shield: 0xffc93c, shieldLine: 0x8a6a2a, trim: 0xffe89a,
+    capelli: 0xe8b34a, segno: 'ali' }
 ];
 
 /* La skin indossata. `meta` nasce in hub.js, che si carica dopo: questa
