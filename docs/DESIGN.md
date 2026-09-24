@@ -952,6 +952,36 @@ La minaccia non la porta il colore ma il numero rosso sopra la testa e la
 corona: così il carceriere del Cielo Spezzato può essere azzurro senza
 sembrare un amico.
 
+**E anche la sua torre.** Era la stessa torre grigia col tetto rosa in tutte e
+otto le zone — cioè proprio la cosa che si va a conquistare. Ogni tema porta
+adesso `torre: { pietra, scura, tetto, finestre, accento, dettaglio }`:
+
+| zona | torre | dettaglio |
+|---|---|---|
+| Valle Gelata | ghiaccio azzurro-bianco | cristalli dalla base e dal balcone |
+| Bosco Rosso | legno | fogliame d'autunno sotto al balcone e alla base |
+| Dune d'Ossa | osso | sei costole che abbracciano il fusto, corna sul tetto |
+| Notte di Rúna | pietra viola | fasce e finestre accese, cristalli che galleggiano |
+| Bocca di Fuoco | ossidiana | fasce di lava, colate dal basamento, gronda e punta arroventate |
+| Palude di Cenere | pietra morta | rami secchi che bucano il fusto |
+| Foresta di Vetro | vetro trasparente | il nucleo che si vede dentro, schegge ai piedi |
+| Cielo Spezzato | marmo e oro | pezzi di terra che le girano attorno |
+
+La **sagoma** invece è sempre la stessa — fusto, balcone, tamburo, tetto alto
+e stretto — perché è lì che si affaccia la principessa e lì sale la camera
+della vittoria. I dettagli stanno tutti entro 13 unità dal centro e mai davanti
+al portone, dove combatte il carceriere; la prova della geometria di
+`tools/smoke.js` lo controlla ad ogni giro, percorso della vittoria compreso.
+
+Le foto della vittoria hanno mostrato un difetto che nel codice non si vedeva:
+il tetto d'ossidiana del Vulcano e quello della Cenere erano quasi neri, e il
+momento del premio usciva cupo. Il Vulcano ha avuto una gronda di lava accesa
+che incornicia la principessa, la Cenere un grigio più chiaro.
+
+Le colonne da spaccare invece restano verdi e rosse ovunque: quel colore è la
+regola del gioco, e se cambiasse per zona smetterebbe di leggersi a colpo
+d'occhio.
+
 **E combatte a modo suo.** I colori distinguevano le zone, il gioco no. Il
 duello è il posto giusto per cambiarle, perché è lì che il giocatore ha il dito
 pronto. Ogni tema porta `duello: '<stile>'`, e `STILI_DUELLO` in `core.js`
@@ -1096,10 +1126,19 @@ Se su fascia bassa non regge, in ordine di resa:
 
 ## 13. Cosa manca, in ordine di impatto sul feel
 
-1. **Audio** — musica loop e sfx sull'impatto. Sposta la qualità percepita più
-   di qualunque effetto grafico.
-2. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
-3. **Missioni e valuta premium** — i cristalli si raccolgono ma non si spendono
-   ancora.
-4. **Prima esecuzione** — mano animata che spiega lo swipe, prima riga con solo
-   verde.
+1. **Audio e vibrazione** — il gioco è muto, ed è la cosa che manca di più: una
+   colonna che si spacca senza rumore sembra mezza spaccata. Da fare
+   sintetizzato con Web Audio — niente file, niente licenze: colpo, moneta,
+   combo che sale di tono, "perfetto" nel duello, crollo del carceriere, e una
+   musica leggera che cambia per zona. Poi `navigator.vibrate`, che Chrome su
+   Android supporta: un colpetto a ogni colonna, uno forte sul perfetto. Un
+   tasto per spegnere tutto nel menù.
+2. **Installabile come app (PWA)** — manifest, icona e service worker: da
+   "Aggiungi a schermata Home" si apre a schermo intero, senza la barra del
+   browser che oggi si mangia un pezzo di schermo, e funziona offline. È anche
+   la strada più corta per il Play Store: una PWA si impacchetta come TWA con
+   Bubblewrap, senza riscrivere niente.
+3. **Anteprima della riga successiva** in alto, per pianificare due mosse avanti.
+
+Fatto, e tolto da questa lista: i diamanti si spendono (seconda occasione,
+aspetti), c'è un obiettivo al giorno, e la prima partita insegna giocando.

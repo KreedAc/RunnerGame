@@ -62,6 +62,7 @@ const THEMES = [
     rock: 0x77899a, rockDark: 0x556474,
     tree: 0x25795c, trunk: 0x6b4a35, snowy: true,
     boss: 0x4e79a8, bossDark: 0x2f5580, bossKey: 'bs.ice', duello: 'base',
+    torre: { pietra: 0xcfe6f5, scura: 0x8fb8d6, tetto: 0x4fb8e6, finestre: 0x2b5d80, accento: 0xbff4ff, dettaglio: 'cristalli' },
     cloud: 0xffffff, hemiSky: 0xffffff, hemiI: 0.72, sunI: 0.72 },
 
   { key: 'z.wood',
@@ -71,6 +72,7 @@ const THEMES = [
     rock: 0x8a6a52, rockDark: 0x63483a,
     tree: 0xc4522e, trunk: 0x5c3b26, snowy: false,
     boss: 0xb35a2a, bossDark: 0x7a3716, bossKey: 'bs.wood', duello: 'svelto',
+    torre: { pietra: 0xa0683c, scura: 0x6b4226, tetto: 0xd9582c, finestre: 0x2a1a10, accento: 0xe8a94c, dettaglio: 'fronde' },
     cloud: 0xffe6c4, hemiSky: 0xfff0d8, hemiI: 0.74, sunI: 0.66 },
 
   { key: 'z.bone',
@@ -80,6 +82,7 @@ const THEMES = [
     rock: 0xc4b08a, rockDark: 0x998a68,
     tree: 0x7a9448, trunk: 0x6b5334, snowy: false,
     boss: 0xa2925f, bossDark: 0x6f6238, bossKey: 'bs.bone', duello: 'storto',
+    torre: { pietra: 0xeadcb8, scura: 0xb8a67c, tetto: 0xc9a15a, finestre: 0x3a2a1a, accento: 0xfff4dc, dettaglio: 'costole' },
     cloud: 0xfff6e0, hemiSky: 0xfffaf0, hemiI: 0.78, sunI: 0.7 },
 
   { key: 'z.rune',
@@ -89,6 +92,7 @@ const THEMES = [
     rock: 0x4c4470, rockDark: 0x352f52,
     tree: 0x2c6a72, trunk: 0x3a2f4a, snowy: false,
     boss: 0x6a4ba8, bossDark: 0x422c74, bossKey: 'bs.rune', duello: 'ombra',
+    torre: { pietra: 0x4c4278, scura: 0x2e2750, tetto: 0x7b5cd6, finestre: 0xb9a8ff, accento: 0xa89dff, dettaglio: 'rune', accese: true },
     cloud: 0x9d92d8, hemiSky: 0xa8b8ff, hemiI: 0.5, sunI: 0.34 },
 
   /* Il vulcano è l'unica zona che aggiunge roba al mondo invece di
@@ -103,6 +107,7 @@ const THEMES = [
     rock: 0x4e3c3a, rockDark: 0x2c2223,
     tree: 0x5a2a1e, trunk: 0x2b1d18, snowy: false,
     boss: 0x9c2c18, bossDark: 0x5e140c, bossKey: 'bs.lava', duello: 'lampo',
+    torre: { pietra: 0x2a2226, scura: 0x17121a, tetto: 0x5a2216, finestre: 0xff7a2a, accento: 0xff6a1e, dettaglio: 'crepe', accese: true },
     cloud: 0x8a4028, hemiSky: 0xff9a5a, hemiI: 0.52, sunI: 0.42,
     lava: 0xff5a1e, lavaHot: 0xffc23c },
 
@@ -113,6 +118,7 @@ const THEMES = [
     rock: 0x565a50, rockDark: 0x3b3f36,
     tree: 0x6d7a4a, trunk: 0x2f2a22, snowy: false,
     boss: 0x5f6b4e, bossDark: 0x3a4330, bossKey: 'bs.ash', duello: 'doppio',
+    torre: { pietra: 0x7d8275, scura: 0x50554a, tetto: 0x5f6858, finestre: 0x1e211b, accento: 0x2f2a22, dettaglio: 'rami' },
     cloud: 0xb4b8ac, hemiSky: 0xd4d8cc, hemiI: 0.62, sunI: 0.44 },
 
   { key: 'z.glass',
@@ -122,6 +128,7 @@ const THEMES = [
     rock: 0xaeb4de, rockDark: 0x7b80b4,
     tree: 0x58d8e0, trunk: 0x7e8ea8, snowy: false,
     boss: 0x6a80d0, bossDark: 0x42549c, bossKey: 'bs.glass', duello: 'finta',
+    torre: { pietra: 0xb8e6ff, scura: 0x7aa6d8, tetto: 0xd8c8ff, finestre: 0xffffff, accento: 0xe4f8ff, dettaglio: 'vetro' },
     cloud: 0xf0e4ff, hemiSky: 0xe8f4ff, hemiI: 0.8, sunI: 0.66 },
 
   { key: 'z.sky',
@@ -131,6 +138,7 @@ const THEMES = [
     rock: 0x9a8a72, rockDark: 0x6d5f4c,
     tree: 0x3f8a4e, trunk: 0x5c4430, snowy: false,
     boss: 0x3f7fd0, bossDark: 0x275a9c, bossKey: 'bs.sky', duello: 'salto',
+    torre: { pietra: 0xf4f1ea, scura: 0xc9c2b0, tetto: 0x3f7fd0, finestre: 0x2a3a5a, accento: 0xffc93c, dettaglio: 'isole' },
     cloud: 0xffffff, hemiSky: 0xffffff, hemiI: 0.85, sunI: 0.78,
     floating: true }
 ];
@@ -611,6 +619,9 @@ function applyTheme(theme) {
      e nome della zona. È l'unico avversario del gioco, e vederlo sempre
      identico faceva sembrare uguali anche le otto torri. */
   C.boss = theme.boss; C.bossDark = theme.bossDark;
+  /* e anche la torre: era la stessa torre grigia col tetto rosa in tutte
+     e otto le zone, cioè proprio la cosa che si va a conquistare */
+  C.torre = theme.torre;
   /* i due campi facoltativi: vanno spenti, non solo accesi, altrimenti la
      zona dopo si porta dietro il vulcano di quella prima */
   C.lava = theme.lava || 0;

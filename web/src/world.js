@@ -255,25 +255,53 @@ function buildVolcano(x, z, h) {
 
 /* -------------------------------- TORRE -------------------------------- */
 /* In cima la principessa, alla base il boss. È visibile dall'inizio del
-   muro: sapere dove stai andando è metà della motivazione.               */
+   muro: sapere dove stai andando è metà della motivazione.
+
+   Ogni zona ha la sua torre (THEMES[].torre in core.js): pietra, tetto,
+   finestre e un dettaglio che la fa riconoscere da lontano. La SAGOMA
+   invece è sempre la stessa — fusto, balcone col varco davanti, tamburo,
+   tetto alto e stretto — perché è lì che si affaccia la principessa, e la
+   camera della vittoria sale proprio su quel varco. */
+
+/* un materiale che non prende luce: finestre accese, rune, lava */
+const accesaCache = new Map();
+function accesa(color) {
+  let m = accesaCache.get(color);
+  if (!m) { m = new THREE.MeshBasicMaterial({ color }); accesaCache.set(color, m); }
+  return m;
+}
+
 function buildTower(z) {
+  const T = C.torre || { pietra: 0x9aa7b4, scura: 0x6f7d8b, tetto: 0xd94f7d,
+                         finestre: 0x2a2438, accento: 0xffffff, dettaglio: '' };
   const g = new THREE.Group();
   g.position.set(0, 0, z);
 
-  receiveShadows(putOn(g, GEO.cyl, MAT.stoneDark, 0, 0, 0, 16, 1.2, 16));   // basamento
-  receiveShadows(putOn(g, GEO.cyl, MAT.stone,     0, 1.2, 0, 11.5, 1.0, 11.5));
+  const pietra = mat(T.pietra);
+  const scura  = mat(T.scura);
+  /* il vetro è l'unico fusto trasparente: si vede il nucleo dentro */
+  const fusto  = T.dettaglio === 'vetro'
+    ? toon({ color: T.pietra, transparent: true, opacity: 0.5 })
+    : pietra;
+  /* nelle zone buie le fasce e le finestre sono luce, non pietra */
+  const fasce    = T.accese ? accesa(T.accento) : scura;
+  const finestre = T.accese ? accesa(T.finestre) : mat(T.finestre);
+
+  receiveShadows(putOn(g, GEO.cyl, scura,  0, 0, 0, 16, 1.2, 16));      // basamento
+  receiveShadows(putOn(g, GEO.cyl, pietra, 0, 1.2, 0, 11.5, 1.0, 11.5));
 
   const H = 26;
-  putOn(g, GEO.taper, MAT.stone, 0, 2.2, 0, 7.6, H, 7.6);                   // fusto
-
-  // fasce di pietra scura: danno scala all'altezza
-  for (let y = 6; y < H; y += 6) {
-    putOn(g, GEO.cyl, MAT.stoneDark, 0, y, 0, 7.9, 0.7, 7.9);
+  putOn(g, GEO.taper, fusto, 0, 2.2, 0, 7.6, H, 7.6);                   // fusto
+  if (T.dettaglio === 'vetro') {
+    putOn(g, GEO.cyl, mat(T.accento), 0, 2.2, 0, 2.4, H, 2.4);          // il nucleo
   }
+
+  // fasce: danno scala all'altezza
+  for (let y = 6; y < H; y += 6) putOn(g, GEO.cyl, fasce, 0, y, 0, 7.9, 0.7, 7.9);
   // finestre a spirale
   for (let i = 0; i < 7; i++) {
     const a = i * 1.1, y = 5 + i * 2.8;
-    put(g, GEO.box, mat(0x2a2438), Math.sin(a) * 3.4, y, Math.cos(a) * 3.4, 0.9, 1.5, 0.9);
+    put(g, GEO.box, finestre, Math.sin(a) * 3.4, y, Math.cos(a) * 3.4, 0.9, 1.5, 0.9);
   }
   // portone alla base
   put(g, GEO.box, mat(0x3a2f24), 0, 3.4, 3.6, 2.6, 4.4, 0.5);
@@ -282,18 +310,19 @@ function buildTower(z) {
   /* Balcone e tetto. Il tetto sta alto e stretto apposta: se scende
      troppo, la principessa sparisce sotto la falda ed è l'unica cosa
      che il giocatore vuole vedere quando vince. */
-  putOn(g, GEO.cyl, MAT.stoneDark, 0, H + 1.4, 0, 9.6, 0.8, 9.6);
+  putOn(g, GEO.cyl, scura, 0, H + 1.4, 0, 9.6, 0.8, 9.6);
   for (let i = 0; i < 12; i++) {
     const a = i / 12 * Math.PI * 2;
     if (Math.abs(a - Math.PI / 2) < 0.6) continue;         // varco davanti
-    putOn(g, GEO.box, MAT.stone, Math.sin(a) * 4.4, H + 2.2, Math.cos(a) * 4.4, 0.8, 1.0, 0.8);
+    putOn(g, GEO.box, pietra, Math.sin(a) * 4.4, H + 2.2, Math.cos(a) * 4.4, 0.8, 1.0, 0.8);
   }
-  putOn(g, GEO.cyl,  MAT.stone,     0, H + 3.4, 0, 6.6, 1.6, 6.6);   // tamburo
-  putOn(g, GEO.cone, mat(0xd94f7d), 0, H + 5.0, 0, 8.6, 6.4, 8.6);   // tetto
-  putOn(g, GEO.cyl,  MAT.gold,      0, H + 11.4, 0, 0.3, 2.2, 0.3);
+  putOn(g, GEO.cyl,  pietra,       0, H + 3.4, 0, 6.6, 1.6, 6.6);    // tamburo
+  putOn(g, GEO.cone, mat(T.tetto), 0, H + 5.0, 0, 8.6, 6.4, 8.6);    // tetto
+  putOn(g, GEO.cyl,  MAT.gold,     0, H + 11.4, 0, 0.3, 2.2, 0.3);
   const flag = put(g, GEO.box, mat(C.princess), 1.3, H + 12.8, 0, 2.4, 1.3, 0.1);
   flag.userData.noOutline = true;
 
+  decoraTorre(g, T, H);
   castShadows(g);
 
   // la principessa, affacciata dal varco, rivolta verso di te
@@ -304,6 +333,101 @@ function buildTower(z) {
 
   world.add(g);
   return { obj: g, princess: p, height: H };
+}
+
+/* Il dettaglio di ogni zona. Tutto sta entro 13 unità dal centro e mai
+   davanti al portone: il carceriere combatte lì, e la camera della
+   vittoria passa a 26 unità di distanza. */
+function decoraTorre(g, T, H) {
+  const A = T.accento;
+  /* Attorno alla torre, lasciando libero l'arco davanti. Con (sin a, cos a)
+     il davanti — verso la pista, dove combatte il carceriere — è a = 0. */
+  const giro = (n, fn) => {
+    for (let i = 0; i < n; i++) {
+      const a = 0.9 + i / (n - 1) * (Math.PI * 2 - 1.8);
+      fn(Math.sin(a), Math.cos(a), i);
+    }
+  };
+
+  switch (T.dettaglio) {
+    case 'cristalli': {         // Valle Gelata: ghiaccio che spunta dalla base e dal balcone
+      giro(7, (sx, sz, i) => {
+        const h = 4 + (i % 3) * 1.6;
+        const c = put(g, GEO.octa, mat(A, true), sx * 8.2, h / 2, sz * 8.2, 1.3, h, 1.3);
+        c.rotation.set(sz * 0.25, i, -sx * 0.25);
+      });
+      giro(5, (sx, sz) => put(g, GEO.octa, mat(A, true), sx * 4.6, H + 3.4, sz * 4.6, 0.6, 1.8, 0.6));
+      break;
+    }
+    case 'fronde': {            // Bosco Rosso: fogliame d'autunno sotto al balcone e alla base
+      giro(9, (sx, sz, i) => put(g, GEO.sph8, mat(i % 2 ? A : 0xc4522e, true),
+                                 sx * 4.6, H + 0.6, sz * 4.6, 2.2, 1.6, 2.2));
+      giro(6, (sx, sz, i) => put(g, GEO.sph8, mat(i % 2 ? 0xc4522e : A, true),
+                                 sx * 7.6, 1.6, sz * 7.6, 2.6, 2.0, 2.6));
+      break;
+    }
+    case 'costole': {           // Dune d'Ossa: grandi costole che abbracciano la torre
+      giro(6, (sx, sz) => {
+        const c = put(g, GEO.cone6, mat(A, true), sx * 6.6, 7.5, sz * 6.6, 0.9, 15, 0.9);
+        c.rotation.set(-sz * 0.32, 0, sx * 0.32);                   // piegate verso il fusto
+      });
+      for (const s of [-1, 1]) {                                   // due corna sul tetto
+        put(g, GEO.cone6, mat(A, true), s * 2.4, H + 7.2, 0, 0.7, 3.2, 0.7).rotation.z = -s * 0.7;
+      }
+      break;
+    }
+    case 'rune': {              // Notte di Rúna: cristalli che galleggiano, accesi
+      giro(3, (sx, sz, i) => {
+        const y = 9 + i * 6;
+        const c = new THREE.Group();
+        c.position.set(sx * 7.4, y, sz * 7.4);
+        put(c, GEO.octa, accesa(A), 0, 0, 0, 1.2, 2.2, 1.2);
+        bagliore(c, A, 5, 0.5);
+        g.add(c);
+      });
+      break;
+    }
+    case 'crepe': {             // Bocca di Fuoco: ossidiana, lava che affiora
+      const b = new THREE.Group();
+      b.position.set(0, H + 11.5, 0);
+      bagliore(b, 0xff7a2a, 7, 0.6);                               // la punta arroventata
+      g.add(b);
+      /* la gronda accesa: senza, il tetto d'ossidiana era un buco nero
+         proprio nel momento in cui la camera sale a premiarti */
+      putOn(g, GEO.cyl, accesa(A), 0, H + 4.9, 0, 8.9, 0.3, 8.9);
+      giro(5, (sx, sz) => put(g, GEO.box, accesa(A), sx * 5.9, 0.62, sz * 5.9, 1.4, 0.1, 3.2)
+                           .rotation.y = Math.atan2(sx, sz));      // colate dal basamento
+      break;
+    }
+    case 'rami': {              // Palude di Cenere: rami secchi che bucano la pietra
+      giro(8, (sx, sz, i) => {
+        const y = 7 + (i % 4) * 4.5;
+        const r = put(g, GEO.cone6, mat(A, true), sx * 4.4, y, sz * 4.4, 0.35, 4.2, 0.35);
+        r.rotation.set(sz * 1.1, 0, -sx * 1.1);                     // spinti in fuori
+      });
+      break;
+    }
+    case 'vetro': {             // Foresta di Vetro: schegge ai piedi della torre
+      giro(8, (sx, sz, i) => {
+        const h = 2.5 + (i % 3) * 1.4;
+        put(g, GEO.octa, toon({ color: A, transparent: true, opacity: 0.6 }),
+            sx * 8.4, h / 2, sz * 8.4, 0.9, h, 0.9).rotation.y = i;
+      });
+      break;
+    }
+    case 'isole': {             // Cielo Spezzato: pezzi di terra che le girano attorno
+      giro(5, (sx, sz, i) => {
+        const y = 7 + i * 4, s = 1.6 + (i % 2) * 0.8;
+        const r = 10 + (i % 2) * 1.8;
+        put(g, GEO.sph8, MAT.rock, sx * r, y, sz * r, s * 1.4, s, s * 1.3);
+        put(g, GEO.sph8, MAT.cap,  sx * r, y + s * 0.4, sz * r, s * 1.2, s * 0.4, s * 1.1);
+        put(g, GEO.cone6, MAT.rockDark, sx * r, y - s * 0.9, sz * r, s * 1.1, s * 1.4, s)
+          .rotation.x = Math.PI;
+      });
+      for (let y = 6; y < H; y += 6) putOn(g, GEO.cyl, MAT.gold, 0, y + 0.25, 0, 8.0, 0.2, 8.0);
+      break;
+    }
+  }
 }
 
 /* ------------------------------ ASSEMBLAGGIO --------------------------- */

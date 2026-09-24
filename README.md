@@ -98,7 +98,9 @@ Spezzato metà del paesaggio non tocca terra.
 
 **Il boss.** Sfondati tutti e trenta, ai piedi della torre ti aspetta il
 carceriere della zona — il Signore del Vulcano, il Mangiacenere, il Re di
-Vetro: stessa stazza e stessa mazza, colori e nome del posto. Quello che ti
+Vetro: stessa stazza e stessa mazza, colori e nome del posto — e anche la torre
+è della zona: di ghiaccio, di legno, d'osso, di vetro, d'ossidiana con la lava
+nelle crepe. Quello che ti
 resta è la forza con cui lo affronti: i due numeri scendono insieme, chi
 arriva a zero cade. Ma non stai a guardare — è un **duello a tempo**: un
 anello si stringe sul bersaglio sul petto del carceriere, e se tocchi quando
@@ -190,4 +192,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Un carceriere diverso per zona anche nel duello (svelto, senza ritmo, ombra, doppio, finte…)
 - [x] Bottega delle rune e obiettivo del giorno
 - [x] Prima partita guidata: si impara giocando, un passo alla volta
-- [ ] Build Android (vedi `docs/DESIGN.md`)
+- [x] Una torre della principessa diversa per zona
+- [ ] Audio sintetizzato e vibrazione (prossimo)
+- [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)
