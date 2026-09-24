@@ -219,40 +219,158 @@ function segnoAspetto(g, S, shield) {
 
 /* ------------------------------- NEMICI -------------------------------- */
 const ENEMIES = {
-  goblin: { body: 0x5fa03e, dark: 0x3f7028, cloth: 0x8a4a2a, ears: true,  scale: 0.82 },
-  imp   : { body: 0x8a5fd0, dark: 0x5f3f9a, cloth: 0x3a2a5a, ears: true,  scale: 0.78 },
-  golem : { body: 0x8b8f98, dark: 0x64686f, cloth: 0x54585f, ears: false, scale: 1.00 }
+  goblin: { body: 0x5fa03e, dark: 0x3f7028, cloth: 0x8a4a2a, scale: 0.82 },
+  imp   : { body: 0x8a5fd0, dark: 0x5f3f9a, cloth: 0x3a2a5a, scale: 0.78 },
+  golem : { body: 0x8b8f98, dark: 0x64686f, cloth: 0x54585f, scale: 1.00 }
 };
 const ENEMY_KINDS = Object.keys(ENEMIES);
 
+/* Occhi da cartone: il bianco e la pupilla. Con due palline nere a
+   quella distanza i nemici sembravano bottoni; il bianco li fa guardare. */
+function occhiVivi(parent, y, z, spread, r) {
+  const bianco = mat(0xfff6e0), nero = mat(0x24202c);
+  for (const k of [-1, 1]) {
+    put(parent, GEO.sph, bianco, k * spread, y, z, r, r * 1.1, r * 0.7);
+    put(parent, GEO.sph8, nero, k * spread, y - r * 0.08, z + r * 0.3, r * 0.52, r * 0.6, r * 0.3);
+  }
+}
+
+/* I nemici in pista sono tanti: ognuno si costruisce UNA volta per tipo e
+   poi si clona. Il clone condivide geometrie e materiali, quindi il
+   dettaglio in più costa memoria una volta sola. */
+const NEMICI_FATTI = {};
+
 function buildEnemy(kind) {
-  const E = ENEMIES[kind] || ENEMIES.goblin;
+  if (!ENEMIES[kind]) kind = 'goblin';
+  let tpl = NEMICI_FATTI[kind];
+  if (!tpl) {
+    tpl = costruisciNemico(kind);
+    /* lo stampo non si libera mai: sciogli() deve lasciarlo stare */
+    tpl.traverse(o => { if (o.isMesh) o.geometry.userData.fusa = false; });
+    NEMICI_FATTI[kind] = tpl;
+  }
+  const g = tpl.clone();
+  g.userData = { limbs: {
+    armL: g.getObjectByName('armL'), armR: g.getObjectByName('armR'),
+    legL: g.getObjectByName('legL'), legR: g.getObjectByName('legR') } };
+  return g;
+}
+
+function costruisciNemico(kind) {
+  const E = ENEMIES[kind];
   const g = new THREE.Group();
   const body  = mat(E.body);
   const dark  = mat(E.dark);
   const cloth = mat(E.cloth);
+  const lite  = mat(new THREE.Color(E.body).lerp(new THREE.Color(0xffffff), 0.25).getHex());
+  const cuoio = mat(0x5a3c28), ferro = mat(0x9aa4ae), ferroD = mat(0x5a6470);
+  const osso  = mat(0xfdf6e6);
+  let armL, armR, legL, legR;
 
-  const legL = limb(g, dark, -0.17, 0.62, 0, 0.24, 0.62);
-  const legR = limb(g, dark,  0.17, 0.62, 0, 0.24, 0.62);
-
-  put(g, GEO.sph, cloth, 0, 0.98, 0, 0.80, 0.72, 0.62);     // pancia
-  const armL = limb(g, body, -0.42, 1.22, 0, 0.22, 0.62);
-  const armR = limb(g, body,  0.42, 1.22, 0, 0.22, 0.62);
-
-  put(g, GEO.sph, body, 0, 1.62, 0, 0.72, 0.66, 0.66);      // testone
-  eyes(g, 1.68, 0.30, 0.16, 0.13);
-  put(g, GEO.cone6, mat(0xfdf6e6), 0, 1.50, 0.30, 0.10, 0.14, 0.10).rotation.x = Math.PI;
-
-  if (E.ears) {
-    for (const s of [-1, 1]) {
-      const ear = put(g, GEO.cone6, body, s * 0.36, 1.72, 0, 0.16, 0.42, 0.16);
-      ear.rotation.z = s * -1.1;
+  if (kind === 'golem') {
+    /* il golem: massi a faccette, una crepa che arde, muschio sulle spalle */
+    const roccia = mat(E.body, true), rocciaD = mat(E.dark, true), muschio = mat(0x5f9a3e, true);
+    const brace = accesa(0x7fe6ff);
+    legL = limb(g, rocciaD, -0.26, 0.6, 0, 0.36, 0.6);
+    legR = limb(g, rocciaD,  0.26, 0.6, 0, 0.36, 0.6);
+    for (const leg of [legL, legR]) put(leg, GEO.sph8, roccia, 0, -0.58, 0.06, 0.46, 0.26, 0.52);
+    put(g, GEO.sph8, roccia, 0, 1.12, 0, 1.2, 1.0, 0.9);              // il masso del busto
+    put(g, GEO.octa, rocciaD, 0, 0.72, 0, 0.9, 0.5, 0.7);
+    [[0.1, 1.2, 0.3], [-0.12, 1.02, 0.4], [0.02, 0.9, -0.2]].forEach(([x, y, r]) =>
+      put(g, GEO.box, brace, x, y, 0.44, 0.05, 0.3, 0.03).rotation.z = r);   // crepe
+    put(g, GEO.octa, brace, 0, 1.12, 0.42, 0.18, 0.22, 0.08);           // il cuore
+    for (const k of [-1, 1]) {
+      put(g, GEO.sph8, rocciaD, k * 0.52, 1.56, 0, 0.56, 0.42, 0.56);   // spalle
+      put(g, GEO.sph8, muschio, k * 0.5, 1.76, 0.04, 0.4, 0.14, 0.36);
     }
+    armL = limb(g, roccia, -0.62, 1.5, 0, 0.34, 0.66);
+    armR = limb(g, roccia,  0.62, 1.5, 0, 0.34, 0.66);
+    for (const arm of [armL, armR]) {
+      put(arm, GEO.octa, rocciaD, 0, -0.34, 0, 0.42, 0.36, 0.42);
+      put(arm, GEO.sph8, roccia, 0, -0.76, 0, 0.5, 0.44, 0.5);          // pugno di pietra
+    }
+    put(g, GEO.sph8, roccia, 0, 1.86, 0.08, 0.62, 0.5, 0.56);          // testa
+    put(g, GEO.box, rocciaD, 0, 1.98, 0.3, 0.52, 0.12, 0.14);          // la fronte
+    for (const k of [-1, 1]) put(g, GEO.box, brace, k * 0.13, 1.88, 0.34, 0.12, 0.07, 0.04);
+    put(g, GEO.octa, rocciaD, 0.1, 2.16, -0.04, 0.3, 0.3, 0.3);        // spuntone
+    put(g, GEO.sph8, muschio, -0.12, 2.1, 0.04, 0.3, 0.12, 0.3);
   } else {
-    put(g, GEO.box, dark, 0, 1.94, 0, 0.5, 0.2, 0.5);       // spuntone di roccia
+    legL = limb(g, dark, -0.17, 0.62, 0, 0.24, 0.62);
+    legR = limb(g, dark,  0.17, 0.62, 0, 0.24, 0.62);
+    armL = limb(g, body, -0.42, 1.24, 0, 0.2, 0.6);
+    armR = limb(g, body,  0.42, 1.24, 0, 0.2, 0.6);
+    for (const arm of [armL, armR]) put(arm, GEO.sph, lite, 0, -0.62, 0, 0.24, 0.22, 0.24);
+    put(g, GEO.sph, lite, 0, 0.96, 0.08, 0.6, 0.56, 0.46);             // pancia
+    put(g, GEO.sph, body, 0, 1.08, -0.02, 0.76, 0.66, 0.6);
+    put(g, GEO.sph, body, 0, 1.64, 0, 0.72, 0.64, 0.64);               // testone
+    occhiVivi(g, 1.7, 0.27, 0.15, 0.16);
+    put(g, GEO.box, dark, 0, 1.82, 0.28, 0.44, 0.06, 0.08).rotation.x = -0.2;   // sopracciglio
+    for (const k of [-1, 1]) put(g, GEO.cone6, osso, k * 0.09, 1.47, 0.28, 0.07, 0.12, 0.07).rotation.x = Math.PI;   // dentini
   }
 
-  g.userData.limbs = { armL, armR, legL, legR };
+  if (kind === 'goblin') {
+    /* cappuccio di cuoio, nasone, orecchie lunghe, pugnale e scudetto */
+    put(g, GEO.cone6, lite, 0, 1.6, 0.4, 0.14, 0.26, 0.14).rotation.x = Math.PI / 2 + 0.3;   // naso
+    for (const k of [-1, 1]) {
+      put(g, GEO.cone6, body, k * 0.46, 1.7, -0.02, 0.18, 0.5, 0.12).rotation.z = -k * 1.35;
+      put(g, GEO.cone6, mat(0xd98a7a), k * 0.44, 1.7, 0.02, 0.08, 0.34, 0.04).rotation.z = -k * 1.35;
+      put(leg(k), GEO.cone6, cuoio, 0, -0.58, 0.16, 0.22, 0.36, 0.16).rotation.x = Math.PI / 2;   // scarpe a punta
+    }
+    put(g, GEO.sph, cloth, 0, 1.84, -0.06, 0.74, 0.5, 0.7);            // cappuccio
+    put(g, GEO.cone6, cloth, 0, 2.14, -0.2, 0.26, 0.42, 0.26).rotation.x = -0.6;
+    put(g, GEO.taper, cloth, 0, 0.9, 0, 0.84, 0.36, 0.66);             // tunica stracciata
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2;
+      put(g, GEO.cone6, cloth, Math.sin(a) * 0.34, 0.66, Math.cos(a) * 0.27, 0.16, 0.18, 0.1).rotation.x = Math.PI;
+    }
+    put(g, GEO.cyl, cuoio, 0, 1.0, 0, 0.8, 0.08, 0.64);                 // cintura
+    put(g, GEO.box, cuoio, 0.26, 0.9, 0.26, 0.16, 0.18, 0.1);           // borsello
+    const lama = new THREE.Group();                                   // pugnale
+    lama.position.set(0, -0.64, 0.12);
+    lama.rotation.x = -0.9;
+    put(lama, GEO.cyl8, cuoio, 0, 0, 0, 0.08, 0.2, 0.08);
+    put(lama, GEO.box, ferroD, 0, 0.12, 0, 0.24, 0.05, 0.08);
+    put(lama, GEO.box, ferro, 0, 0.36, 0, 0.1, 0.44, 0.04);
+    put(lama, GEO.cone6, ferro, 0, 0.64, 0, 0.1, 0.14, 0.04);
+    armR.add(lama);
+    const scudo = put(armL, GEO.cyl12, cuoio, -0.1, -0.44, 0.06, 0.46, 0.08, 0.46);
+    scudo.rotation.z = Math.PI / 2;
+    put(armL, GEO.sph8, ferro, -0.15, -0.44, 0.06, 0.14, 0.14, 0.14);
+  }
+
+  if (kind === 'imp') {
+    /* corna, ali da pipistrello, coda a freccia, forcone */
+    const corno = mat(0x3a2440), ala = mat(E.dark), fiamma = accesa(0xffd23c);
+    for (const k of [-1, 1]) {
+      put(g, GEO.cone6, corno, k * 0.22, 1.98, 0.02, 0.14, 0.34, 0.14).rotation.z = -k * 0.4;
+      const w = new THREE.Group();                                    // un'ala: tre dita e la membrana
+      w.position.set(k * 0.24, 1.32, -0.3);
+      w.rotation.set(0.2, k * 0.5, 0);
+      [[0.3, 0.9], [0.5, 0.5], [0.56, 0.1]].forEach(([l, a]) =>
+        put(w, GEO.cyl8, corno, k * Math.sin(a) * l * 0.5, Math.cos(a) * l * 0.5, 0, 0.05, l, 0.05)
+          .rotation.z = -k * a);
+      put(w, GEO.cone6, ala, k * 0.24, 0.18, 0, 0.5, 0.48, 0.04).rotation.z = -k * 0.9;
+      g.add(w);
+    }
+    for (const k of [-1, 1]) put(g, GEO.cone6, body, k * 0.4, 1.68, 0, 0.12, 0.26, 0.1).rotation.z = -k * 1.2;
+    put(g, GEO.box, cloth, 0, 0.7, 0.2, 0.36, 0.3, 0.06);               // perizoma
+    put(g, GEO.cyl, cloth, 0, 0.84, 0, 0.62, 0.1, 0.5);
+    [[0.95, -0.32], [0.72, -0.5], [0.5, -0.56]].forEach(([y, z], i) =>
+      put(g, GEO.sph8, dark, 0.04 * i, y, z, 0.12, 0.12, 0.12));      // coda
+    put(g, GEO.cone6, corno, 0.1, 0.4, -0.56, 0.18, 0.24, 0.06).rotation.x = Math.PI;
+    const forca = new THREE.Group();                                  // forcone
+    forca.position.set(0, -0.62, 0.1);
+    forca.rotation.x = -0.35;
+    put(forca, GEO.cyl8, cuoio, 0, 0.2, 0, 0.07, 1.6, 0.07);
+    put(forca, GEO.box, ferroD, 0, 0.98, 0, 0.36, 0.05, 0.05);
+    for (const x of [-0.16, 0, 0.16]) put(forca, GEO.cone6, ferro, x, 1.14, 0, 0.06, 0.3, 0.06);
+    armR.add(forca);
+    const fuoco = put(g, GEO.cone6, fiamma, 0, 2.02, 0, 0.12, 0.2, 0.12);   // la fiammella in testa
+    fuoco.userData.noOutline = true;
+  }
+
+  function leg(k) { return k < 0 ? legL : legR; }
+  armL.name = 'armL'; armR.name = 'armR'; legL.name = 'legL'; legR.name = 'legR';
   g.scale.setScalar(E.scale);
   addOutline(g, 0.04);
   castShadows(g);
@@ -622,26 +740,71 @@ function buildBoss() {
 }
 
 /* ----------------------------- PRINCIPESSA ----------------------------- */
+/* È il premio, e la si guarda soprattutto alla vittoria, quando la camera
+   sale fino al suo balcone: era un cono rosa con una palla sopra. Ora ha
+   una gonna a due balze con l'orlo d'oro, il corpetto allacciato, le
+   maniche a sbuffo, i capelli lunghi fino alla vita con la treccia che le
+   gira attorno alla testa, e una tiara con la gemma che brilla — si vede
+   da lontano, ed è quello che vai a prendere. */
 function buildPrincess() {
   const g = new THREE.Group();
   const gown = mat(C.princess);
   const lite = mat(C.gownLite);
+  const scuro = mat(new THREE.Color(C.princess).multiplyScalar(0.72).getHex());
   const skin = mat(C.skin);
-  const hair = mat(0xf5d76e);
+  const hair = mat(0xf5d76e), hairD = mat(0xd9ac3c);
+  const oro  = mat(C.gold);
 
-  put(g, GEO.cone, gown, 0, 0.62, 0, 1.02, 1.24, 1.02);     // abito
-  put(g, GEO.cyl,  lite, 0, 1.22, 0, 0.56, 0.42, 0.5);      // corpetto
-  const armL = limb(g, skin, -0.32, 1.36, 0, 0.16, 0.5);
-  const armR = limb(g, skin,  0.32, 1.36, 0, 0.16, 0.5);
+  /* gonna: due balze, orlo d'oro, il grembiule davanti */
+  put(g, GEO.cone, gown, 0, 0.62, 0, 1.08, 1.24, 1.08);
+  put(g, GEO.cyl, oro, 0, 0.04, 0, 1.08, 0.06, 1.08);
+  put(g, GEO.cone, lite, 0, 0.8, 0, 0.86, 0.9, 0.86);                // seconda balza
+  put(g, GEO.cyl, scuro, 0, 0.36, 0, 0.9, 0.06, 0.9);
+  put(g, GEO.box, lite, 0, 0.5, 0.42, 0.3, 0.8, 0.04).rotation.x = -0.34;
+  /* corpetto con i lacci e la cintura d'oro */
+  put(g, GEO.taper, lite, 0, 1.24, 0, 0.56, 0.42, 0.46);
+  put(g, GEO.cyl, oro, 0, 1.05, 0, 0.5, 0.06, 0.42);
+  for (let i = 0; i < 3; i++) put(g, GEO.box, scuro, 0, 1.12 + i * 0.1, 0.22, 0.12, 0.03, 0.02);
+  put(g, GEO.sph8, oro, 0, 1.4, 0.2, 0.08, 0.08, 0.06);             // il ciondolo
+  put(g, GEO.cyl, skin, 0, 1.46, 0, 0.16, 0.1, 0.16);               // collo
 
-  put(g, GEO.sph, hair, 0, 1.68, -0.06, 0.66, 0.72, 0.66);  // capelli
-  put(g, GEO.sph, skin, 0, 1.66, 0.12, 0.52, 0.56, 0.46);   // viso
-  eyes(g, 1.70, 0.30, 0.12, 0.09);
-  put(g, GEO.cyl, mat(C.gold), 0, 1.98, 0, 0.44, 0.14, 0.44);
-  for (let i = 0; i < 5; i++) {
-    const a = i / 5 * Math.PI * 2;
-    put(g, GEO.cone6, mat(C.gold), Math.cos(a) * 0.19, 2.10, Math.sin(a) * 0.19, 0.09, 0.18, 0.09);
+  /* braccia: sbuffo sulla spalla, guanto, mano */
+  const armL = limb(g, skin, -0.32, 1.38, 0, 0.13, 0.5);
+  const armR = limb(g, skin,  0.32, 1.38, 0, 0.13, 0.5);
+  for (const arm of [armL, armR]) {
+    put(arm, GEO.sph, gown, 0, -0.04, 0, 0.26, 0.24, 0.26);
+    put(arm, GEO.cyl, lite, 0, -0.34, 0, 0.15, 0.16, 0.15);
+    put(arm, GEO.sph8, skin, 0, -0.52, 0, 0.13, 0.13, 0.13);
   }
+
+  /* capelli lunghi dietro, fino alla vita */
+  put(g, GEO.sph, hair, 0, 1.68, -0.08, 0.64, 0.7, 0.62);
+  put(g, GEO.taper, hair, 0, 1.3, -0.2, 0.56, 0.64, 0.24).rotation.x = Math.PI;
+  put(g, GEO.sph, hairD, 0, 1.0, -0.22, 0.4, 0.2, 0.2);
+  /* viso: occhi grandi, guance, sorriso */
+  put(g, GEO.sph, skin, 0, 1.66, 0.12, 0.5, 0.54, 0.44);
+  occhiVivi(g, 1.7, 0.3, 0.1, 0.1);
+  for (const k of [-1, 1]) put(g, GEO.sph8, mat(0xf29a9a), k * 0.16, 1.6, 0.28, 0.09, 0.05, 0.03);
+  put(g, GEO.box, mat(0xb8505a), 0, 1.55, 0.33, 0.08, 0.02, 0.02);
+  /* frangia e ciocche ai lati del viso */
+  put(g, GEO.sph, hair, 0, 1.88, 0.14, 0.5, 0.2, 0.38);
+  for (const k of [-1, 1]) {
+    put(g, GEO.sph8, hair, k * 0.24, 1.6, 0.14, 0.14, 0.44, 0.16);
+    put(g, GEO.sph8, hairD, k * 0.26, 1.34, 0.14, 0.12, 0.16, 0.12);
+  }
+  /* la treccia che gira attorno alla testa */
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2;
+    if (Math.cos(a) > 0.7) continue;
+    put(g, GEO.sph8, i % 2 ? hairD : hair, Math.sin(a) * 0.3, 1.9, Math.cos(a) * 0.29 - 0.06, 0.16, 0.14, 0.16);
+  }
+
+  /* tiara: cerchietto, tre punte, la gemma che brilla */
+  put(g, GEO.cyl, oro, 0, 1.97, 0, 0.44, 0.07, 0.42);
+  for (const [x, h] of [[-0.14, 0.12], [0, 0.2], [0.14, 0.12]])
+    put(g, GEO.cone6, oro, x, 2.0 + h / 2, 0.18, 0.08, h, 0.06);
+  const gemma = put(g, GEO.octa, accesa(0xff7ac0), 0, 2.02, 0.22, 0.1, 0.12, 0.06);
+  bagliore(gemma, 0xff9ad0, 6, 0.5);
 
   g.userData.limbs = { armL, armR, legL: null, legR: null };
   addOutline(g, 0.035);

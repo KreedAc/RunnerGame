@@ -195,5 +195,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Una torre della principessa diversa per zona
 - [x] Eroe rifatto nel dettaglio, contorni sottili del colore del pezzo, lastricato sulla pista
 - [x] Carceriere rifatto: un gigante vichingo muscoloso in armatura, diverso per regno (tratto, barba, arma), con le chiavi della prigione alla cintura
+- [x] Nemici e principessa rifatti nello stesso stile (nemici clonati da uno stampo per tipo)
 - [ ] Audio sintetizzato e vibrazione (prossimo)
 - [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)

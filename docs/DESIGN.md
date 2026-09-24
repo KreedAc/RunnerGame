@@ -480,6 +480,18 @@ martello hanno il manico lungo, la spada una guardia vera. E l'arma è passata
 nella mano **destra**: il modello è costruito guardando +Z e poi girato, e il
 braccio che il codice chiamava destro a schermo finiva a sinistra.
 
+**I nemici e la principessa** seguono lo stesso passo. Il goblin ha il
+cappuccio, il nasone, le orecchie lunghe, la tunica stracciata, il pugnale e
+lo scudetto; il diavoletto corna, ali da pipistrello, coda a freccia, forcone
+e una fiammella in testa; il golem è fatto di massi a faccette con le crepe
+che ardono e il muschio sulle spalle. Tutti hanno occhi da cartone (il bianco
+e la pupilla): due palline nere, a quella distanza, sembravano bottoni. I
+nemici in pista sono tanti, quindi ogni tipo si costruisce **una volta** e poi
+si clona: il clone condivide geometrie e materiali. La principessa ha gonna a
+due balze con l'orlo d'oro, corpetto allacciato, maniche a sbuffo, capelli
+fino alla vita con la treccia attorno alla testa, e una tiara con la gemma
+che brilla, che si vede anche da giù.
+
 **La pista** è un lastricato disegnato su canvas (file di pietre sfalsate con
 tono e luce propri, mipmap e filtro anisotropo) invece della trama a quadri.
 
