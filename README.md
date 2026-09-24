@@ -35,6 +35,11 @@ Per una copia che si apre con doppio click, senza server:
 
 ## Una partita
 
+**La prima volta.** La prima corsa insegna giocando: tre colonne verdi da
+spaccare, poi una rossa nella tua corsia — il tempo quasi si ferma e un dito
+ti mostra come trascinare, finché non ti sposti. Poi l'arma, il muro, il
+duello. Solo la prima volta.
+
 **Menù.** È l'unica schermata fuori dalla corsa: torre corrente, portafoglio,
 record e tre potenziamenti permanenti. **POTENZA** (`×1.10` per livello) e
 **ORO** (`×1.08`) sono moltiplicatori composti: non finiscono mai di servire.
@@ -151,6 +156,7 @@ tools/sim.js          simulatore dell'economia: quanti tentativi costa ogni torr
 tools/smoke.js        gioca una corsa e controlla che nessun numero impazzisca
 tools/skins.js        compra, indossa e salva un aspetto: il giro dei diamanti
 tools/bottega.js      bottega delle rune e obiettivo del giorno: il giro delle rune
+tools/guida.js        la prima partita guidata, giocata da un robot
 tools/misura-home.js  quanti pixel serve il menù e chi se li prende
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
@@ -183,4 +189,5 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Cinque aspetti dell'eroe comprabili in diamanti (solo colore, zero vantaggi)
 - [x] Un carceriere diverso per zona anche nel duello (svelto, senza ritmo, ombra, doppio, finte…)
 - [x] Bottega delle rune e obiettivo del giorno
+- [x] Prima partita guidata: si impara giocando, un passo alla volta
 - [ ] Build Android (vedi `docs/DESIGN.md`)

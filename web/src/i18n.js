@@ -85,6 +85,13 @@ const STRINGS = {
     'rb.confirm'  : 'TOCCA ANCORA PER CONFERMARE',
     'rb.done'     : '+{0} RUNE · SPENDILE TOCCANDO 🔮',
 
+    /* --- la prima partita --- */
+    'gu.verdi'    : 'Spacca le colonne VERDI: ti danno potenza',
+    'gu.schiva'   : 'Le ROSSE fanno male! Trascina per schivarla',
+    'gu.bravo'    : 'Così!',
+    'gu.arma'     : 'Prendi l\'ARMA: spacca colonne più grosse',
+    'gu.muro'     : 'Ogni blocco COSTA potenza: scegli il più basso',
+
     /* --- la bottega delle rune --- */
     'bt.titolo'   : 'BOTTEGA DELLE RUNE',
     'bt.sub'      : 'Rune da spendere: <b>{0}</b> · il bonus <b>×{1}</b> resta tuo comunque',
@@ -237,6 +244,12 @@ const STRINGS = {
     'rb.note'     : 'Back to Tower 1 · upgrades wiped',
     'rb.confirm'  : 'TAP AGAIN TO CONFIRM',
     'rb.done'     : '+{0} RUNES · TAP 🔮 TO SPEND THEM',
+
+    'gu.verdi'    : 'Smash the GREEN towers: they give you power',
+    'gu.schiva'   : 'RED ones hurt! Drag to dodge it',
+    'gu.bravo'    : 'That\'s it!',
+    'gu.arma'     : 'Grab the WEAPON: it smashes bigger towers',
+    'gu.muro'     : 'Every block COSTS power: pick the lowest',
 
     'bt.titolo'   : 'RUNE SHOP',
     'bt.sub'      : 'Runes to spend: <b>{0}</b> · your <b>×{1}</b> bonus stays anyway',

@@ -442,6 +442,7 @@ function defaultSave() {
     diary: [],           // { l: torre, t: tentativi, r: seconda occasione }
     skin: 0,             // l'aspetto indossato…
     skins: [],           // …e quelli comprati (lo 0 è di tutti)
+    guidaFatta: false,   // la prima partita guidata è già stata giocata
     runeSpese: 0,        // rune spese in bottega (il bonus si conta su meta.runes)
     bottega: { arma: 0, scorta: 0, mira: 0, muro: 0, gemme: 0, pelle: 0 },
     oggi: { giorno: '', fatto: 0, preso: false },   // l'obiettivo del giorno

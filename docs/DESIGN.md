@@ -675,6 +675,43 @@ l'ha detto subito, e qualche pixel di margine qua e là l'ha riportato a 720
 (700 sugli schermi più bassi). `tools/bottega.js` fa il giro completo di
 bottega e obiettivo, compreso "il premio non si paga due volte".
 
+## 6c-quater. La prima partita insegna giocando
+
+Il link è pubblico, e chi lo apriva trovava un paragrafo da leggere: le regole
+si imparavano sbagliando. Adesso la prima corsa di chi non ha mai giocato
+insegna mentre si gioca, e **ogni passo aspetta che il precedente sia
+successo davvero**, non un timer:
+
+1. **Spacca le verdi.** La prima fila è scritta a mano: tre colonne verdi
+   facili. Qualunque cosa tu faccia, la prima cosa che succede è una colonna
+   che esplode e la potenza che sale.
+2. **Schiva la rossa.** La seconda fila ha una rossa proprio nella tua
+   corsia, fra due verdi. Quando è vicina e tu sei ancora lì, il tempo quasi
+   si ferma (×0,22) e compare un dito che trascina — **finché non ti sposti**.
+   Il gioco ti chiede di muoverti prima ancora che tu sappia di poterlo fare.
+3. **Prendi l'arma**, quando la prima arma è in vista.
+4. **Il muro costa**, quando il muro comincia.
+5. **Il duello**: la sua scritta c'era già; in più il primo anello del primo
+   duello si chiude al 60% della velocità.
+
+La guida sta in basso, sotto l'eroe. La prima versione era a metà schermo e
+copriva esattamente la colonna rossa che diceva di schivare: si è visto solo
+dalla foto. In basso la pista è vuota, ed è dove sta il pollice che deve
+trascinare.
+
+Compare solo a chi non ha mai finito una corsa (`!meta.lastOutcome` e
+`!meta.guidaFatta`): chi gioca già non la vede, nemmeno dopo l'aggiornamento.
+Si segna come fatta a fine corsa anche se è andata male — una volta sola.
+
+Le prime due file non passano dal generatore normale, ma dentro lo stesso
+ciclo, prima delle righe che il simulatore legge con le sue regex: il
+simulatore non si accorge di niente, e la prima corsa del primo giocatore
+vale una colonna verde in più.
+
+`tools/guida.js` la gioca con un robot a passi fissi di 1/60 s e controlla le
+due file scritte, i cinque passi, il rallentatore che parte e si ferma, e che
+alla seconda corsa non torni.
+
 ## 6d. Il diario della salita
 
 Il simulatore dice una cosa, un pollice su un telefono ne dice un'altra — e

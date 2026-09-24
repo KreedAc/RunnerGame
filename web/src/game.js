@@ -270,7 +270,24 @@ function buildRun() {
   let z = CFG.firstRowZ;
   let refTier = meta.up.weapon;
 
+  guida.z0 = z;
+  guida.z1 = z - CFG.rowSpacing;
   for (let i = 0; i < rows; i++) {
+    /* La prima partita di chi non ha mai giocato: le prime due file sono
+       scritte a mano. Tre verdi facili — la prima cosa che fai è spaccare
+       — e poi una rossa proprio nella tua corsia, fra due verdi, così il
+       gioco ti chiede di spostarti prima ancora che tu sappia di poterlo
+       fare. Vedi LA PRIMA PARTITA più sotto. */
+    if (guida.attiva && i < 2) {
+      for (let l = 0; l < 3; l++) {
+        const rossa = i === 1 && l === 1;
+        const hp = rossa ? Math.round(unit * 3) : Math.max(1, Math.round(unit * 0.6));
+        items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[l], hp, done: false },
+                                 spawnPillar(CFG.laneX[l], z, hp)));
+      }
+      z -= CFG.rowSpacing;
+      continue;
+    }
     const lanes = shuffle([0, 1, 2]);
     const weaponRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
 
@@ -826,6 +843,72 @@ function updateBossFight(dt) {
   else if (run.power <= 0)  { impatto(1.1, 0.12); endRun('boss'); }
 }
 
+/* ---------------------------- LA PRIMA PARTITA -------------------------
+   Chi apriva il gioco per la prima volta trovava un paragrafo da leggere,
+   e le regole le imparava sbagliando. Adesso la prima corsa insegna mentre
+   si gioca, un passo alla volta, e ogni passo aspetta che il precedente sia
+   successo davvero:
+
+     0  spacca le verdi      finché non passi la prima fila (tutta verde)
+     1  schiva la rossa      il tempo rallenta finché non ti sposti
+     2  prendi l'arma        quando la prima arma è in vista
+     3  il muro costa        quando il muro comincia
+     4  il duello            il primo anello si chiude più piano
+
+   Compare solo a chi non ha mai finito una corsa: chi gioca già non la
+   vede, nemmeno dopo un aggiornamento. */
+const guida = { attiva: false, passo: 0, lento: false, fino: 0, z0: 0, z1: 0 };
+
+function guidaInizia() {
+  guida.attiva = !meta.guidaFatta && !meta.lastOutcome && meta.level === 1;
+  guida.passo = 0;
+  guida.lento = false;
+  guida.fino = 0;
+}
+
+function guidaMostra(chiave, dito, secondi) {
+  $('guidaTesto').textContent = t(chiave);
+  $('guidaDito').classList.toggle('hidden', !dito);
+  $('guida').classList.remove('hidden');
+  guida.fino = secondi ? tempoMondo + secondi : 0;
+}
+function guidaNascondi() { $('guida').classList.add('hidden'); guida.fino = 0; }
+
+function guidaAggiorna() {
+  if (!guida.attiva) return;
+  if (guida.fino && tempoMondo > guida.fino) guidaNascondi();
+
+  if (guida.passo === 0) {
+    if (!guida.fino && $('guida').classList.contains('hidden')) guidaMostra('gu.verdi', false, 0);
+    if (run.z < guida.z0 - 1) { guidaNascondi(); guida.passo = 1; }
+  } else if (guida.passo === 1) {
+    const avanti = run.z - guida.z1;
+    /* la rossa è nella corsia di mezzo: se ci sei ancora quando è vicina,
+       il tempo quasi si ferma finché il dito non si muove */
+    if (avanti < 26 && avanti > 0 && Math.abs(run.targetX) < 1.2) {
+      if (!guida.lento) { guida.lento = true; guidaMostra('gu.schiva', true, 0); }
+    } else if (guida.lento) {
+      guida.lento = false;
+      guidaMostra('gu.bravo', false, 1.2);
+    }
+    if (avanti <= 0) { guida.lento = false; guida.passo = 2; }
+  } else if (guida.passo === 2) {
+    const arma = items.find(i => i.kind === 'weapon' && !i.done);
+    if (arma && run.z - arma.z < 34) { guidaMostra('gu.arma', false, 2.6); guida.passo = 3; }
+    else if (state === 'wall' || !arma) guida.passo = 3;
+  } else if (guida.passo === 3) {
+    if (state === 'wall') { guidaMostra('gu.muro', false, 3.5); guida.passo = 4; }
+  }
+}
+
+function guidaFinisci() {
+  if (!guida.attiva) return;
+  guida.attiva = false;
+  guida.lento = false;
+  meta.guidaFatta = true;
+  guidaNascondi();
+}
+
 /* ------------------------------ IL DUELLO ------------------------------
    Un anello si stringe sul bersaglio sul petto del carceriere. Tocchi —
    dove vuoi, lo schermo intero è il bottone — quando combacia: perfetto o
@@ -898,8 +981,10 @@ function aggiornaDuello(dt) {
     if (duello.attesa <= 0) nasceAnello();
   }
   const giro = giroOra();
+  /* il primo anello del primo duello di sempre si chiude più piano */
+  const piano = guida.attiva && duello.primo ? 0.6 : 1;
   for (const a of duello.anelli.slice()) {
-    a.t += dt;
+    a.t += dt * piano;
     if (a.t >= giro) {                    // chiuso senza un tocco
       togliAnello(a);
       if (!a.finto) colpo('mancato');
@@ -1020,6 +1105,7 @@ function startRun() {
   hero.rotation.x = 0;
   if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
   setWeapon(hero, run.weapon);
+  guidaInizia();                 // prima di buildRun: decide le prime due file
   buildRun();
   /* bottega: la scorta — due colonne facili di potenza per gradino, in
      proporzione alla torre, altrimenti alla decima varrebbe zero */
@@ -1154,6 +1240,7 @@ function endRun(outcome) {
 
 function finishRun(outcome) {
   state = 'over';
+  guidaFinisci();                // una volta sola, anche se è andata male
   run.outcome = outcome;
 
   /* il diario: ogni corsa è un tentativo sulla torre corrente */
@@ -1314,6 +1401,7 @@ function update(dt) {
      l'anello sparisce; se la seconda occasione riporta allo scontro, si
      riapre da solo */
   if (duello.aperto && state !== 'boss') chiudiDuello();
+  if (guida.attiva && state !== 'hub' && state !== 'over') guidaAggiorna();
 
   /* --- eroe --- */
   const moving = steering() || (state === 'boss' && run.z > bossZ + 7);
@@ -1523,6 +1611,9 @@ buildRun();
   adattaRisoluzione(dtVero);
   let dt = Math.min(dtVero, 0.05);
   if (fermo > 0) { fermo = Math.max(0, fermo - dt); dt *= 0.1; }
+  /* la prima partita aspetta il tuo dito: davanti alla prima rossa il
+     tempo quasi si ferma, finché non trascini */
+  if (guida.lento) dt *= 0.22;
   update(dt);
   renderer.render(scene, camera);
 })();
