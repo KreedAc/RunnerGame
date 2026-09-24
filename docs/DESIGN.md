@@ -958,6 +958,31 @@ vicini e bastano.
 sinistra fotogrammi al secondo, densità di pixel e draw call. Serve a capire,
 con un telefono vero in mano, dove il gioco arranca.
 
+## 6g. I poteri a tempo
+
+Una corsa era fatta di scelte tutte uguali: quale colonna rompere. I poteri
+aggiungono una domanda diversa — *vale la pena cambiare corsia per prenderlo,
+adesso?* — perché sono rari (al più due per corsa, mai nelle prime due file,
+mai nella prima partita guidata), si vedono da lontano (una pietra runica
+che fluttua, col suo colore, un alone grande e il nome sopra) e durano poco:
+
+| potere | cosa fa | dura | addosso all'eroe |
+|---|---|---|---|
+| 🔥 FURIA | il colpo raddoppia: le colonne davanti diventano verdi | 5 s | alone rosso e braci |
+| 🛡️ SCUDO | la prima rossa o il primo nemico che ti prende non costa | 14 s o un colpo | bolla azzurra, lampeggia alla fine |
+| 🐦 CORVO | raccoglie le monete di tutte le corsie | 8 s | un corvo che gli gira sopra la testa |
+
+In basso al centro, una targhetta per potere con la barra che si svuota:
+quanto manca si deve sapere senza cercarlo. Le costanti stanno in `POTERI`
+(`core.js`).
+
+Il simulatore conta la furia (il colpo doppio per le file che si corrono in
+5 secondi, alla velocità di quella torre); lo scudo e il corvo no, e non è
+una svista: il giocatore simulato non prende mai una rossa e raccoglie già
+ogni moneta — i due poteri aiutano solo chi sbaglia, che è il punto. Il
+risultato resta 30 / 26 / 26 corse fino alla torre 10, dentro l'oscillazione
+del caso. `tools/poteri.js` gioca i tre poteri a passo fisso.
+
 ## 7. Le due lingue
 
 Il gioco aveva una quarantina di stringhe, tutte scritte a mano in italiano

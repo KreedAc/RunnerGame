@@ -62,7 +62,8 @@ const run = {
 /* Il colpo è un multiplo del passo della torre, come le colonne che deve
    rompere: è il rapporto fra i due numeri a decidere cosa si spacca. */
 const damage  = () => Math.round(WEAPONS[run.weapon].hit * run.unit *
-                                 (1 + run.buffs.rate * BUFFS.rate.step));
+                                 (1 + run.buffs.rate * BUFFS.rate.step) *
+                                 (run.poteri && run.poteri.furia > 0 ? POTERI.furia.mult : 1));
 const comboMul = () => 1 + Math.min(run.combo, COMBO.max) * COMBO.passo;
 const gainMul = () => UPGRADES.power.value(meta.up.power) *
                      (1 + run.buffs.gain * BUFFS.gain.step) * runeMul(meta.runes) *
@@ -210,6 +211,28 @@ function spawnPickup(x, z, kind) {
   return { obj: g, spin: rnd(1.4, 2.4) };
 }
 
+/* Un potere a tempo: una pietra runica che fluttua, col suo colore, un
+   alone grande e il nome sopra. Deve farsi notare da lontano: vale la
+   pena cambiare corsia per prenderlo, ma bisogna saperlo in tempo. */
+function spawnPotere(x, z, kind) {
+  const P = POTERI[kind];
+  const col = parseInt(P.color.slice(1), 16);
+  const g = new THREE.Group();
+  g.position.set(x, 1.3, z);
+  put(g, GEO.box, mat(0x3a3f4a), 0, 0, 0, 0.95, 1.25, 0.28);
+  put(g, GEO.box, mat(0x5a6270), 0, 0.68, 0, 1.05, 0.14, 0.34);
+  put(g, GEO.box, accesa(col), 0, 0.05, 0.15, 0.12, 0.7, 0.02);
+  put(g, GEO.box, accesa(col), 0.1, 0.22, 0.15, 0.3, 0.1, 0.02).rotation.z = 0.7;
+  put(g, GEO.box, accesa(col), -0.1, -0.12, 0.15, 0.3, 0.1, 0.02).rotation.z = 0.7;
+  bagliore(g, col, 4.2, 0.75);
+  const s = labelSprite(P.icon + ' ' + t(P.key), P.color, 0.8);
+  s.position.set(0, 1.6, 0);
+  g.add(s);
+  addOutline(g, 0.03);
+  world.add(g);
+  return { obj: g, spin: 1.2 };
+}
+
 /* -------------------------------- MURO --------------------------------- */
 /* Trenta blocchi separano dalla torre. Ognuno costa potenza; nella
    stessa riga i tre costi sono diversi, quindi si sceglie ancora. */
@@ -279,6 +302,7 @@ function buildRun() {
 
   guida.z0 = z;
   guida.z1 = z - CFG.rowSpacing;
+  let poteriMessi = 0;
   for (let i = 0; i < rows; i++) {
     /* La prima partita di chi non ha mai giocato: le prime due file sono
        scritte a mano. Tre verdi facili — la prima cosa che fai è spaccare
@@ -335,7 +359,13 @@ function buildRun() {
     // raccolte fra una riga e l'altra
     const pz = z + CFG.rowSpacing * 0.5;
     if (i > 0) {
-      if (Math.random() < 0.26) {
+      if (i > 1 && !guida.attiva && poteriMessi < POTERI_MAX && Math.random() < POTERI_PROB) {
+        poteriMessi++;
+        const kind = pick(Object.keys(POTERI));
+        const lane = CFG.laneX[rint(0, 2)];
+        items.push(Object.assign({ kind: 'potere', potere: kind, z: pz, x: lane, done: false },
+                                 spawnPotere(lane, pz, kind)));
+      } else if (Math.random() < 0.26) {
         const kind = pick(['income', 'rate', 'gain']);
         const lane = CFG.laneX[rint(0, 2)];
         items.push(Object.assign({ kind: 'buff', buff: kind, z: pz, x: lane, done: false },
@@ -637,6 +667,8 @@ function hitPillar(it) {
     shatter(it.obj, 16, MAT.good);
     comboSu();
     oggiConta('verdi', 1);
+  } else if (scudoPara(it.obj, dove)) {
+    shatter(it.obj, 16, MAT.bad);
   } else {
     /* Sbagliare colonna costa il 18%: con la pista più fitta le rosse si
        incontrano più spesso, e il prezzo dev'essere abbastanza alto da
@@ -672,6 +704,8 @@ function hitEnemy(it) {
     it.sprite.visible = false;
     comboSu();
     oggiConta('nemici', 1);
+  } else if (scudoPara(it.obj, dove)) {
+    it.obj.visible = false;
   } else {
     const loss = Math.max(5, Math.round(run.power * 0.22));
     run.power = Math.max(0, run.power - loss);
@@ -724,6 +758,126 @@ function renderCombo() {
   el.classList.toggle('piena', n >= COMBO.max);
   $('comboN').textContent = '×' + n;
   $('comboBonus').textContent = t('co.bonus', Math.round((comboMul() - 1) * 100));
+}
+
+/* ------------------------------ I POTERI ------------------------------ */
+function takePotere(it) {
+  const P = POTERI[it.potere];
+  const col = parseInt(P.color.slice(1), 16);
+  run.poteri[it.potere] = P.dura;
+  popup(P.icon + ' ' + t(P.desc), P.color, puntoSchermo(it.obj, 2.2));
+  impatto(0.45);
+  FX.scintille.emetti(it.obj.position.x, 1.6, it.obj.position.z, 36, col,
+                      { vel: 8, su: 5, taglia: 0.55, vita: 0.7, grav: 8 });
+  FX.onde.lancia(it.obj.position.x, 0.1, it.obj.position.z, col, 4.5);
+  it.obj.visible = false;
+  if (it.potere === 'furia') refreshThreats();       // le colonne cambiano colore
+  oggiConta('poteri', 1);
+  renderPoteri();
+}
+
+/* lo scudo si consuma sul primo colpo che faceva male */
+function scudoPara(obj, dove) {
+  if (!(run.poteri.scudo > 0)) return false;
+  run.poteri.scudo = 0;
+  popup('🛡️ ' + t('po.parato'), POTERI.scudo.color, dove);
+  impatto(0.5);
+  FX.scintille.emetti(run.x, 1.5, run.z - 0.8, 30, 0x7cd8ff,
+                      { vel: 8, su: 4, taglia: 0.5, vita: 0.6, grav: 6 });
+  FX.onde.lancia(run.x, 0.1, run.z, 0x7cd8ff, 3.5);
+  renderPoteri();
+  return true;
+}
+
+function aggiornaPoteri(dt) {
+  const P = run.poteri;
+  if (!P) return;
+  let cambiato = false;
+  for (const k of Object.keys(P)) {
+    if (!(P[k] > 0)) continue;
+    P[k] = Math.max(0, P[k] - dt);
+    if (P[k] === 0) { cambiato = true; if (k === 'furia') refreshThreats(); }
+  }
+  if (cambiato) renderPoteri();
+  for (const k of Object.keys(POTERI)) {
+    const barra = document.querySelector('#poteri [data-p="' + k + '"] i');
+    if (barra) barra.style.width = (P[k] / POTERI[k].dura * 100).toFixed(1) + '%';
+  }
+}
+
+function renderPoteri() {
+  const el = $('poteri');
+  const P = run.poteri || {};
+  el.innerHTML = Object.keys(POTERI).filter(k => P[k] > 0).map(k => {
+    const D = POTERI[k];
+    return '<div class="po" data-p="' + k + '" style="border-color:' + D.color + '">' +
+           '<span>' + D.icon + '</span><b style="color:' + D.color + '">' + t(D.key) + '</b>' +
+           '<em><i style="background:' + D.color + '"></i></em></div>';
+  }).join('');
+}
+
+/* Come si vedono addosso all'eroe: la furia è un alone rosso e braci, lo
+   scudo una bolla azzurra, il corvo un corvo che gli gira sopra la testa.
+   Stanno nella scena e non nell'eroe, che si ricostruisce cambiando aspetto. */
+const effetti = (() => {
+  const furia = new THREE.Group();
+  bagliore(furia, 0xff5a2a, 4.6, 0.8, 1.3);
+  const scudo = new THREE.Group();
+  const bolla = new THREE.Mesh(GEO.sph, new THREE.MeshBasicMaterial({
+    color: 0x7cd8ff, transparent: true, opacity: 0.22, depthWrite: false }));
+  bolla.scale.set(2.5, 2.9, 2.5);
+  bolla.position.y = 1.3;
+  scudo.add(bolla);
+  bagliore(scudo, 0x7cd8ff, 3.6, 0.3, 1.3);
+  const corvo = new THREE.Group();
+  const nero = mat(0x262233), becco = mat(0xf2b33c);
+  put(corvo, GEO.sph, nero, 0, 0, 0, 0.36, 0.3, 0.6);
+  put(corvo, GEO.sph, nero, 0, 0.1, 0.32, 0.26, 0.26, 0.26);
+  put(corvo, GEO.cone6, becco, 0, 0.08, 0.5, 0.08, 0.18, 0.08).rotation.x = Math.PI / 2;
+  put(corvo, GEO.cone6, nero, 0, 0.02, -0.4, 0.2, 0.3, 0.06).rotation.x = -Math.PI / 2;
+  const ali = [-1, 1].map(k => {
+    const a = new THREE.Group();
+    a.position.set(k * 0.14, 0.06, 0);
+    put(a, GEO.box, nero, k * 0.36, 0, 0, 0.72, 0.04, 0.34);
+    corvo.add(a);
+    return a;
+  });
+  for (const k of [-1, 1]) put(corvo, GEO.sph8, accesa(0xffe066), k * 0.09, 0.16, 0.45, 0.05, 0.05, 0.03);
+  addOutline(corvo, 0.02);
+  for (const o of [furia, scudo, corvo]) { o.visible = false; scene.add(o); }
+  return { furia, scudo, corvo, ali, bolla };
+})();
+
+function mostraPoteri(dt) {
+  const P = run.poteri || {};
+  const vivi = state === 'run' || state === 'wall';
+  const E = effetti;
+  E.furia.visible = vivi && P.furia > 0;
+  E.scudo.visible = vivi && P.scudo > 0;
+  E.corvo.visible = vivi && P.corvo > 0;
+  $('poteri').classList.toggle('hidden', !vivi);
+  if (!vivi) return;
+  const h = hero.position;
+  if (E.furia.visible) {
+    E.furia.position.copy(h);
+    E.furia.scale.setScalar(1 + 0.1 * Math.sin(tempoMondo * 14));
+    if (Math.random() < 0.5)
+      FX.scintille.emetti(h.x + rnd(-0.5, 0.5), 0.6 + Math.random() * 1.6, h.z, 1, 0xff7a3c,
+                          { vel: 1.2, su: 3, taglia: 0.35, vita: 0.45, grav: -2 });
+  }
+  if (E.scudo.visible) {
+    E.scudo.position.copy(h);
+    E.bolla.material.opacity = 0.2 + 0.06 * Math.sin(tempoMondo * 5);
+    /* negli ultimi due secondi lampeggia: sta per finire */
+    if (P.scudo < 2) E.scudo.visible = Math.sin(tempoMondo * 20) > 0;
+  }
+  if (E.corvo.visible) {
+    const a = tempoMondo * 2.4;
+    E.corvo.position.set(h.x + Math.sin(a) * 1.7, 3.3 + Math.sin(a * 2) * 0.2, h.z + Math.cos(a) * 1.7);
+    E.corvo.rotation.y = a + Math.PI / 2;
+    const b = Math.sin(tempoMondo * 16) * 0.7;
+    E.ali[0].rotation.z = b; E.ali[1].rotation.z = -b;
+  }
 }
 
 function takeWeapon(it) {
@@ -1204,6 +1358,7 @@ function startRun() {
   run.combo = 0; renderCombo();
   run.phaseStart = 0; run.revived = false;
   run.buffs = { income: 0, rate: 0, gain: 0 };
+  run.poteri = { furia: 0, scudo: 0, corvo: 0 };
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
   if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
@@ -1214,6 +1369,7 @@ function startRun() {
      proporzione alla torre, altrimenti alla decima varrebbe zero */
   run.power += Math.round(perk('scorta') * 2 * 0.75 * run.unit * 3);
   renderBuffRail(run.buffs);
+  renderPoteri();
   azzeraHudVisto();
   renderHud();
   runT = 0;
@@ -1624,17 +1780,21 @@ function update(dt) {
     run.z -= run.speed * dt;
     run.x = lerp(run.x, run.targetX, 1 - Math.pow(0.0015, dt));
 
+    aggiornaPoteri(dt);
     const lane = nearestLaneX();
     for (const it of items) {
       if (it.done || run.z > it.z) continue;
       it.done = true;
+      /* col corvo le monete arrivano da tutte le corsie */
+      const dalCorvo = run.poteri.corvo > 0 && (it.kind === 'coin' || it.kind === 'gem');
       const touched = it.kind === 'block' ? it.x === lane          // il muro è pieno
-                                          : Math.abs(run.x - it.x) <= HIT_X;
+                                          : dalCorvo || Math.abs(run.x - it.x) <= HIT_X;
       if (!touched) continue;                                      // schivato
       if (it.kind === 'pillar')      hitPillar(it);
       else if (it.kind === 'enemy')  hitEnemy(it);
       else if (it.kind === 'weapon') takeWeapon(it);
       else if (it.kind === 'block')  hitWallBlock(it);
+      else if (it.kind === 'potere') takePotere(it);
       else                           takePickup(it);
       if (!steering()) break;
     }
@@ -1708,6 +1868,7 @@ function update(dt) {
     animateIdle(tower.princess, runT, 0.6);
   }
   aggiornaVittoria(dt);             // dopo: salto e saluto si sommano al respiro
+  mostraPoteri(dt);
 
   fadeLabels();
   aggiornaPoi(dt);
@@ -1722,16 +1883,17 @@ function update(dt) {
       it.swirl.rotation.y += dt * 1.5;
       it.swirl.position.y = 2.5 + Math.sin(runT * 2.2) * 0.18;
     } else if (!it.done && it.obj.visible &&
-               (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff')) {
+               (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff' || it.kind === 'potere')) {
       it.obj.rotation.y += dt * (it.spin || 1.8);
       /* galleggiano, e quelle che stai per prendere ti vengono incontro.
          Solo quelle: la calamita è una cosa che si vede, non una regola —
          la raccolta resta decisa dalla corsia, come prima. */
       const avanti = run.z - it.z;
-      const presa = steering() && avanti > 0 && avanti < 7 && Math.abs(run.x - it.x) <= HIT_X;
+      const corvo = run.poteri && run.poteri.corvo > 0 && (it.kind === 'coin' || it.kind === 'gem');
+      const presa = steering() && avanti > 0 && avanti < 7 && (corvo || Math.abs(run.x - it.x) <= HIT_X);
       const k = presa ? 1 - avanti / 7 : 0;
       it.obj.position.x = lerp(it.x, run.x, k * k);
-      it.obj.position.y = 1.1 + Math.sin(runT * 3 + it.z) * 0.14 + k * 0.5;
+      it.obj.position.y = (it.kind === 'potere' ? 1.3 : 1.1) + Math.sin(runT * 3 + it.z) * 0.14 + k * 0.5;
     } else if (!it.done && it.kind === 'enemy' && it.obj.visible) {
       animateIdle(it.mob, runT, it.z * 0.2);
     }

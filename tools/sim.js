@@ -74,6 +74,22 @@ const G = {
     critP   : num(core, /DUELLO[\s\S]*?critP:\s*(\d*\.?\d+)/, 'DUELLO.critP'),
     critB   : num(core, /DUELLO[\s\S]*?critB:\s*(\d*\.?\d+)/, 'DUELLO.critB')
   },
+  /* i poteri a tempo: al simulatore conta solo la furia. Lo scudo para una
+     colonna rossa, e il giocatore simulato non ne prende mai; il corvo
+     raccoglie monete da ogni corsia, e lui le raccoglie già tutte. */
+  poteri: {
+    prob : num(core, /POTERI_PROB\s*=\s*(\d*\.?\d+)/, 'POTERI_PROB'),
+    max  : num(core, /POTERI_MAX\s*=\s*(\d+)/, 'POTERI_MAX'),
+    tipi : (core.match(/const POTERI = \{([\s\S]*?)\n\};/) || ['', ''])[1].split('\n').filter(r => /^\s*\w+:/.test(r)).length,
+    dura : num(core, /furia:\s*\{[^}]*dura:\s*(\d*\.?\d+)/, 'POTERI.furia.dura'),
+    mult : num(core, /furia:\s*\{[^}]*mult:\s*(\d*\.?\d+)/, 'POTERI.furia.mult')
+  },
+  corsa: {
+    speed : num(core, /speed\s*:\s*(\d*\.?\d+)/, 'CFG.speed'),
+    step  : num(core, /speedStep\s*:\s*(\d*\.?\d+)/, 'CFG.speedStep'),
+    max   : num(core, /speedMax\s*:\s*(\d*\.?\d+)/, 'CFG.speedMax'),
+    fila  : num(core, /rowSpacing\s*:\s*(\d*\.?\d+)/, 'CFG.rowSpacing')
+  },
   /* la rabbia a metà vita */
   rabbia: {
     soglia : num(core, /RABBIA\s*=\s*\{[^}]*soglia:\s*(\d*\.?\d+)/, 'RABBIA.soglia'),
@@ -174,7 +190,11 @@ function corsa(m, stile) {
   let potenza = G.potenzaIni, arma = m.up.arma, oro = 0, rotti = 0;
   const bonus = { oro: 0, attacco: 0, potenza: 0 };
 
-  const colpo = () => G.armi[arma] * u * (1 + bonus.attacco * G.buffAttacco);
+  let furia = 0, poteri = 0;                           // file di furia rimaste
+  const colpo = () => G.armi[arma] * u * (1 + bonus.attacco * G.buffAttacco) *
+                      (furia > 0 ? G.poteri.mult : 1);
+  const velocita = Math.min(G.corsa.max, G.corsa.speed + (m.level - 1) * G.corsa.step);
+  const fileFuria = Math.round(G.poteri.dura * velocita / G.corsa.fila);
   /* La combo: il giocatore simulato non prende mai una colonna rossa (sceglie
      sempre fra quelle che può spaccare), quindi la sua serie non si rompe
      mai. È il caso migliore, e va bene così: la compensazione su BASE_SHARE
@@ -220,8 +240,13 @@ function corsa(m, stile) {
         combo++;
       } else { potenza += Math.round(scelta.hp * 3 * molPot()); combo++; }
     }
+    if (furia > 0) furia--;
     if (i > 0) {
-      if (caso() < G.bonusProb) bonus[['oro', 'attacco', 'potenza'][Math.floor(caso() * 3)]]++;
+      /* come nel gioco: il potere prende il posto delle monete del varco */
+      if (i > 1 && poteri < G.poteri.max && caso() < G.poteri.prob) {
+        poteri++;
+        if (caso() < 1 / G.poteri.tipi) furia = fileFuria + 1;   // +1: il calo qui sopra
+      } else if (caso() < G.bonusProb) bonus[['oro', 'attacco', 'potenza'][Math.floor(caso() * 3)]]++;
       else oro += Math.round(3 * u * G.monetaValore * molOro());   // tre monete per varco
     }
   }

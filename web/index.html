@@ -70,6 +70,19 @@
   .poi-c.no{background:rgba(224,101,79,.6)}
   .poi-c.arma{background:rgba(255,210,75,.6);color:#3a2000}
   .poi-c.trap{background:rgba(140,90,220,.6)}
+  /* i poteri a tempo: in basso al centro, sotto gli occhi, con la barra
+     che si svuota — si deve sapere quanto manca senza cercarlo */
+  #poteri{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);
+    display:flex;justify-content:center;gap:8px}
+  .po{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:6px;row-gap:4px;
+    padding:6px 11px 7px;border-radius:13px;border:2px solid;
+    background:rgba(16,32,52,.72);color:#fff;animation:poDentro .35s ease-out}
+  .po span{font-size:18px;line-height:1}
+  .po b{font-family:var(--titolo);font-size:14px;letter-spacing:.5px}
+  .po em{grid-column:1 / -1;display:block;height:5px;border-radius:99px;
+    background:rgba(0,0,0,.4);overflow:hidden}
+  .po em i{display:block;height:100%;border-radius:99px}
+  @keyframes poDentro{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
   .buff{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:11px;
     background:rgba(16,32,52,.68);border:2px solid;color:#fff;
     font-size:11px;font-weight:800;letter-spacing:.2px}
@@ -569,6 +582,7 @@
   <div id="progressWrap"><div id="progress"></div></div>
   <div id="combo" class="hidden"><b id="comboN">×2</b><span id="comboBonus"></span></div>
   <div id="buffRail"></div>
+  <div id="poteri"></div>
   <div id="poi" class="hidden"><small data-t="poi.lbl">DOPO</small><div id="poiRiga"></div></div>
 </div>
 <!-- la prima partita guidata: una riga alla volta -->
@@ -733,7 +747,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260924-1508';</script>
+<script>window.BUILD = '260924-1517';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

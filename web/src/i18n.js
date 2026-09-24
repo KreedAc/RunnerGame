@@ -171,6 +171,14 @@ const STRINGS = {
     'b.power'     : 'Potenza',
 
     'poi.lbl'     : 'DOPO',
+    /* --- i poteri a tempo --- */
+    'po.furia'    : 'FURIA',
+    'po.furia.d'  : 'COLPO ×2!',
+    'po.scudo'    : 'SCUDO',
+    'po.scudo.d'  : 'UNA ROSSA GRATIS',
+    'po.corvo'    : 'CORVO',
+    'po.corvo.d'  : 'MONETE DA OGNI CORSIA',
+    'po.parato'   : 'PARATO!',
     /* --- il salvataggio di riserva --- */
     'sv.bottone'  : 'SALVATAGGIO',
     'sv.tit'      : '💾 SALVATAGGIO DI RISERVA',
@@ -348,6 +356,14 @@ const STRINGS = {
     'z.sky'       : 'BROKEN SKY',
 
     'poi.lbl'     : 'NEXT',
+    /* --- timed powers --- */
+    'po.furia'    : 'FURY',
+    'po.furia.d'  : 'HIT ×2!',
+    'po.scudo'    : 'SHIELD',
+    'po.scudo.d'  : 'ONE RED FOR FREE',
+    'po.corvo'    : 'RAVEN',
+    'po.corvo.d'  : 'COINS FROM EVERY LANE',
+    'po.parato'   : 'BLOCKED!',
     /* --- backup save --- */
     'sv.bottone'  : 'BACKUP',
     'sv.tit'      : '💾 BACKUP SAVE',

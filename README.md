@@ -160,6 +160,7 @@ tools/skins.js        compra, indossa e salva un aspetto: il giro dei diamanti
 tools/bottega.js      bottega delle rune e obiettivo del giorno: il giro delle rune
 tools/guida.js        la prima partita guidata, giocata da un robot
 tools/riserva.js      salvataggio di riserva: copia, azzera, ricarica identico; anteprima
+tools/poteri.js       i poteri a tempo: furia, scudo, corvo, giocati a passo fisso
 tools/misura-home.js  quanti pixel serve il menù e chi se li prende
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
@@ -200,5 +201,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Salvataggio di riserva (codice da copiare), anteprima della riga dopo, contatore FPS nascosto
 - [x] Scena della vittoria: le chiavi volano alla grata, la grata si alza, la principessa salta e saluta, coriandoli
 - [x] Il gigante si infuria a metà vita: ruggito, occhi rossi, anelli due alla volta
+- [x] Poteri a tempo in pista: furia (colpo ×2), scudo (una rossa gratis), corvo (monete da ogni corsia)
 - [ ] Audio sintetizzato e vibrazione (prossimo)
 - [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)

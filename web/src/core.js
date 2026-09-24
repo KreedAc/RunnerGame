@@ -228,6 +228,23 @@ const BUFFS = {
   gain  : { key: 'b.power',  icon: '⚡', step: 0.25, color: '#7cc9ff' }
 };
 
+/* I POTERI A TEMPO. Rari (al più due per corsa, mai nelle prime due file e
+   mai nella prima partita guidata), durano pochi secondi e cambiano cosa
+   conviene fare ADESSO — vale la pena cambiare corsia per prenderlo?
+     furia : il colpo raddoppia per `dura` secondi (le colonne diventano
+             verdi davanti a te, e lo si vede)
+     scudo : la prima colonna rossa o il primo nemico che ti prende non
+             costa niente; se nessuno lo tocca, svanisce dopo `dura`
+     corvo : per `dura` secondi il corvo raccoglie le monete di tutte le
+             corsie, non solo della tua
+   Una riga per potere: il simulatore legge la furia con una regex. */
+const POTERI = {
+  furia: { key: 'po.furia', desc: 'po.furia.d', icon: '🔥', dura: 5,  color: '#ff6a3c', mult: 2 },
+  scudo: { key: 'po.scudo', desc: 'po.scudo.d', icon: '🛡️', dura: 14, color: '#7cd8ff' },
+  corvo: { key: 'po.corvo', desc: 'po.corvo.d', icon: '🐦', dura: 8,  color: '#c9a8ff' }
+};
+const POTERI_PROB = 0.07, POTERI_MAX = 2;
+
 /* Potenziamenti permanenti, comprati nel menù (azzerati dalla rinascita).
    POTENZA e ORO sono moltiplicatori composti: +10% e +8% ad ogni livello,
    per sempre. Erano somme fisse (20 + 14×liv), e a partire dalla quinta
