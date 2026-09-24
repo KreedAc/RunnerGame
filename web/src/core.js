@@ -500,6 +500,7 @@ function defaultSave() {
     runeSpese: 0,        // rune spese in bottega (il bonus si conta su meta.runes)
     bottega: { arma: 0, scorta: 0, mira: 0, muro: 0, gemme: 0, pelle: 0 },
     oggi: { giorno: '', fatto: 0, preso: false },   // l'obiettivo del giorno
+    regole: {},          // quante volte si è vista annunciare ogni regola di zona
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

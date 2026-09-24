@@ -290,6 +290,7 @@ function buildRun() {
   fxZona(themeFor(meta.level).key);   // e con lei l'aria: neve, braci, cenere…
   clearWorld();
   items.length = 0;
+  trappoleAzzera();
   tower = null; boss = null; bossSprite = null; heroSprite = null;
 
   rows = trackRows(meta.level);
@@ -321,6 +322,7 @@ function buildRun() {
     }
     const lanes = shuffle([0, 1, 2]);
     const weaponRow = i % 4 === 3 && refTier < WEAPONS.length - 1;
+    const primoDellaFila = items.length;
 
     // corsia 1: la torre alla tua portata — il guadagno
     const easyHp = Math.max(1, Math.round(unit * rnd(0.55, 0.95)));
@@ -354,6 +356,12 @@ function buildRun() {
       const hardHp = Math.round(unit * rnd(1.3, 3.2));
       items.push(Object.assign({ kind: 'pillar', z, x: CFG.laneX[lanes[2]], hp: hardHp, done: false },
                                spawnPillar(CFG.laneX[lanes[2]], z, hardHp)));
+    }
+
+    /* la regola della zona (trappole.js): nella fila, o nel varco davanti */
+    if (i > 1 && !guida.attiva) {
+      trappolaRiga(items.slice(primoDellaFila));
+      trappolaVarco(z + 8);
     }
 
     // raccolte fra una riga e l'altra
@@ -466,12 +474,13 @@ function refreshThreats() {
   for (const it of items) {
     if (it.done) continue;
     if (it.kind !== 'pillar' && it.kind !== 'enemy') continue;
-    const ok = dmg >= it.hp;
-    setLabel(it.sprite, fmt(it.hp), ok ? '#8dff87' : '#ff8a6e');
+    /* nebbia e specchio (trappole.js) decidono cosa si vede */
+    const A = trappolaAspetto(it, dmg), ok = A.ok;
+    setLabel(it.sprite, A.testo, ok === null ? '#d6c8ff' : ok ? '#8dff87' : '#ff8a6e');
     if (it.parts) {
-      const body = ok ? MAT.good : MAT.bad;
-      const band = ok ? MAT.goodDark : MAT.badDark;
-      const lite = ok ? MAT.goodLite : MAT.badLite;
+      const body = ok === null ? MAT.stone : ok ? MAT.good : MAT.bad;
+      const band = ok === null ? MAT.stoneDark : ok ? MAT.goodDark : MAT.badDark;
+      const lite = ok === null ? MAT.stone : ok ? MAT.goodLite : MAT.badLite;
       const n = it.courses * 2;
       it.parts.forEach((m, i) => {
         m.material = i >= n ? lite : (i % 2 ? band : body);
@@ -1359,12 +1368,14 @@ function startRun() {
   run.phaseStart = 0; run.revived = false;
   run.buffs = { income: 0, rate: 0, gain: 0 };
   run.poteri = { furia: 0, scudo: 0, corvo: 0 };
+  run.scivola = 0;
   run.x = 0; run.targetX = 0; run.z = 0;
   hero.rotation.x = 0;
   if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
   setWeapon(hero, run.weapon);
   guidaInizia();                 // prima di buildRun: decide le prime due file
   buildRun();
+  trappolaAnnuncia();            // le prime corse in una zona, la regola si dice
   /* bottega: la scorta — due colonne facili di potenza per gradino, in
      proporzione alla torre, altrimenti alla decima varrebbe zero */
   run.power += Math.round(perk('scorta') * 2 * 0.75 * run.unit * 3);
@@ -1682,6 +1693,7 @@ addEventListener('pointerup',     () => { dragging = false; });
 addEventListener('pointercancel', () => { dragging = false; });
 addEventListener('pointermove', e => {
   if (!dragging || !steering()) return;
+  if (run.scivola > 0) { lastPX = e.clientX; return; }     // sul ghiaccio non si sterza
   /* Il passo si misura in fette di schermo, non in pixel: un pixel vale
      mondi diversi su schermi diversi, e con la conversione fissa di prima
      lo stesso trascinamento attraversava più corsie su un telefono che
@@ -1691,7 +1703,7 @@ addEventListener('pointermove', e => {
   lastPX = e.clientX;
 });
 addEventListener('keydown', e => {
-  if (!steering()) return;
+  if (!steering() || run.scivola > 0) return;
   if (e.key === 'ArrowLeft')  run.targetX = clamp(run.targetX - 1.2, -CFG.laneLimit, CFG.laneLimit);
   if (e.key === 'ArrowRight') run.targetX = clamp(run.targetX + 1.2, -CFG.laneLimit, CFG.laneLimit);
 });
@@ -1723,8 +1735,8 @@ function aggiornaPoi(dt) {
     if (!it) return ['', '·'];
     if (it.kind === 'weapon') return ['arma', '⚔'];
     if (it.kind === 'trappola') return ['trap', trappolaIcona(it)];
-    const ok = dmg >= it.hp;
-    return [ok ? 'si' : 'no', (it.kind === 'enemy' ? '👹' : '') + fmt(it.hp)];
+    const A = trappolaAspetto(it, dmg);           // nebbia e specchio mentono anche qui
+    return [A.ok === null ? 'trap' : A.ok ? 'si' : 'no', (it.kind === 'enemy' ? '👹' : '') + A.testo];
   });
   const chiave = celle.map(c => c.join(':')).join('|');
   if (chiave === poiChiave) return;
@@ -1732,10 +1744,6 @@ function aggiornaPoi(dt) {
   $('poiRiga').innerHTML = celle.map(([k, v]) =>
     '<span class="poi-c ' + k + '">' + v + '</span>').join('');
 }
-
-/* le trappole dei biomi le riempie più avanti trappole.js; qui basta
-   un'icona di ripiego */
-let trappolaIcona = () => '⚠';
 
 /* ------------------------ IL CONTATORE DEI FOTOGRAMMI ------------------ */
 let fpsN = 0, fpsT = 0;
@@ -1781,6 +1789,7 @@ function update(dt) {
     run.x = lerp(run.x, run.targetX, 1 - Math.pow(0.0015, dt));
 
     aggiornaPoteri(dt);
+    aggiornaTrappole(dt, tempoMondo);
     const lane = nearestLaneX();
     for (const it of items) {
       if (it.done || run.z > it.z) continue;
@@ -1795,6 +1804,7 @@ function update(dt) {
       else if (it.kind === 'weapon') takeWeapon(it);
       else if (it.kind === 'block')  hitWallBlock(it);
       else if (it.kind === 'potere') takePotere(it);
+      else if (it.kind === 'trappola') trappolaPassa(it);
       else                           takePickup(it);
       if (!steering()) break;
     }

@@ -179,6 +179,16 @@ const STRINGS = {
     'po.corvo'    : 'CORVO',
     'po.corvo.d'  : 'MONETE DA OGNI CORSIA',
     'po.parato'   : 'PARATO!',
+    /* --- le regole delle zone --- */
+    'tr.scivoli'  : 'SCIVOLI!',
+    'tr.h.ghiaccio': '❄ ATTENTO AL GHIACCIO: SI SCIVOLA!',
+    'tr.h.tronco' : '🪵 TRONCHI CHE ROTOLANO!',
+    'tr.h.spuntoni': '🦴 PASSA QUANDO LE OSSA SONO GIÙ!',
+    'tr.h.nebbia' : '🌫 NELLA NEBBIA I NUMERI SI VEDONO TARDI',
+    'tr.h.lava'   : '🔥 ARANCIONE = STA PER DIVENTARE LAVA',
+    'tr.h.geyser' : '💨 I GEYSER SBUFFANO A TEMPO',
+    'tr.h.specchio': '🪞 CHI LUCCICA MENTE SUL NUMERO!',
+    'tr.h.fulmine': '⚡ DOVE LAMPEGGIA CADE IL FULMINE!',
     /* --- il salvataggio di riserva --- */
     'sv.bottone'  : 'SALVATAGGIO',
     'sv.tit'      : '💾 SALVATAGGIO DI RISERVA',
@@ -364,6 +374,16 @@ const STRINGS = {
     'po.corvo'    : 'RAVEN',
     'po.corvo.d'  : 'COINS FROM EVERY LANE',
     'po.parato'   : 'BLOCKED!',
+    /* --- zone rules --- */
+    'tr.scivoli'  : 'SLIDING!',
+    'tr.h.ghiaccio': '❄ WATCH THE ICE: YOU SLIDE!',
+    'tr.h.tronco' : '🪵 ROLLING LOGS!',
+    'tr.h.spuntoni': '🦴 PASS WHEN THE BONES ARE DOWN!',
+    'tr.h.nebbia' : '🌫 IN THE FOG NUMBERS SHOW UP LATE',
+    'tr.h.lava'   : '🔥 ORANGE = ABOUT TO TURN TO LAVA',
+    'tr.h.geyser' : '💨 GEYSERS BLOW ON A TIMER',
+    'tr.h.specchio': '🪞 THE SHINY ONES LIE ABOUT THEIR NUMBER!',
+    'tr.h.fulmine': '⚡ WHERE IT FLASHES, LIGHTNING STRIKES!',
     /* --- backup save --- */
     'sv.bottone'  : 'BACKUP',
     'sv.tit'      : '💾 BACKUP SAVE',

@@ -151,6 +151,7 @@ web/
   src/fx.js           bagliori, scintille, onde d'urto, aria della zona, scie di velocità
   src/actors.js       eroe, nemici, boss, principessa, armi, animazioni
   src/hub.js          menù, portafoglio, potenziamenti, schermate
+  src/trappole.js     una regola per zona: le trappole della pista
   src/game.js         corsa, ostacoli, muro, duello col boss, ciclo di gioco
   vendor/three.min.js copia locale di three.js (serve al pacchetto offline)
 docs/DESIGN.md        scelte di design, bilanciamento e roadmap Android
@@ -161,6 +162,7 @@ tools/bottega.js      bottega delle rune e obiettivo del giorno: il giro delle r
 tools/guida.js        la prima partita guidata, giocata da un robot
 tools/riserva.js      salvataggio di riserva: copia, azzera, ricarica identico; anteprima
 tools/poteri.js       i poteri a tempo: furia, scudo, corvo, giocati a passo fisso
+tools/trappole.js     una regola per zona: ogni zona la sua, e ognuna fa quello che dice
 tools/misura-home.js  quanti pixel serve il menù e chi se li prende
 tools/build-single.sh genera la demo a file singolo (marca la build)
 tools/stamp.sh        marca la build: ?v= sui sorgenti, contro la cache
@@ -202,5 +204,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Scena della vittoria: le chiavi volano alla grata, la grata si alza, la principessa salta e saluta, coriandoli
 - [x] Il gigante si infuria a metà vita: ruggito, occhi rossi, anelli due alla volta
 - [x] Poteri a tempo in pista: furia (colpo ×2), scudo (una rossa gratis), corvo (monete da ogni corsia)
+- [x] Una regola per zona in pista: ghiaccio, tronchi, spuntoni, nebbia, lava, geyser, specchi, fulmini
 - [ ] Audio sintetizzato e vibrazione (prossimo)
 - [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)

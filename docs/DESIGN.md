@@ -1223,6 +1223,40 @@ menù torna a scorrere — che è giusto così: il costo di far entrare tutto in
 `tools/misura-home.js` rifà il conto e stampa chi occupa cosa: è il modo per
 accorgersi che il menù è cresciuto **prima** che lo faccia notare qualcuno.
 
+## 7e. Una regola per zona
+
+Le otto zone cambiavano cielo, terra, carceriere e duello, ma la corsa si
+giocava uguale dappertutto: rompere la colonna giusta. Adesso ogni zona ha
+una regola sua (`web/src/trappole.js`), che si vede arrivare e si impara in
+una corsa. Le prime due volte in una zona, un cartello la dice in una riga.
+
+| zona | regola | come si vede | cosa succede |
+|---|---|---|---|
+| Valle Gelata | ghiaccio | chiazza azzurra col bordo acceso | scivoli nella corsia accanto, e per 0,3 s non sterzi |
+| Bosco Rosso | tronco | un tronco che rotola da una corsia all'altra | ti prende se ci sei quando passa |
+| Dune d'Ossa | spuntoni | punte d'osso che salgono e scendono (tremano prima) | costano solo se sono su |
+| Notte di Rúna | nebbia | una fila grigia con "?" al posto dei numeri | i numeri veri a 16 unità |
+| Bocca di Fuoco | lava | una striscia che lampeggia arancione, poi è lava | costa solo se è lava |
+| Palude di Cenere | geyser | uno sfiato che gorgoglia, poi sbuffa | costa solo mentre sbuffa |
+| Foresta di Vetro | specchio | la colonna più dura mostra un numero verde falso, e luccica | il numero vero a 12 unità |
+| Cielo Spezzato | fulmine | un cerchio giallo che lampeggia sulla corsia | il fulmine cade quando ci passi |
+
+Le trappole stanno nei **varchi** fra una fila e l'altra, 8 unità prima della
+fila: non prendono mai il posto di una colonna, quindi non tolgono la scelta,
+la complicano — la corsia buona per la trappola e quella buona per la fila
+possono non essere la stessa. Nebbia e specchio invece cambiano una fila, e
+mentono anche nell'anteprima e ai cambi d'arma (`trappolaAspetto`, da cui
+passa `refreshThreats`). Mai nelle prime due file, mai nella prima partita
+guidata. Una trappola presa costa il 12% della potenza e rompe la serie; lo
+scudo la para come para una rossa.
+
+Il simulatore non le vede, e non è una svista: il giocatore simulato le
+schiva tutte, e il conto della torre resta quello (30 / 26 / 26). Le
+trappole rendono il gioco più difficile solo a chi non le guarda — per
+questo costano poco e si annunciano. Se il diario delle prossime prove dice
+che pesano troppo, le manopole sono `TRAPPOLA_COSTO` e le `prob` per zona.
+`tools/trappole.js` le gioca tutte a passo fisso.
+
 ## 8. Il muro è pieno, gli ostacoli no
 
 Le corsie stanno a x = −2.4, 0, +2.4 e la collisione si risolveva per
