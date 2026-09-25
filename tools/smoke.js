@@ -125,6 +125,9 @@ const controlla = (ok, cosa) => { if (!ok) problemi.push(cosa); };
 
   const r = await p.evaluate(() => {
     const G = window.BlockyRun;
+    /* la scossa si spegne in tempo di gioco: sul renderer software 1,5 s
+       veri possono essere pochi fotogrammi. Due secondi a passo fisso. */
+    for (let i = 0; i < 120; i++) update(1 / 60);
     /* ogni numero che il giocatore vede, più quelli che finiscono su disco */
     const numeri = {};
     for (const k of ['power', 'coins', 'gems', 'broken', 'unit', 'bossHp'])

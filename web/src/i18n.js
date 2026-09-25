@@ -170,7 +170,6 @@ const STRINGS = {
     'b.attack'    : 'Attacco',
     'b.power'     : 'Potenza',
 
-    'poi.lbl'     : 'DOPO',
     /* --- i poteri a tempo --- */
     'po.furia'    : 'FURIA',
     'po.furia.d'  : 'COLPO ×2!',
@@ -398,7 +397,6 @@ const STRINGS = {
     'z.glass'     : 'GLASS FOREST',
     'z.sky'       : 'BROKEN SKY',
 
-    'poi.lbl'     : 'NEXT',
     /* --- timed powers --- */
     'po.furia'    : 'FURY',
     'po.furia.d'  : 'HIT ×2!',

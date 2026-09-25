@@ -933,7 +933,7 @@ scostamento della camera sia tornato esattamente a zero. Verificata
 rompendola apposta: con la proiezione guasta la prova fallisce su quattro
 numeri.
 
-## 6f. Il salvataggio di riserva, l'anteprima, il contatore
+## 6f. Il salvataggio di riserva e il contatore
 
 **Il salvataggio di riserva.** La partita vive nel localStorage del browser:
 pulire i dati, cambiare telefono o aprire il link da un'altra app la cancella,
@@ -948,11 +948,12 @@ Nel registro sta anche RICOMINCIA DA CAPO: cancellare tutto e mettere al
 sicuro tutto sono la stessa faccenda, e lì non si tocca per sbaglio.
 `tools/riserva.js` fa il giro completo.
 
-**L'anteprima.** I numeri di una riga si leggono quando è già vicina: si
-decideva una mossa alla volta. In corsa, a destra, tre caselline mostrano la
-riga DOPO quella che hai davanti, in ordine di corsia e col colore della
-portata (verde, rosso, ⚔ l'arma, 👹 i nemici). Nel muro no: lì i numeri sono
-vicini e bastano.
+**L'anteprima, provata e tolta.** Per un po' in corsa, a destra, tre
+caselline mostravano la riga DOPO quella davanti, per pensare due mosse
+avanti. Alla prova sul telefono: "quel rettangolino è un po' bruttino". Aveva
+ragione — un riquadro di numeri sopra un mondo che si legge da solo, e con
+le file che si vedono già arrivare da lontano non aggiungeva abbastanza per
+quello che copriva. Tolta.
 
 **Il contatore.** Cinque tocchi sulla marca della build accendono in basso a
 sinistra fotogrammi al secondo, densità di pixel e draw call. Serve a capire,
@@ -1281,7 +1282,7 @@ Le trappole stanno nei **varchi** fra una fila e l'altra, 8 unità prima della
 fila: non prendono mai il posto di una colonna, quindi non tolgono la scelta,
 la complicano — la corsia buona per la trappola e quella buona per la fila
 possono non essere la stessa. Nebbia e specchio invece cambiano una fila, e
-mentono anche nell'anteprima e ai cambi d'arma (`trappolaAspetto`, da cui
+mentono anche ai cambi d'arma (`trappolaAspetto`, da cui
 passa `refreshThreats`). Mai nelle prime due file, mai nella prima partita
 guidata. Una trappola presa costa il 12% della potenza e rompe la serie; lo
 scudo la para come para una rossa.
@@ -1390,5 +1391,5 @@ Se su fascia bassa non regge, in ordine di resa:
    la strada più corta per il Play Store: una PWA si impacchetta come TWA con
    Bubblewrap, senza riscrivere niente.
 Fatto, e tolto da questa lista: i diamanti si spendono (seconda occasione,
-aspetti), c'è un obiettivo al giorno, la prima partita insegna giocando, e
-l'anteprima della riga successiva (§6f).
+aspetti), c'è un obiettivo al giorno, e la prima partita insegna giocando.
+L'anteprima della riga successiva è stata fatta e poi tolta (§6f).

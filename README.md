@@ -161,7 +161,7 @@ tools/smoke.js        gioca una corsa e controlla che nessun numero impazzisca
 tools/skins.js        compra, indossa e salva un aspetto: il giro dei diamanti
 tools/bottega.js      bottega delle rune e obiettivo del giorno: il giro delle rune
 tools/guida.js        la prima partita guidata, giocata da un robot
-tools/riserva.js      salvataggio di riserva: copia, azzera, ricarica identico; anteprima
+tools/riserva.js      salvataggio di riserva: copia, azzera, ricarica identico
 tools/poteri.js       i poteri a tempo: furia, scudo, corvo, giocati a passo fisso
 tools/trappole.js     una regola per zona: ogni zona la sua, e ognuna fa quello che dice
 tools/imprese.js      le imprese: riconosciute a chi giocava già, pagate una volta, nel codice
@@ -202,7 +202,7 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Eroe rifatto nel dettaglio, contorni sottili del colore del pezzo, lastricato sulla pista
 - [x] Carceriere rifatto: un gigante vichingo muscoloso in armatura, diverso per regno (tratto, barba, arma), con le chiavi della prigione alla cintura
 - [x] Nemici e principessa rifatti nello stesso stile (nemici clonati da uno stampo per tipo)
-- [x] Salvataggio di riserva (codice da copiare), anteprima della riga dopo, contatore FPS nascosto
+- [x] Salvataggio di riserva (codice da copiare), contatore FPS nascosto
 - [x] Scena della vittoria: le chiavi volano alla grata, la grata si alza, la principessa salta e saluta, coriandoli
 - [x] Il gigante si infuria a metà vita: ruggito, occhi rossi, anelli due alla volta
 - [x] Poteri a tempo in pista: furia (colpo ×2), scudo (una rossa gratis), corvo (monete da ogni corsia)

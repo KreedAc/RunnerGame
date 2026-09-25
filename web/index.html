@@ -56,20 +56,6 @@
      un bonus lungo ("⚔️ Attacco +20%") le si sovrapponeva */
   #buffRail{position:absolute;left:12px;top:calc(env(safe-area-inset-top,0px) + 196px);
     display:flex;flex-direction:column;gap:6px}
-  /* l'anteprima: la riga DOPO quella che hai davanti, per pensare due
-     mosse avanti. A destra, di fronte ai bonus. */
-  #poi{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 196px);
-    display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 6px 6px;
-    border-radius:12px;background:rgba(16,32,52,.6);border:2px solid rgba(255,255,255,.18)}
-  #poi small{font-size:9px;font-weight:900;letter-spacing:1.3px;color:rgba(255,255,255,.6)}
-  #poiRiga{display:flex;gap:4px}
-  .poi-c{min-width:30px;height:24px;padding:0 4px;border-radius:7px;display:grid;
-    place-items:center;font-family:var(--titolo);font-size:13px;color:#fff;
-    background:rgba(255,255,255,.08);font-variant-numeric:tabular-nums}
-  .poi-c.si{background:rgba(70,190,100,.55)}
-  .poi-c.no{background:rgba(224,101,79,.6)}
-  .poi-c.arma{background:rgba(255,210,75,.6);color:#3a2000}
-  .poi-c.trap{background:rgba(140,90,220,.6)}
   /* i poteri a tempo: in basso al centro, sotto gli occhi, con la barra
      che si svuota — si deve sapere quanto manca senza cercarlo */
   #poteri{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);
@@ -599,7 +585,6 @@
   <div id="combo" class="hidden"><b id="comboN">×2</b><span id="comboBonus"></span></div>
   <div id="buffRail"></div>
   <div id="poteri"></div>
-  <div id="poi" class="hidden"><small data-t="poi.lbl">DOPO</small><div id="poiRiga"></div></div>
 </div>
 <!-- la prima partita guidata: una riga alla volta -->
 <div id="guida" class="hidden">
@@ -765,7 +750,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260925-0036';</script>
+<script>window.BUILD = '260925-0649';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */

@@ -10,8 +10,6 @@
    il codice dal registro, si ricomincia da capo, si incolla il codice e
    tutto deve tornare com'era. Un codice con un carattere cambiato o
    troncato va rifiutato senza toccare niente. Caricare chiede due tocchi.
-   Poi l'anteprima: in corsa mostra tre caselle, quelle della riga DOPO
-   la prossima, e nel menù sparisce.
 
    Serve Playwright:  npm i playwright
    uso: node tools/riserva.js [percorso/index.html]
@@ -89,18 +87,6 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem(SAVE_KEY)).level) === 7,
      'il carico non è stato scritto nel salvataggio');
 
-  /* --- l'anteprima --- */
-  const poi = await p.evaluate(() => {
-    meta.lastOutcome = 'wall'; meta.guidaFatta = true;
-    const G = window.BlockyRun;
-    G.start();
-    for (let i = 0; i < 30; i++) update(1 / 60);
-    const inCorsa = { vista: !document.getElementById('poi').classList.contains('hidden'),
-                      celle: document.querySelectorAll('#poiRiga .poi-c').length };
-    return inCorsa;
-  });
-  ok(poi.vista && poi.celle === 3, 'l\'anteprima in corsa: ' + JSON.stringify(poi));
-
   for (const e of errori) male.push('errore JS: ' + e);
   await b.close();
   if (male.length) {
@@ -108,5 +94,5 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
     for (const m of male) console.error('  · ' + m);
     process.exit(1);
   }
-  console.log('prova superata · codice copiato, partita azzerata e ricaricata identica, codici rotti respinti, anteprima in corsa');
+  console.log('prova superata · codice copiato, partita azzerata e ricaricata identica, codici rotti respinti');
 })();
