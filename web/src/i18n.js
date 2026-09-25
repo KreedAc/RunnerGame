@@ -179,6 +179,7 @@ const STRINGS = {
     'po.corvo'    : 'CORVO',
     'po.corvo.d'  : 'MONETE DA OGNI CORSIA',
     'po.parato'   : 'PARATO!',
+    'po.h'        : '⚡ UN POTERE! PRENDILO!',
     /* --- le imprese --- */
     'im.titolo'   : 'IMPRESE',
     'im.sub'      : '{0} su {1} · ognuna paga in diamanti',
@@ -406,6 +407,7 @@ const STRINGS = {
     'po.corvo'    : 'RAVEN',
     'po.corvo.d'  : 'COINS FROM EVERY LANE',
     'po.parato'   : 'BLOCKED!',
+    'po.h'        : '⚡ A POWER! GRAB IT!',
     /* --- feats --- */
     'im.titolo'   : 'FEATS',
     'im.sub'      : '{0} of {1} · each one pays in diamonds',

@@ -211,26 +211,86 @@ function spawnPickup(x, z, kind) {
   return { obj: g, spin: rnd(1.4, 2.4) };
 }
 
-/* Un potere a tempo: una pietra runica che fluttua, col suo colore, un
-   alone grande e il nome sopra. Deve farsi notare da lontano: vale la
-   pena cambiare corsia per prenderlo, ma bisogna saperlo in tempo. */
+/* Un potere a tempo. Era una pietra runica, uguale per tutti e tre salvo
+   il colore del segno: il corvo in pista "non si capiva che fosse un
+   potere". Adesso ogni potere mostra COSA fa — il corvo vero che sbatte
+   le ali, una fiamma che guizza, uno scudo — dentro una bolla, e tutti
+   parlano la stessa lingua, diversa da monete e bonus: bolla, colonna di
+   luce verso il cielo, anello che gira a terra. Imparata una volta, si
+   riconosce da lontano qualunque potere. */
 function spawnPotere(x, z, kind) {
   const P = POTERI[kind];
   const col = parseInt(P.color.slice(1), 16);
   const g = new THREE.Group();
   g.position.set(x, 1.3, z);
-  put(g, GEO.box, mat(0x3a3f4a), 0, 0, 0, 0.95, 1.25, 0.28);
-  put(g, GEO.box, mat(0x5a6270), 0, 0.68, 0, 1.05, 0.14, 0.34);
-  put(g, GEO.box, accesa(col), 0, 0.05, 0.15, 0.12, 0.7, 0.02);
-  put(g, GEO.box, accesa(col), 0.1, 0.22, 0.15, 0.3, 0.1, 0.02).rotation.z = 0.7;
-  put(g, GEO.box, accesa(col), -0.1, -0.12, 0.15, 0.3, 0.1, 0.02).rotation.z = 0.7;
-  bagliore(g, col, 4.2, 0.75);
-  const s = labelSprite(P.icon + ' ' + t(P.key), P.color, 0.8);
-  s.position.set(0, 1.6, 0);
+
+  const icona = new THREE.Group();
+  g.add(icona);
+  let anima = null;
+  if (kind === 'corvo') {
+    const c = costruisciCorvo();
+    c.g.scale.setScalar(1.55);
+    c.g.rotation.y = 0.5;
+    icona.add(c.g);
+    anima = t => {
+      const b = Math.sin(t * 13) * 0.75;
+      c.ali[0].rotation.z = b; c.ali[1].rotation.z = -b;
+      c.g.position.y = Math.sin(t * 13) * 0.06;
+    };
+  } else if (kind === 'furia') {
+    /* una fiamma, non un cono: lingue storte di altezze diverse, ognuna
+       che guizza per conto suo, sopra una palla di brace */
+    const f = new THREE.Group();
+    const lingue = [
+      [0xff4a1a, 0, 1.25, 0.5, 0, 0], [0xff4a1a, -0.28, 0.85, 0.34, 0.35, 0.05],
+      [0xff4a1a, 0.3, 0.95, 0.34, -0.35, -0.05], [0xff9a2a, -0.08, 0.9, 0.3, 0.12, 0.14],
+      [0xff9a2a, 0.14, 0.7, 0.24, -0.2, 0.16], [0xffe066, 0, 0.5, 0.2, 0, 0.24]
+    ].map(([c, x, h, r, rz, zz]) => {
+      const l = put(f, GEO.sph, accesa(c), x, -0.35 + h / 2, zz, r * 1.6, h, r * 1.6);
+      l.rotation.z = rz;
+      return { l, h, fase: Math.random() * 6 };
+    });
+    put(f, GEO.sph, accesa(0xff6a1a), 0, -0.36, 0.05, 0.8, 0.34, 0.8);
+    icona.add(f);
+    anima = t => lingue.forEach(({ l, h, fase }) => {
+      const k = 1 + Math.sin(t * 15 + fase) * 0.14 + Math.sin(t * 27 + fase) * 0.07;
+      l.scale.y = h * k;
+      l.position.y = -0.35 + h * k / 2;
+    });
+  } else {
+    const s = new THREE.Group();
+    const legno = mat(0x3f7fc8), ferro = mat(0xc9d6e2);
+    put(s, GEO.cyl12, legno, 0, 0, 0, 1.2, 0.14, 1.2).rotation.x = Math.PI / 2;
+    put(s, GEO.ring, ferro, 0, 0, 0.02, 1.36, 1.36, 1.4);
+    put(s, GEO.box, accesa(0xdff6ff), 0, 0, 0.09, 0.16, 0.9, 0.04);
+    put(s, GEO.box, accesa(0xdff6ff), 0, 0, 0.09, 0.9, 0.16, 0.04);
+    put(s, GEO.sph, ferro, 0, 0, 0.1, 0.3, 0.3, 0.22);
+    icona.add(s);
+  }
+  addOutline(icona, 0.03);
+
+  /* la bolla, la colonna di luce, l'anello a terra */
+  const vetro = new THREE.Mesh(GEO.sph, new THREE.MeshBasicMaterial({
+    color: col, transparent: true, opacity: 0.16, depthWrite: false }));
+  vetro.scale.setScalar(2.1);
+  g.add(vetro);
+  bagliore(g, col, 4.4, 0.6);
+  const colonna = new THREE.Mesh(GEO.cyl, new THREE.MeshBasicMaterial({
+    color: col, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending }));
+  /* alta, ma sotto la camera (6,2): alta 8 la camera ci passava dentro,
+     e passandoci sotto lo schermo si tingeva per un attimo */
+  colonna.scale.set(1.1, 5.4, 1.1);
+  colonna.position.y = 1.4;
+  g.add(colonna);
+  const anello = put(g, GEO.ring, accesa(col), 0, -1.22, 0, 1.9, 1.9, 1.2);
+  anello.rotation.x = Math.PI / 2;
+  anello.userData.noOutline = true;
+
+  const s = labelSprite(P.icon + ' ' + t(P.key), P.color, 0.85);
+  s.position.set(0, 1.9, 0);
   g.add(s);
-  addOutline(g, 0.03);
   world.add(g);
-  return { obj: g, spin: 1.2 };
+  return { obj: g, spin: 1.2, anima };
 }
 
 /* -------------------------------- MURO --------------------------------- */
@@ -805,6 +865,16 @@ function scudoPara(obj, dove) {
 function aggiornaPoteri(dt) {
   const P = run.poteri;
   if (!P) return;
+  /* le prime tre volte che se ne avvicina uno, il gioco lo dice */
+  if ((meta.poteriVisti || 0) < 3) {
+    for (const it of items) {
+      if (it.kind !== 'potere' || it.done || it.detto || run.z - it.z > 46) continue;
+      it.detto = true;
+      meta.poteriVisti = (meta.poteriVisti || 0) + 1;
+      flashBanner(t('po.h'), 'good');
+      break;
+    }
+  }
   let cambiato = false;
   for (const k of Object.keys(P)) {
     if (!(P[k] > 0)) continue;
@@ -829,6 +899,27 @@ function renderPoteri() {
   }).join('');
 }
 
+/* Il corvo: quello che gira sopra l'eroe e quello nella bolla in pista
+   sono lo stesso, così si capisce che cosa si sta prendendo. */
+function costruisciCorvo() {
+  const g = new THREE.Group();
+  const nero = mat(0x262233), becco = mat(0xf2b33c);
+  put(g, GEO.sph, nero, 0, 0, 0, 0.36, 0.3, 0.6);
+  put(g, GEO.sph, nero, 0, 0.1, 0.32, 0.26, 0.26, 0.26);
+  put(g, GEO.cone6, becco, 0, 0.08, 0.5, 0.08, 0.18, 0.08).rotation.x = Math.PI / 2;
+  put(g, GEO.cone6, nero, 0, 0.02, -0.4, 0.2, 0.3, 0.06).rotation.x = -Math.PI / 2;
+  const ali = [-1, 1].map(k => {
+    const a = new THREE.Group();
+    a.position.set(k * 0.14, 0.06, 0);
+    put(a, GEO.box, nero, k * 0.36, 0, 0, 0.72, 0.04, 0.34);
+    put(a, GEO.box, nero, k * 0.66, 0, -0.06, 0.2, 0.04, 0.26);   // le penne in punta
+    g.add(a);
+    return a;
+  });
+  for (const k of [-1, 1]) put(g, GEO.sph8, accesa(0xffe066), k * 0.09, 0.16, 0.45, 0.05, 0.05, 0.03);
+  return { g, ali };
+}
+
 /* Come si vedono addosso all'eroe: la furia è un alone rosso e braci, lo
    scudo una bolla azzurra, il corvo un corvo che gli gira sopra la testa.
    Stanno nella scena e non nell'eroe, che si ricostruisce cambiando aspetto. */
@@ -842,20 +933,8 @@ const effetti = (() => {
   bolla.position.y = 1.3;
   scudo.add(bolla);
   bagliore(scudo, 0x7cd8ff, 3.6, 0.3, 1.3);
-  const corvo = new THREE.Group();
-  const nero = mat(0x262233), becco = mat(0xf2b33c);
-  put(corvo, GEO.sph, nero, 0, 0, 0, 0.36, 0.3, 0.6);
-  put(corvo, GEO.sph, nero, 0, 0.1, 0.32, 0.26, 0.26, 0.26);
-  put(corvo, GEO.cone6, becco, 0, 0.08, 0.5, 0.08, 0.18, 0.08).rotation.x = Math.PI / 2;
-  put(corvo, GEO.cone6, nero, 0, 0.02, -0.4, 0.2, 0.3, 0.06).rotation.x = -Math.PI / 2;
-  const ali = [-1, 1].map(k => {
-    const a = new THREE.Group();
-    a.position.set(k * 0.14, 0.06, 0);
-    put(a, GEO.box, nero, k * 0.36, 0, 0, 0.72, 0.04, 0.34);
-    corvo.add(a);
-    return a;
-  });
-  for (const k of [-1, 1]) put(corvo, GEO.sph8, accesa(0xffe066), k * 0.09, 0.16, 0.45, 0.05, 0.05, 0.03);
+  const C = costruisciCorvo();
+  const corvo = C.g, ali = C.ali;
   addOutline(corvo, 0.02);
   for (const o of [furia, scudo, corvo]) { o.visible = false; scene.add(o); }
   return { furia, scudo, corvo, ali, bolla };
@@ -1919,6 +1998,7 @@ function update(dt) {
     } else if (!it.done && it.obj.visible &&
                (it.kind === 'coin' || it.kind === 'gem' || it.kind === 'buff' || it.kind === 'potere')) {
       it.obj.rotation.y += dt * (it.spin || 1.8);
+      if (it.anima) it.anima(runT);
       /* galleggiano, e quelle che stai per prendere ti vengono incontro.
          Solo quelle: la calamita è una cosa che si vede, non una regola —
          la raccolta resta decisa dalla corsia, come prima. */

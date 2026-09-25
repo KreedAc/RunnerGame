@@ -502,6 +502,7 @@ function defaultSave() {
     oggi: { giorno: '', fatto: 0, preso: false },   // l'obiettivo del giorno
     regole: {},          // quante volte si è vista annunciare ogni regola di zona
     imprese: { fatte: {}, conti: {} },   // i traguardi lunghi (imprese.js)
+    poteriVisti: 0,      // le prime volte un potere in pista si annuncia
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

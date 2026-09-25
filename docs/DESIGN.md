@@ -963,14 +963,23 @@ con un telefono vero in mano, dove il gioco arranca.
 Una corsa era fatta di scelte tutte uguali: quale colonna rompere. I poteri
 aggiungono una domanda diversa — *vale la pena cambiare corsia per prenderlo,
 adesso?* — perché sono rari (al più due per corsa, mai nelle prime due file,
-mai nella prima partita guidata), si vedono da lontano (una pietra runica
-che fluttua, col suo colore, un alone grande e il nome sopra) e durano poco:
+mai nella prima partita guidata), si vedono da lontano e durano poco:
 
 | potere | cosa fa | dura | addosso all'eroe |
 |---|---|---|---|
 | 🔥 FURIA | il colpo raddoppia: le colonne davanti diventano verdi | 5 s | alone rosso e braci |
 | 🛡️ SCUDO | la prima rossa o il primo nemico che ti prende non costa | 14 s o un colpo | bolla azzurra, lampeggia alla fine |
 | 🐦 CORVO | raccoglie le monete di tutte le corsie | 8 s | un corvo che gli gira sopra la testa |
+
+**Come si riconoscono.** La prima versione era una pietra runica uguale per
+tutti e tre, con cambiato solo il colore del segno; alla prima prova vera: "il
+corvo in pista non si capisce che è un potere". Adesso ogni potere mostra
+*cosa fa* — il corvo che sbatte le ali, una fiamma di lingue che guizzano,
+uno scudo — dentro una bolla, e i tre parlano la stessa lingua, diversa da
+monete e bonus: bolla, **colonna di luce** verso il cielo, **anello** che
+gira a terra. Il corvo nella bolla è lo stesso che poi gira sopra l'eroe
+(`costruisciCorvo`). Le prime tre volte che se ne avvicina uno, un cartello
+dice ⚡ UN POTERE! PRENDILO!
 
 In basso al centro, una targhetta per potere con la barra che si svuota:
 quanto manca si deve sapere senza cercarlo. Le costanti stanno in `POTERI`
