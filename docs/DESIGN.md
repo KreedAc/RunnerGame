@@ -573,6 +573,13 @@ al testo), i colori sono pieni e saturi (blu cobalto, viola, verde prato,
 arancio), il velo scuro sul menù è quasi sparito, e una carta non comprabile
 **resta colorata**: perde solo la freccia verde e il prezzo si fa rosso.
 
+**Contorni vettoriali.** Il contorno delle scritte era fatto di otto ombre
+spostate attorno alla lettera: sugli angoli faceva gli scalini, e sul
+telefono la home sembrava "sgranata". Adesso è un contorno vero
+(`-webkit-text-stroke`) disegnato sotto la lettera (`paint-order: stroke
+fill`), liscio a qualunque densità. Stesso difetto sulle icone: il contorno
+da adesivo era campionato in 16 direzioni, a smerli; ora 48.
+
 **Gli schermi bassi.** Sotto i 760 px d'altezza tutto scende di un gradino
 (titolo, icone, bottone, niente valore successivo sulle carte), perché fra
 il titolo e il bottone deve restare posto per l'eroe: `tools/misura-home.js`
@@ -840,6 +847,15 @@ La riga dell'obiettivo ha fatto sforare il menù di 13 px: `tools/misura-home.js
 l'ha detto subito, e qualche pixel di margine qua e là l'ha riportato a 720
 (700 sugli schermi più bassi). `tools/bottega.js` fa il giro completo di
 bottega e obiettivo, compreso "il premio non si paga due volte".
+
+**L'arma di famiglia, fino in fondo.** Con l'Ascia di famiglia e i Pugni
+comprati, la pista metteva a terra il Randello — l'arma "dopo" quella
+comprata — e raccoglierlo faceva scendere il colpo da 12 a 9; e il menù
+diceva "Pugni" mentre in mano c'era l'Ascia. Adesso l'arma di partenza è
+una sola, `armaIniziale()` (la migliore fra comprata e di famiglia), e vale
+ovunque: la pista offre solo armi migliori, raccoglierne una non può mai
+peggiorare il colpo, la carta ARMA mostra quella e vende la successiva, e
+l'eroe nel menù la tiene in mano. `tools/bottega.js` lo controlla.
 
 ## 6c-quater. La prima partita insegna giocando
 

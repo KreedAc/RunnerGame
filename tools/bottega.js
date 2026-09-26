@@ -63,6 +63,14 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   await p.click('#playBtn');
   await p.waitForTimeout(300);
   ok(await p.evaluate(() => run.weapon) === 1, 'la partita non parte con l\'arma di famiglia');
+  /* e la pista non offre armi peggiori o uguali: raccoglierle faceva scendere
+     il colpo (Ascia di famiglia, Randello a terra: da 12 a 9) */
+  const aTerra = await p.evaluate(() => items.filter(i => i.kind === 'weapon').map(i => i.tier));
+  ok(aTerra.every(tier => tier > 1), 'a terra c\'è un\'arma non migliore di quella di famiglia: ' + aTerra);
+  const giu = await p.evaluate(() => { const prima = run.weapon; takeWeapon({ tier: 0, obj: new THREE.Group() }); return [prima, run.weapon]; });
+  ok(giu[1] === giu[0], 'raccogliere un\'arma peggiore fa scendere il colpo: ' + giu);
+  ok(await p.evaluate(() => document.querySelector('.up-card[data-key="weapon"] .up-value').textContent === weaponName(1)),
+     'la carta ARMA nel menù non mostra l\'arma di famiglia');
   await p.evaluate(() => { finishRun('wall'); });
   await p.waitForTimeout(1200);
   await p.evaluate(() => showScreen('hub'));

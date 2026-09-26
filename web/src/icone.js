@@ -328,7 +328,7 @@ function generaIcone() {
 }
 
 /* Il contorno da adesivo: la sagoma dell'icona, tinta di scuro e
-   ridisegnata in sedici direzioni attorno, poi l'icona sopra; sotto, la
+   ridisegnata in quarantotto direzioni attorno, poi l'icona sopra; sotto, la
    stessa sagoma più chiara e spostata in giù fa da ombra. */
 function adesivo(sorgente, lato) {
   const px = Math.round(lato * 0.035);
@@ -350,8 +350,9 @@ function adesivo(sorgente, lato) {
   g.globalAlpha = 0.3;
   g.drawImage(tinta, 0, px * 1.6);                       // ombra
   g.globalAlpha = 1;
-  for (let i = 0; i < 16; i++) {
-    const a = i / 16 * Math.PI * 2;
+  /* 48 direzioni: con 16 il contorno era a smerli, un dente ogni 5 pixel */
+  for (let i = 0; i < 48; i++) {
+    const a = i / 48 * Math.PI * 2;
     g.drawImage(tinta, Math.cos(a) * px, Math.sin(a) * px);
   }
   g.drawImage(icona, 0, 0);

@@ -366,7 +366,7 @@ function buildRun() {
   wallGap   = CFG.wallGap * run.speed / CFG.speed;
   const unit = run.unit;
   let z = CFG.firstRowZ;
-  let refTier = meta.up.weapon;
+  let refTier = armaIniziale();         // a terra solo armi migliori di quella in mano
 
   guida.z0 = z;
   guida.z1 = z - CFG.rowSpacing;
@@ -982,7 +982,8 @@ function mostraPoteri(dt) {
 }
 
 function takeWeapon(it) {
-  run.weapon = clamp(it.tier, 0, WEAPONS.length - 1);
+  /* mai indietro: un'arma raccolta non può essere peggio di quella in mano */
+  run.weapon = clamp(Math.max(run.weapon, it.tier), 0, WEAPONS.length - 1);
   setWeapon(hero, run.weapon);
   popup('⚔ ' + weaponName(run.weapon), '#ffe07a', puntoSchermo(it.obj, 2.6));
   impatto(0.4);                       // l'arma nuova è un momento, non un dettaglio
@@ -1461,7 +1462,7 @@ const clock = new THREE.Clock();
 
 function startRun() {
   run.power  = START_POWER;      // POTENZA adesso moltiplica quello che raccogli
-  run.weapon = Math.max(meta.up.weapon, perk('arma'));   // bottega: l'arma di famiglia
+  run.weapon = armaIniziale();   // bottega: l'arma di famiglia
   run.coins = 0; run.gems = 0; run.broken = 0; run.swing = 0;
   run.beatRecord = false; run.outcome = '';
   run.combo = 0; renderCombo();
@@ -1769,7 +1770,7 @@ function backToHub() {
   hero.rotation.x = 0;
   hero.userData.falling = false;
   if (heroSprite) { scene.remove(heroSprite); heroSprite = null; }
-  setWeapon(hero, meta.up.weapon);
+  setWeapon(hero, armaIniziale());
   buildRun();
   renderHub();
   showScreen('hub');
@@ -1787,13 +1788,13 @@ langHook = () => { buildRun(); renderHud(); renderHub(); };
 rebuildHook = () => {
   run.x = 0; run.targetX = 0; run.z = 0;
   rifaiEroe();                     // il ricomincia da capo rimette l'aspetto di serie
-  setWeapon(hero, meta.up.weapon);
+  setWeapon(hero, armaIniziale());
   buildRun();
   snapCamera();
 };
 
 /* lo chiama il menù quando si cambia aspetto */
-skinHook = () => { rifaiEroe(); setWeapon(hero, meta.up.weapon); };
+skinHook = () => { rifaiEroe(); setWeapon(hero, armaIniziale()); };
 
 /* -------------------------------- INPUT -------------------------------- */
 const steering = () => state === 'run' || state === 'wall';
@@ -2120,7 +2121,7 @@ generaIcone();                   // le icone dell'interfaccia, fotografate dai m
 impreseRecupera();               // chi giocava già si vede riconoscere torri e rinascite
 renderHub();
 showScreen('hub');
-setWeapon(hero, meta.up.weapon);
+setWeapon(hero, armaIniziale());
 buildRun();
 
 (function loop() {

@@ -66,7 +66,9 @@ function renderBadge() {
 /* --------------------------- POTENZIAMENTI --------------------------- */
 function upgradeInfo(key) {
   const u = UPGRADES[key];
-  const lvl = meta.up[key];
+  /* l'arma parte da quella di famiglia, se è meglio: la carta mostra
+     quella e vende la successiva, non il Randello che non serve più */
+  const lvl = key === 'weapon' ? armaIniziale() : meta.up[key];
   const maxed = lvl >= u.max;
   const cost = maxed ? Infinity : upgradeCost(key, lvl);
   return { u, lvl, maxed, cost, afford: meta.coins >= cost };
@@ -75,16 +77,16 @@ function upgradeInfo(key) {
 /* Come si legge il valore di un potenziamento nel menù.
    POTENZA e ORO sono moltiplicatori: si leggono ×1.10, ×1.21, ×1.33… */
 function upgradeValueText(key) {
-  const lvl = meta.up[key];
+  const lvl = key === 'weapon' ? armaIniziale() : meta.up[key];
   if (key === 'weapon') return weaponName(lvl);
   return '×' + UPGRADES[key].value(lvl).toFixed(2);
 }
 
 function buyUpgrade(key) {
-  const { maxed, cost, afford } = upgradeInfo(key);
+  const { lvl, maxed, cost, afford } = upgradeInfo(key);
   if (maxed || !afford) return;
   meta.coins -= cost;
-  meta.up[key]++;
+  meta.up[key] = lvl + 1;
   writeSave(meta);
   renderHub();
   /* comprare deve sentirsi: la carta rimbalza, le monete partono dal
@@ -439,7 +441,7 @@ function renderHub() {
   }
 
   for (const key of Object.keys(UPGRADES)) {
-    const { u, lvl, maxed, cost, afford } = upgradeInfo(key);
+    const { u, lvl, maxed, cost, afford } = upgradeInfo(key);   // lvl: per l'arma, quella iniziale
     const card = document.querySelector('.up-card[data-key="' + key + '"]');
     card.querySelector('.up-name').textContent  = t(u.key);
     card.querySelector('.up-level').textContent = t('up.level', lvl);
@@ -574,7 +576,7 @@ function tapSkin(i) {
 /* l'arsenale: le sei armi, quelle già tue accese, quella in mano evidenziata */
 function renderArsenale() {
   $('arsenale').innerHTML = WEAPONS.map((W, i) =>
-    '<div class="ars' + (i > meta.up.weapon ? ' no' : '') + (i === meta.up.weapon ? ' su' : '') +
+    '<div class="ars' + (i > armaIniziale() ? ' no' : '') + (i === armaIniziale() ? ' su' : '') +
     '" title="' + weaponName(i) + '"><i class="ic ic-arma' + i + '"></i></div>').join('');
 }
 

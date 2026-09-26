@@ -125,7 +125,9 @@ function buildCliffs(len) {
         // guglia: cono sfaccettato con la punta chiara
         const h = rnd(4.5, 13);
         const w = rnd(2.6, 5.2);
-        const su = C.floating && Math.random() < 0.4 ? rnd(4, 14) : 0;
+        /* galleggia solo se è lontano dalla corsia: vicino, alla vittoria
+           la camera che sale verso la torre ci passava dentro */
+        const su = C.floating && d > 13 && Math.random() < 0.4 ? rnd(4, 14) : 0;
         const sp = putOn(world, GEO.cone6, MAT.slab, x, su, z, w, h, w);
         sp.rotation.y = rnd(0, 3);
         const capH = h * 0.28;
@@ -143,7 +145,7 @@ function buildCliffs(len) {
            tre non tocca terra: è tutto quello che serve a far capire che
            qui il terreno si è rotto e i pezzi galleggiano. */
         const s = rnd(1.8, 4.2);
-        const su = C.floating && Math.random() < 0.6 ? rnd(5, 19) : 0;
+        const su = C.floating && d > 13 && Math.random() < 0.6 ? rnd(5, 19) : 0;
         const b = putOn(world, GEO.sph8, MAT.rock, x, su, z, s * 1.3, s, s * 1.2);
         b.rotation.y = rnd(0, 3);
         const t = put(world, GEO.sph8, MAT.cap, x, su + s * 0.72, z, s * 0.9, s * 0.42, s * 0.85);

@@ -436,6 +436,13 @@ const BOTTEGA = {
 /* il gradino comprato di un vantaggio, e le rune ancora da spendere
    (`meta` nasce in hub.js: si chiamano solo a gioco avviato) */
 const perk = k => Math.min((meta.bottega && meta.bottega[k]) || 0, BOTTEGA[k].costi.length);
+
+/* L'arma con cui si parte: la più forte fra quella comprata e quella di
+   famiglia (bottega). Prima la pista contava solo quella comprata: con
+   l'Ascia di famiglia e i Pugni comprati, a terra compariva il Randello,
+   e raccoglierlo ti faceva SCENDERE da 12 a 9 di colpo. E il menù diceva
+   "Pugni" mentre in mano avevi l'Ascia. */
+const armaIniziale = () => Math.max(meta.up.weapon, perk('arma'));
 const runeLibere = () => Math.max(0, meta.runes - (meta.runeSpese || 0));
 
 /* ------------------------- L'OBIETTIVO DEL GIORNO ---------------------
