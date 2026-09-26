@@ -50,6 +50,9 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   });
 
   const prima = await tinte();
+  /* gli aspetti stanno nella scheda EROE, dalla barra in basso */
+  await p.click('#navEroe');
+  await p.waitForTimeout(250);
   ok(await p.textContent('#skName') === 'VICHINGO', 'il nome di serie non e\' VICHINGO');
   ok(await p.locator('.sk').count() === 5, 'le pastiglie non sono cinque');
   ok(await p.locator('.sk.locked').count() === 4, 'gli aspetti chiusi non sono quattro');

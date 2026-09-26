@@ -12,10 +12,55 @@ const $ = id => document.getElementById(id);
    riepilogo della corsa appena fatta sopra ai potenziamenti. */
 function showScreen(name) {
   $('hub').classList.toggle('hidden', name !== 'hub');
+  $('nav').classList.toggle('hidden', name !== 'hub');
+  if (name !== 'hub') chiudiSchede();
   $('hud').classList.toggle('hidden', name !== null);
   /* la camera del menù si punta sulla fascia lasciata libera dal menù
      stesso, quindi va rifatto ogni volta che il menù compare */
   if (name === 'hub' && typeof aimMenuCamera === 'function') aimMenuCamera();
+}
+
+/* ------------------------------ LE SCHEDE ------------------------------
+   Eroe, Rune, Imprese, Opzioni (e la Rinascita, dalla sua tessera): una
+   alla volta, sopra il menù e sotto la barra in basso. Toccare la scheda
+   aperta, GIOCA o la ✕ la chiude. */
+const SCHEDE = ['schEroe', 'bottega', 'registro', 'schOpzioni', 'schRinascita'];
+let schedaAperta = '';
+
+function apriScheda(id) {
+  if (!id || schedaAperta === id) { chiudiSchede(); return; }
+  SCHEDE.forEach(k => $(k).classList.toggle('hidden', k !== id));
+  schedaAperta = id;
+  document.querySelectorAll('.nav-b').forEach(b => b.classList.toggle('on', b.dataset.scheda === id));
+  if (id === 'bottega') { bottegaArmata = ''; renderBottega(); }
+  if (id === 'registro') {
+    if (typeof renderImprese === 'function') renderImprese();
+    renderDiary();
+    meta.impreseViste = impreseFatte();
+    writeSave(meta);
+    renderBadge();
+  }
+  if (id === 'schOpzioni') preparaOpzioni();
+  if (id === 'schEroe') renderSkins();
+  if (id === 'schRinascita') { rebirthArmed = false; renderRebirth(); }
+}
+
+function chiudiSchede() {
+  SCHEDE.forEach(k => $(k).classList.add('hidden'));
+  schedaAperta = '';
+  document.querySelectorAll('.nav-b').forEach(b => b.classList.toggle('on', b.id === 'navGioca'));
+}
+
+/* i pallini rossi: c'è qualcosa da prendere di là */
+const impreseFatte = () => typeof imprese === 'function'
+  ? Object.keys(imprese().fatte).length : 0;
+function renderBadge() {
+  const b = (id, acceso) => $(id).querySelector('.badge').classList.toggle('hidden', !acceso);
+  b('navEroe', SKINS.some((s, i) => !skinOwned(i) && meta.gems >= s.gems));
+  b('navRune', $('runePill').classList.contains('spendi'));
+  b('registroBtn', impreseFatte() > (meta.impreseViste || 0));
+  /* il salvataggio di riserva: da ricordare a chi ha qualcosa da perdere */
+  b('navOpzioni', !meta.backupFatto && (meta.bestLevel || 1) >= 3);
 }
 
 /* --------------------------- POTENZIAMENTI --------------------------- */
@@ -42,6 +87,13 @@ function buyUpgrade(key) {
   meta.up[key]++;
   writeSave(meta);
   renderHub();
+  /* comprare deve sentirsi: la carta rimbalza, le monete partono dal
+     portafoglio e ci entrano dentro */
+  const card = document.querySelector('.up-card[data-key="' + key + '"]');
+  pulsa(card, 'compra');
+  const r = card.getBoundingClientRect(), w = document.querySelector('.wallet .coin-pill').getBoundingClientRect();
+  for (let k = 0; k < 6; k++) setTimeout(() => volaVerso(
+    { x: w.left + 20, y: w.top + w.height / 2 }, { x: r.left + r.width / 2, y: r.top + r.height * 0.4 }), k * 45);
 }
 
 /* ------------------------------ RENDER -------------------------------- */
@@ -71,10 +123,12 @@ function renderRebirth() {
   card.classList.toggle('hidden', gain < 1);
   if (gain < 1) { rebirthArmed = false; }
   $('rbGain').textContent = '+' + gain;
+  $('rbTag').textContent = '+' + gain;
   $('rbBonus').textContent = '×' + runeMul(meta.runes + gain).toFixed(2);
   card.classList.toggle('ready', meta.lastOutcome === 'win');
-  card.classList.toggle('armed', rebirthArmed);
   $('rbNote').textContent = t(rebirthArmed ? 'rb.confirm' : 'rb.note');
+  $('rbNote').classList.toggle('armata', rebirthArmed);
+  $('rbVai').querySelector('span').textContent = t(rebirthArmed ? 'rb.sicuro' : 'rb.vai');
 }
 
 function tapRebirth() {
@@ -97,6 +151,7 @@ function tapRebirth() {
   meta.diary = []; meta.tries = 0; meta.towerRevived = 0;   // nuova salita, diario nuovo
   rebirthArmed = false;
   writeSave(meta);
+  chiudiSchede();
   flashBanner(t('rb.done', gain), 'good');
   if (rebuildHook) rebuildHook();
   renderHub();
@@ -136,7 +191,7 @@ function tapReset() {
   Object.assign(meta, defaultSave());
   writeSave(meta);
   flashBanner(t('reset.done'));
-  chiudiRegistro();
+  chiudiSchede();
   if (rebuildHook) rebuildHook();
   renderHub();
 }
@@ -183,7 +238,8 @@ function renderOggi() {
   el.classList.toggle('fatto', meta.oggi.preso);
   $('oggiTesto').textContent = meta.oggi.preso ? t('og.domani') : t('og.' + o.tipo, o.n);
   $('oggiConto').textContent = meta.oggi.preso ? '✓' : meta.oggi.fatto + '/' + o.n;
-  $('oggiPremio').textContent = '💎' + PREMIO_OGGI;
+  $('oggiBarra').style.width = (meta.oggi.preso ? 100 : meta.oggi.fatto / o.n * 100) + '%';
+  $('oggiPremio').textContent = PREMIO_OGGI;
 }
 
 /* ------------------------------ LA BOTTEGA -----------------------------
@@ -208,9 +264,11 @@ function effettoPerk(k, g) {
 
 function renderBottega() {
   const libere = runeLibere();
-  $('btSub').innerHTML = t('bt.sub', libere, runeMul(meta.runes).toFixed(2));
   const lista = $('btList');
   lista.innerHTML = '';
+  /* senza rune la bottega è chiusa, ma la scheda dice come si apre */
+  if (!meta.runes) { $('btSub').innerHTML = t('rune.chiuse'); return; }
+  $('btSub').innerHTML = t('bt.sub', libere, runeMul(meta.runes).toFixed(2));
   for (const k of Object.keys(BOTTEGA)) {
     const B = BOTTEGA[k];
     const g = perk(k);
@@ -226,7 +284,8 @@ function renderBottega() {
         (max ? effettoPerk(k, g) : (g ? effettoPerk(k, g) + ' → ' : '') + effettoPerk(k, g + 1)) +
       '</small></span>' +
       '<span class="bt-pallini">' + pallini + '</span>' +
-      '<span class="bt-costo">' + (max ? t('up.max') : bottegaArmata === k ? t('bt.ok') : '🔮' + costo) + '</span>';
+      '<span class="bt-costo">' + (max ? t('up.max') : bottegaArmata === k ? t('bt.ok')
+        : '<i class="ic ic-runa"></i>' + costo) + '</span>';
     riga.addEventListener('click', () => compraPerk(k));
     lista.appendChild(riga);
   }
@@ -248,13 +307,8 @@ function compraPerk(k) {
   renderHub();
 }
 
-function apriBottega() {
-  if (!meta.runes) return;
-  bottegaArmata = '';
-  renderBottega();
-  $('bottega').classList.remove('hidden');
-}
-function chiudiBottega() { $('bottega').classList.add('hidden'); }
+function apriBottega() { if (schedaAperta !== 'bottega') apriScheda('bottega'); }
+function chiudiBottega() { chiudiSchede(); }
 
 /* ------------------------------ IL REGISTRO ---------------------------
    Imprese e salvataggio di riserva, in un pannello solo che si apre dal
@@ -263,18 +317,19 @@ function chiudiBottega() { $('bottega').classList.add('hidden'); }
    menù principale non si tocca per sbaglio. */
 let caricaArmato = false;
 
-function apriRegistro() {
+function apriRegistro() { if (schedaAperta !== 'registro') apriScheda('registro'); }
+function chiudiRegistro() { chiudiSchede(); }
+
+function preparaOpzioni() {
   caricaArmato = false;
   $('svCodice').classList.add('hidden');
   $('svCarica').classList.add('hidden');
   $('svCarica').classList.remove('armata');
   $('svCarica').textContent = t('sv.carica');
   svMsg('');
-  if (typeof renderImprese === 'function') renderImprese();
   renderReset();
-  $('registro').classList.remove('hidden');
+  renderLangs();
 }
-function chiudiRegistro() { $('registro').classList.add('hidden'); }
 
 function svMsg(txt, male) {
   $('svMsg').textContent = txt;
@@ -282,6 +337,8 @@ function svMsg(txt, male) {
 }
 
 function copiaCodice() {
+  meta.backupFatto = true;
+  renderBadge();
   writeSave(meta);
   const codice = codiceSalvataggio(meta);
   const box = $('svCodice');
@@ -322,7 +379,7 @@ function caricaCodice() {
   for (const k of Object.keys(meta)) delete meta[k];
   Object.assign(meta, nuovo);
   writeSave(meta);
-  chiudiRegistro();
+  chiudiSchede();
   flashBanner(t('sv.fatto'), 'good');
   if (rebuildHook) rebuildHook();
   renderHub();
@@ -387,14 +444,20 @@ function renderHub() {
     card.querySelector('.up-name').textContent  = t(u.key);
     card.querySelector('.up-level').textContent = t('up.level', lvl);
     card.querySelector('.up-value').textContent = upgradeValueText(key);
-    card.querySelector('.up-cost').textContent  = maxed ? t('up.max') : fmt(cost);
+    /* quello che si compra: il valore dopo, piccolo sotto quello di adesso */
+    card.querySelector('.up-next').textContent = maxed ? '' : key === 'weapon'
+      ? '→ ' + weaponName(lvl + 1) : '→ ×' + u.value(lvl + 1).toFixed(2);
+    if (key === 'weapon') card.querySelector('.up-ico').className = 'ic up-ico ic-arma' + lvl;
+    card.querySelector('.up-cost span').textContent = maxed ? t('up.max') : fmt(cost);
     card.classList.toggle('locked', maxed || !afford);
     card.disabled = maxed || !afford;
   }
+  renderBadge();
 
   /* per ultimo: la camera si punta sulla fascia libera, che dipende da
      tutto quello che il menù ha appena deciso di mostrare */
-  renderSkins();
+  renderSkins();                      // anche a scheda chiusa: il nome e i prezzi restano giusti
+  if (schedaAperta === 'bottega') renderBottega();
   renderLangs();
   if (typeof aimMenuCamera === 'function') aimMenuCamera();
 }
@@ -402,14 +465,14 @@ function renderHub() {
 document.querySelectorAll('.up-card').forEach(card => {
   card.addEventListener('click', () => buyUpgrade(card.dataset.key));
 });
-$('rebirthCard').addEventListener('click', tapRebirth);
+$('rebirthCard').addEventListener('click', () => apriScheda('schRinascita'));
+$('rbVai').addEventListener('click', tapRebirth);
+document.querySelectorAll('.nav-b').forEach(b => b.addEventListener('click', () => apriScheda(b.dataset.scheda)));
+document.querySelectorAll('[data-chiudi]').forEach(b => b.addEventListener('click', chiudiSchede));
 $('resetBtn').addEventListener('click', tapReset);
-$('registroBtn').addEventListener('click', apriRegistro);
-$('rgChiudi').addEventListener('click', chiudiRegistro);
 $('svCopia').addEventListener('click', copiaCodice);
 $('svIncolla').addEventListener('click', preparaIncolla);
 $('svCarica').addEventListener('click', caricaCodice);
-$('rgVaiSalva').addEventListener('click', () => $('svTit').scrollIntoView({ behavior: 'smooth', block: 'start' }));
 
 /* cinque tocchi sulla marca della build accendono il contatore dei
    fotogrammi: serve a capire su quale telefono il gioco arranca */
@@ -421,7 +484,6 @@ $('buildTag').addEventListener('click', () => {
   if (tocchiBuild >= 5) { tocchiBuild = 0; $('fps').classList.toggle('hidden'); }
 });
 $('runePill').addEventListener('click', apriBottega);
-$('btChiudi').addEventListener('click', chiudiBottega);
 $('buildTag').textContent = 'BUILD ' + (window.BUILD || 'dev');
 
 /* il bottone in fondo: le imprese quando ci sono, il salvataggio sempre */
@@ -467,14 +529,16 @@ function renderSkins() {
     const b = document.createElement('button');
     b.className = 'sk' + (i === meta.skin ? ' on' : '') +
                   (mio ? '' : ' locked') + (skinArmed === i ? ' armed' : '');
-    b.style.background = 'linear-gradient(135deg,' + esa(s.cloth) + ' 52%,' +
-                         esa(s.metal) + ' 52%)';
-    if (!mio) b.innerHTML = '<i>🔒</i>';
+    /* il ritratto fotografato (icone.js); sotto, il prezzo se è chiuso */
+    b.innerHTML = '<i class="ic ic-eroe' + i + '"></i><em>' +
+                  (mio ? (i === meta.skin ? '✓' : '') : '💎' + s.gems) + '</em>';
     b.addEventListener('click', () => tapSkin(i));
     row.appendChild(b);
   });
+  renderArsenale();
 
   const mostrata = skinArmed >= 0 ? skinArmed : meta.skin;
+  $('eroeRitratto').className = 'ic ic-eroe' + mostrata;
   const s = SKINS[mostrata];
   $('skName').textContent = skinOwned(mostrata)
     ? t(s.key)
@@ -505,6 +569,13 @@ function tapSkin(i) {
   if (skinHook) skinHook();
   flashBanner(t('sk.bought', t(s.key)), 'good');
   renderHub();
+}
+
+/* l'arsenale: le sei armi, quelle già tue accese, quella in mano evidenziata */
+function renderArsenale() {
+  $('arsenale').innerHTML = WEAPONS.map((W, i) =>
+    '<div class="ars' + (i > meta.up.weapon ? ' no' : '') + (i === meta.up.weapon ? ' su' : '') +
+    '" title="' + weaponName(i) + '"><i class="ic ic-arma' + i + '"></i></div>').join('');
 }
 
 /* --------------------------- COLONNA BONUS ---------------------------- */
@@ -545,9 +616,9 @@ function flashBanner(text, tono) {
    qui si decide solo quando. Toglierla e rimetterla con un reflow in mezzo
    è il modo di far ripartire un'animazione che sta ancora girando. */
 function pulsa(id, classe) {
-  const el = $(id);
+  const el = typeof id === 'string' ? $(id) : id;
   if (!el) return;
-  el.classList.remove('su', 'giu', 'bump');
+  el.classList.remove('su', 'giu', 'bump', 'compra');
   void el.offsetWidth;
   el.classList.add(classe);
 }
@@ -564,8 +635,8 @@ function volaAlPortafoglio(punto, icona) {
   const x1 = r.left + r.width / 2, y1 = r.top + r.height / 2;
   const mx = (x0 + x1) / 2 + (Math.random() * 120 - 60), my = Math.min(y0, y1) - 30;
   const d = document.createElement('div');
-  d.className = 'vola';
-  d.textContent = icona || '🪙';
+  if (!icona && document.body.classList.contains('icone-ok')) d.className = 'vola ic ic-moneta';
+  else { d.className = 'vola'; d.textContent = icona || '🪙'; }
   $('pops').appendChild(d);
   inVolo++;
   const pos = (x, y, s) => 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) scale(' + s + ')';
@@ -577,6 +648,22 @@ function volaAlPortafoglio(punto, icona) {
     { transform: pos(x1, y1, 0.65), opacity: 1 }
   ], { duration: 520 + Math.random() * 180, easing: 'cubic-bezier(.5,0,.3,1)' });
   a.onfinish = fine;
+}
+
+/* una moneta da un punto a un altro dello schermo (in pixel): l'acquisto */
+function volaVerso(da, a) {
+  const d = document.createElement('div');
+  d.className = document.body.classList.contains('icone-ok') ? 'vola ic ic-moneta' : 'vola';
+  if (!document.body.classList.contains('icone-ok')) d.textContent = '🪙';
+  $('pops').appendChild(d);
+  const pos = (x, y, s) => 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) scale(' + s + ')';
+  const mx = (da.x + a.x) / 2 + (Math.random() * 80 - 40), my = Math.min(da.y, a.y) - 40;
+  if (!d.animate) { d.remove(); return; }
+  d.animate([
+    { transform: pos(da.x, da.y, 0.6), opacity: 0 },
+    { transform: pos(mx, my, 1.15), opacity: 1, offset: 0.4 },
+    { transform: pos(a.x, a.y, 0.5), opacity: 0.2 }
+  ], { duration: 480, easing: 'cubic-bezier(.5,0,.3,1)' }).onfinish = () => d.remove();
 }
 
 /* ------------------------------ POPUP ---------------------------------

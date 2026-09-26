@@ -150,6 +150,7 @@ web/
   src/world.js        sentiero, scogliere di ghiaccio, pini, cristalli, la torre
   src/fx.js           bagliori, scintille, onde d'urto, aria della zona, scie di velocità
   src/actors.js       eroe, nemici, boss, principessa, armi, animazioni
+  src/icone.js        le icone dell'interfaccia, fotografate dai modelli del gioco
   src/hub.js          menù, portafoglio, potenziamenti, schermate
   src/imprese.js      le imprese: tredici traguardi lunghi, con premi
   src/trappole.js     una regola per zona: le trappole della pista
@@ -208,5 +209,6 @@ In console: `BlockyRun.setPower(5000)`, `BlockyRun.moveTo(-2.4)`, `BlockyRun.nee
 - [x] Poteri a tempo in pista: furia (colpo ×2), scudo (una rossa gratis), corvo (monete da ogni corsia)
 - [x] Una regola per zona in pista: ghiaccio, tronchi, spuntoni, nebbia, lava, geyser, specchi, fulmini
 - [x] Tredici imprese con premi in diamanti (e il Campione per il giro del regno)
+- [x] Interfaccia rifatta: icone 3D dai modelli, stile grasso, menù con barra a schede e pallini rossi, riflesso lucido
 - [ ] Audio sintetizzato e vibrazione (prossimo)
 - [ ] Installabile come app (PWA), poi Play Store come TWA (vedi `docs/DESIGN.md`)

@@ -500,6 +500,75 @@ come una foto a bassa risoluzione. Ora è 1024×1024 con lo stesso motivo, più
 bordo smussato, ombra sotto ogni pietra e una grana leggera; filtro
 anisotropo fino a 8.
 
+## 4d. L'interfaccia rifatta: "sembra vecchio"
+
+Chi l'ha provato l'ha messo accanto ai giochi che ha sul telefono e ha detto
+che sembrava vecchio. Non era il mondo 3D — eroe, giganti e torri reggono il
+confronto — ma l'interfaccia: riquadri scuri semitrasparenti, testo sottile,
+emoji al posto delle icone, un menù a colonna pieno di righe. Sembrava un
+sito. I giochi di adesso parlano un'altra lingua, e il giocatore la associa
+al "curato". Rifatta tutta, lasciando stare il combattimento.
+
+**Le icone, fotografate dai nostri modelli** (`web/src/icone.js`). Un
+disegnatore non c'è, ma i modelli sì: all'avvio un secondo renderer, piccolo,
+fotografa moneta, gemma, runa, fulmine, stella, forziere, trofeo, bersaglio,
+elmo, ingranaggio, spade, pugno, muro, torre, fiamma, scudo, corvo, le sei
+armi e l'eroe in ognuno dei cinque aspetti — con la stessa luce e gli stessi
+materiali del gioco. Poi in 2D ogni foto prende il contorno scuro "da
+adesivo" (la sagoma tinta di scuro ridisegnata in sedici direzioni) e
+un'ombra sotto. Finiscono in un foglio di stile come classi (`.ic-moneta`…).
+Costa ~0,5 s sul renderer software dei test (molto meno su un telefono) e
+~700 KB di immagini in memoria; se il WebGL non parte, sotto ricompare l'emoji.
+
+**Lo stile grasso.** Tutto ha un contorno scuro spesso (`--inchiostro`),
+anche il testo (otto ombre piene attorno alle lettere); i bottoni sono
+bombati — luce in alto, filo chiaro dentro, un gradino scuro sotto che scende
+quando li premi; i colori sono pieni e ognuno dice una cosa (potenza blu,
+arma viola, oro verde, rune viola, imprese oro).
+
+**Il menù.** La home tiene solo quello che serve a ogni partita: torre e
+zona in alto a sinistra, le valute impilate a destra con le icone grandi,
+il titolo, l'obiettivo del giorno come una carta "evento" con la barra,
+l'ultima corsa in un nastro, l'eroe, ALL'ASSALTO (con il riflesso che
+passa), e le tre carte dei potenziamenti — ognuna con la sua icona, il
+valore di adesso e sotto quello che si compra (→ ×1.21, → Lama Rúna), e una
+freccia verde che salta quando si può comprare. La rinascita, quando c'è, è
+una **tessera di lato** che pulsa ("PRONTA +8") e apre la sua scheda con la
+spiegazione. Tutto il resto sta nella **barra in basso**, a schede:
+
+| scheda | cosa c'è |
+|---|---|
+| EROE | ritratto grande, gli aspetti come ritratti (con il prezzo), l'arsenale |
+| RUNE | la bottega (chiusa, con la spiegazione, finché non si rinasce) |
+| GIOCA | chiude la scheda aperta: si torna al menù |
+| IMPRESE | il diario dei tentativi e le tredici imprese |
+| OPZIONI | lingua, salvataggio di riserva, ricomincia, la marca della build |
+
+Un **pallino rosso** con il punto esclamativo dice che di là c'è qualcosa:
+un aspetto che puoi comprare, rune da spendere, imprese nuove non ancora
+viste, il salvataggio di riserva mai fatto (da quando c'è qualcosa da
+perdere, dalla torre 3).
+
+**In corsa**, la plancia parla la stessa lingua: pillole bombate con le icone
+(l'arma cambia icona quando la raccogli), barra di avanzamento spessa,
+cartelli, combo, duello, guida e seconda occasione con il contorno.
+
+**Colore e luce.** Due righe nello shader cartoon: un **riflesso** bianco a
+gradino dove la superficie guarda fra il sole e la camera — i personaggi
+sembrano giocattoli di plastica nuovi — acceso solo sui pezzi con il
+contorno (personaggi, armi, poteri), non sul terreno; e un filo di
+**saturazione** in più su tutto (`SATURA`, 1,14).
+
+**Movimento.** Il riflesso che passa su ALL'ASSALTO, la freccia verde che
+salta, i pallini che pulsano, la tessera della rinascita che respira, le
+schede che salgono, e comprando la carta rimbalza e le monete volano dal
+portafoglio dentro la carta.
+
+**Gli schermi bassi.** Sotto i 760 px d'altezza tutto scende di un gradino
+(titolo, icone, bottone, niente valore successivo sulle carte), perché fra
+il titolo e il bottone deve restare posto per l'eroe: `tools/misura-home.js`
+lo controlla a 720 e a 640.
+
 ## 5. Il momento della vittoria
 
 Battuto il boss, la camera lascia il duello e sale sul balcone della torre.

@@ -45,9 +45,10 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
     return JSON.stringify(meta);
   });
 
-  await p.click('#registroBtn');
+  /* il salvataggio sta nella scheda OPZIONI, dalla barra in basso */
+  await p.click('#navOpzioni');
   await p.waitForTimeout(150);
-  ok(await p.evaluate(() => !document.getElementById('registro').classList.contains('hidden')), 'il registro non si apre');
+  ok(await p.evaluate(() => !document.getElementById('schOpzioni').classList.contains('hidden')), 'le opzioni non si aprono');
   await p.click('#svCopia');
   await p.waitForTimeout(250);
   const codice = await p.evaluate(() => document.getElementById('svCodice').value);
@@ -68,7 +69,7 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   }
 
   /* --- incolla e carica: due tocchi --- */
-  await p.click('#registroBtn');
+  await p.click('#navOpzioni');
   await p.click('#svIncolla');
   await p.fill('#svCodice', '  ' + codice.slice(0, 40) + '\n' + codice.slice(40) + '  ');   // spazi e a capo di una nota
   await p.click('#svCarica');
@@ -79,11 +80,12 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   const A = JSON.parse(prima), B = JSON.parse(dopo);
   for (const k of Object.keys(A)) {
     if (k === 'oggi') continue;                       // lo riscrive il menù col giorno di oggi
+    if (k === 'backupFatto') continue;                // copiare il codice lo accende, ed è giusto
     ok(JSON.stringify(A[k]) === JSON.stringify(B[k]), 'dopo il carico ' + k + ' è ' +
        JSON.stringify(B[k]) + ' invece di ' + JSON.stringify(A[k]));
   }
-  ok(await p.evaluate(() => document.getElementById('registro').classList.contains('hidden')),
-     'il registro resta aperto dopo il carico');
+  ok(await p.evaluate(() => document.getElementById('schOpzioni').classList.contains('hidden')),
+     'le opzioni restano aperte dopo il carico');
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem(SAVE_KEY)).level) === 7,
      'il carico non è stato scritto nel salvataggio');
 

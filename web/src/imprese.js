@@ -95,7 +95,7 @@ function renderImprese() {
   const I = imprese();
   const fatte = IMPRESE.filter(D => I.fatte[D.id]).length;
   $('rgImpreseBox').classList.remove('hidden');
-  $('rgHead').textContent = '🏆 ' + t('im.titolo');
+  $('rgHead').textContent = t('im.titolo');
   $('rgSub').textContent = t('im.sub', fatte, IMPRESE.length);
   /* prima quelle da fare, in ordine di quanto manca; in fondo le fatte */
   const lista = IMPRESE.slice().sort((a, b) => {
@@ -110,7 +110,7 @@ function renderImprese() {
       ? '<div class="imp-barra"><i style="width:' + (v / D.n * 100).toFixed(1) + '%"></i></div>' +
         '<small>' + fmt(v) + ' / ' + fmt(D.n) + '</small>'
       : '';
-    const premio = fatta ? '✓' : '💎' + D.premio + (D.skin !== undefined ? ' 👑' : '');
+    const premio = fatta ? '✓' : '<i class="ic ic-gemma"></i>' + D.premio + (D.skin !== undefined ? ' 👑' : '');
     return '<div class="imp' + (fatta ? ' fatta' : '') + '">' +
            '<div class="imp-ico">' + D.icona + '</div>' +
            '<div class="imp-testo"><b>' + t('im.' + D.id) + '</b><small>' + t('im.' + D.id + '.d') + '</small>' +

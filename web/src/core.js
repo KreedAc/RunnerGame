@@ -503,6 +503,8 @@ function defaultSave() {
     regole: {},          // quante volte si è vista annunciare ogni regola di zona
     imprese: { fatte: {}, conti: {} },   // i traguardi lunghi (imprese.js)
     poteriVisti: 0,      // le prime volte un potere in pista si annuncia
+    impreseViste: 0,     // quante imprese fatte si sono già viste (il pallino rosso)
+    backupFatto: false,  // ha mai copiato il codice di riserva?
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

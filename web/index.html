@@ -142,322 +142,370 @@
     100%{opacity:0;transform:scale(1.06)}
   }
 
-  /* ============================== MENÙ ============================== */
+  /* ========================== LO STILE GRASSO ==========================
+     "Sembra vecchio", diceva chi l'ha provato, mettendolo accanto ai giochi
+     che ha sul telefono. Non era il mondo 3D: era l'interfaccia —
+     riquadri scuri semitrasparenti, testo sottile, emoji al posto delle
+     icone. Sembrava un sito. I giochi di adesso parlano un'altra lingua, e
+     il giocatore la associa al "curato":
+
+     - tutto ha un CONTORNO scuro spesso (--inchiostro), anche il testo;
+     - i bottoni sono BOMBATI: luce in alto, un filo chiaro dentro, e un
+       gradino scuro sotto che scende quando li premi;
+     - le icone sono oggetti lucidi (icone.js le fotografa dai modelli);
+     - i colori sono pieni: ogni cosa ha il suo (potenza blu, arma viola,
+       oro verde, rune viola, imprese oro).
+
+     Le misure restano strette apposta: la home deve stare in uno schermo
+     (tools/misura-home.js). */
+  :root{
+    --inchiostro:#1b1530;
+    --tx: 0 2px 0 var(--inchiostro),2px 0 0 var(--inchiostro),-2px 0 0 var(--inchiostro),
+          0 -2px 0 var(--inchiostro),1.5px 1.5px 0 var(--inchiostro),-1.5px 1.5px 0 var(--inchiostro),
+          1.5px -1.5px 0 var(--inchiostro),-1.5px -1.5px 0 var(--inchiostro),0 3.5px 0 var(--inchiostro);
+    --tx-s: 0 1.5px 0 var(--inchiostro),1.5px 0 0 var(--inchiostro),-1.5px 0 0 var(--inchiostro),
+          0 -1.5px 0 var(--inchiostro),0 2.5px 0 var(--inchiostro);
+    --bombato: inset 0 3px 0 rgba(255,255,255,.42),inset 0 -4px 0 rgba(0,0,0,.2);
+    --pan: linear-gradient(180deg,#34508a,#223561);
+  }
+
+  /* ------------------------------ LE ICONE --------------------------- */
+  .ic{display:inline-block;width:1em;height:1em;flex:none;font-style:normal;
+    background:center/contain no-repeat;vertical-align:-.16em;line-height:1;text-align:center}
+  /* senza icone fotografate (niente WebGL) ricompare l'emoji */
+  body:not(.icone-ok) .ic::before{font-size:.82em}
+  body:not(.icone-ok) .ic-moneta::before{content:"🪙"} body:not(.icone-ok) .ic-oro::before{content:"💰"}
+  body:not(.icone-ok) .ic-gemma::before{content:"💎"} body:not(.icone-ok) .ic-runa::before{content:"🔮"}
+  body:not(.icone-ok) .ic-fulmine::before{content:"⚡"} body:not(.icone-ok) .ic-stella::before{content:"💥"}
+  body:not(.icone-ok) .ic-trofeo::before{content:"🏆"} body:not(.icone-ok) .ic-bersaglio::before{content:"🎯"}
+  body:not(.icone-ok) .ic-elmo::before{content:"⛑"} body:not(.icone-ok) .ic-ingranaggio::before{content:"⚙"}
+  body:not(.icone-ok) .ic-spade::before{content:"⚔"} body:not(.icone-ok) .ic-muro::before{content:"🧱"}
+  body:not(.icone-ok) .ic-torre::before{content:"🏰"} body:not(.icone-ok) .ic-forziere::before{content:"🧰"}
+  body:not(.icone-ok) [class*="ic-arma"]::before{content:"⚔"} body:not(.icone-ok) [class*="ic-eroe"]::before{content:"🧔"}
+
+  /* ------------------------------ IL MENÙ ---------------------------- */
   #hub{position:fixed;inset:0;display:flex;flex-direction:column;
-    padding:calc(env(safe-area-inset-top,0px) + 10px) 14px
-      calc(env(safe-area-inset-bottom,0px) + 14px);
+    padding:calc(env(safe-area-inset-top,0px) + 10px) 12px
+      calc(env(safe-area-inset-bottom,0px) + 86px);
     color:#fff;overflow-y:auto;
-    background:linear-gradient(180deg,rgba(10,26,44,.12),rgba(10,26,44,.4) 42%,rgba(10,26,44,.92))}
+    background:linear-gradient(180deg,rgba(10,26,44,.05),rgba(10,26,44,0) 40%,rgba(10,26,44,.55))}
 
-  .hub-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .wallet{display:flex;gap:8px}
-  .coin-pill{display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:13px;
-    background:rgba(16,32,52,.68);border:2px solid rgba(255,255,255,.24);
-    font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+  .hub-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .torre-badge{display:flex;align-items:center;gap:7px;padding:5px 13px 6px 7px;border-radius:16px;
+    background:var(--pan);border:3px solid var(--inchiostro);box-shadow:var(--bombato),0 4px 0 var(--inchiostro)}
+  .torre-badge .ic{font-size:34px}
+  .torre-badge b{display:block;font-family:var(--titolo);font-weight:400;font-size:19px;line-height:1;text-shadow:var(--tx-s)}
+  .torre-badge span{display:block;margin-top:2px;font-size:9.5px;font-weight:900;letter-spacing:1.2px;color:#bfe9ff}
+  .wallet{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .coin-pill{position:relative;display:flex;align-items:center;justify-content:flex-end;gap:4px;
+    min-width:92px;padding:3px 11px 3px 30px;border-radius:12px;color:#fff;
+    background:linear-gradient(180deg,#27365c,#1a2544);border:3px solid var(--inchiostro);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.18);
+    font-family:var(--titolo);font-size:17px;line-height:1.15;text-shadow:var(--tx-s);font-variant-numeric:tabular-nums}
+  .coin-pill .ic{position:absolute;left:-14px;top:50%;transform:translateY(-50%);font-size:40px}
+  button.coin-pill{cursor:pointer}
 
-  /* Tutte le misure del menù sono strette apposta: con otto zone, le
-     bandierine, gli aspetti e il diario, la home aveva superato l'altezza
-     di un telefono e il diario — che è fatto per essere fotografato —
-     finiva sotto la piega. Vedi DESIGN, "La home in uno schermo". */
-  .hub-title{margin-top:6px;text-align:center}
-  .hub-title .name{font-size:clamp(28px,8.4vw,48px);font-weight:900;line-height:.92;
-    background:linear-gradient(180deg,#fff,#9fe6ff 55%,#ffd24b);-webkit-background-clip:text;
-    background-clip:text;color:transparent;filter:drop-shadow(0 5px 0 rgba(24,20,38,.55))}
-  .hub-title .zone{margin-top:3px;font-size:13.5px;font-weight:800;letter-spacing:2px;opacity:.8}
-  .hub-title .best{margin-top:3px;font-size:12px;font-weight:800;letter-spacing:1.4px;
-    color:#ffd24b;opacity:.92}
+  .hub-title{margin-top:2px;text-align:center}
+  .hub-title .name{font-size:clamp(30px,9vw,48px);line-height:.9;
+    background:linear-gradient(180deg,#fff 10%,#9fe6ff 55%,#ffd24b 92%);-webkit-background-clip:text;
+    background-clip:text;color:transparent;
+    filter:drop-shadow(0 3px 0 var(--inchiostro)) drop-shadow(2px 0 0 var(--inchiostro))
+           drop-shadow(-2px 0 0 var(--inchiostro)) drop-shadow(0 -2px 0 var(--inchiostro))
+           drop-shadow(0 4px 0 rgba(27,21,48,.6))}
+  .hub-title .best{margin-top:5px;font-family:var(--titolo);font-size:13.5px;letter-spacing:.8px;
+    color:#ffd24b;text-shadow:var(--tx-s)}
 
-  .story{margin:12px auto 0;max-width:31ch;font-size:13px;font-weight:700;
-    line-height:1.45;text-align:center;opacity:.92;text-wrap:balance}
+  /* l'obiettivo del giorno: una carta evento */
+  .oggi{display:flex;align-items:center;gap:8px;margin:8px auto 0;width:100%;max-width:330px;
+    padding:6px 10px 7px 8px;border-radius:16px;background:linear-gradient(180deg,#ff9d4a,#e0602a);
+    border:3px solid var(--inchiostro);box-shadow:var(--bombato),0 4px 0 var(--inchiostro)}
+  .oggi > .ic{font-size:38px}
+  .og-testo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .og-testo small{font-size:9px;font-weight:900;letter-spacing:1.3px;color:#fff3c0}
+  .og-testo span{font-family:var(--titolo);font-size:15.5px;line-height:1.05;text-shadow:var(--tx-s);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .og-barra{position:relative;height:15px;margin-top:2px;border-radius:99px;overflow:hidden;
+    background:#3a1a10;border:2px solid var(--inchiostro)}
+  .og-barra i{display:block;height:100%;width:0;background:linear-gradient(180deg,#b8ff8a,#4cc43a);
+    transition:width .4s}
+  .og-barra b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--titolo);font-weight:400;
+    font-size:11.5px;text-shadow:var(--tx-s)}
+  .og-premio{display:flex;align-items:center;gap:1px;font-family:var(--titolo)}
+  .og-premio .ic{font-size:28px}
+  .og-premio b{font-weight:400;font-size:17px;text-shadow:var(--tx-s)}
+  .oggi.fatto{background:linear-gradient(180deg,#8ee07a,#3ea83a)}
+
+  .story{margin:8px auto 0;max-width:33ch;padding:8px 12px;border-radius:14px;
+    font-size:12.5px;font-weight:700;line-height:1.42;text-align:center;text-wrap:balance;
+    background:rgba(20,30,58,.72);border:3px solid var(--inchiostro)}
   .story b{color:#ffd24b}
 
-  /* riepilogo dell'ultima corsa */
-  .last-run{position:relative;margin:10px auto 0;max-width:310px;padding:9px 18px 7px;
-    border-radius:20px;background:rgba(16,32,52,.66);
-    border:2px solid rgba(255,255,255,.24)}
-  .lr-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
-    padding:3px 14px;border-radius:99px;white-space:nowrap;
-    background:linear-gradient(180deg,#ffd056,#f0a01a);color:#3a2000;
-    font-size:11px;font-weight:900;letter-spacing:1.2px}
-  .lr-out{font-size:12px;font-weight:900;letter-spacing:1.4px;text-align:center;
-    margin-bottom:5px;opacity:.9}
-  .lr-row{display:flex;align-items:center;justify-content:space-around;gap:10px}
-  .lr-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
-  .lr-cell b{font-size:26px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+  /* il riepilogo dell'ultima corsa: un nastro */
+  .last-run{position:relative;margin:9px auto 0;min-width:230px;max-width:320px;padding:6px 16px 7px;
+    border-radius:16px;background:var(--pan);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato),0 4px 0 var(--inchiostro)}
+  .lr-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%) rotate(-2deg);
+    padding:2px 12px;border-radius:99px;white-space:nowrap;border:3px solid var(--inchiostro);
+    background:linear-gradient(180deg,#ffe07a,#f0a01a);color:#fff;font-size:11.5px;text-shadow:var(--tx-s)}
+  .lr-out{font-family:var(--titolo);font-size:15px;letter-spacing:.5px;text-align:center;text-shadow:var(--tx-s)}
+  .lr-row{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:2px}
+  .lr-cell{display:flex;align-items:center;gap:5px}
+  .lr-cell .ic{font-size:26px}
+  .lr-cell b{font-family:var(--titolo);font-weight:400;font-size:22px;line-height:1;text-shadow:var(--tx-s);
+    font-variant-numeric:tabular-nums}
   .lr-cell b.gold{color:#ffd24b}
-  .lr-cell span{font-size:10px;font-weight:800;letter-spacing:1.4px;opacity:.6}
-  .lr-sep{width:2px;align-self:stretch;background:rgba(255,255,255,.18);border-radius:2px}
 
-  .hint{display:flex;align-items:center;justify-content:center;gap:10px;
-    font-size:13px;font-weight:700;opacity:.75;margin-top:12px}
-  /* Era una pillina con il pallino che scorre: identica a un interruttore
-     acceso/spento, e infatti la prima cosa che viene da fare è premerla.
-     Adesso è un dito fra due frecce — si legge "trascina", non "attiva". */
-  .swipe{display:inline-flex;align-items:center;gap:3px;
-    font-size:14px;color:rgba(255,255,255,.45)}
-  .swipe .dito{font-size:19px;line-height:1;
-    animation:sw 1.6s ease-in-out infinite}
+  .hint{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;
+    font-family:var(--titolo);font-size:15px;text-shadow:var(--tx-s)}
+  .swipe{display:inline-flex;align-items:center;gap:3px;font-size:16px;color:rgba(255,255,255,.7)}
+  .swipe .dito{font-size:21px;line-height:1;animation:sw 1.6s ease-in-out infinite}
   @keyframes sw{0%,100%{transform:translateX(-9px)}50%{transform:translateX(9px)}}
 
   .spacer{flex:1;min-height:6px}
 
-  .btn{pointer-events:auto;cursor:pointer;border:none;border-radius:20px;
-    padding:14px 50px;font-size:21px;font-weight:900;color:#3a2000;font-family:inherit;
-    background:linear-gradient(180deg,#ffd970,#f5a91d);
-    box-shadow:0 7px 0 #b96e00,0 12px 26px rgba(0,0,0,.45);
+  /* la tessera di lato: la rinascita, quando c'è */
+  /* sta nella fascia dell'eroe, sopra al bottone: misurata dal basso,
+     perché è il basso del menù che non cambia fra una partita e l'altra */
+  .tile{position:absolute;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 340px);z-index:1;
+    display:flex;flex-direction:column;align-items:center;gap:1px;width:76px;padding:6px 4px 7px;
+    border-radius:16px;cursor:pointer;font-family:var(--titolo);color:#fff;
+    background:linear-gradient(180deg,#9b6ae0,#5a33a8);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato),0 4px 0 var(--inchiostro)}
+  .tile .ic{font-size:40px;margin-top:-2px}
+  .tile b{font-weight:400;font-size:12px;letter-spacing:.2px;text-shadow:var(--tx-s)}
+  .tile-tag{margin-top:2px;padding:1px 7px;border-radius:99px;font-size:11px;
+    background:linear-gradient(180deg,#8dff87,#2fbd63);border:2px solid var(--inchiostro);text-shadow:var(--tx-s)}
+  .tile:active{transform:translateY(3px);box-shadow:var(--bombato),0 1px 0 var(--inchiostro)}
+  .tile.ready{animation:rbPulse 1.6s ease-in-out infinite}
+  @keyframes rbPulse{50%{transform:scale(1.07)}}
+
+  /* ------------------------------ I BOTTONI -------------------------- */
+  .btn{position:relative;overflow:hidden;pointer-events:auto;cursor:pointer;display:inline-flex;
+    align-items:center;justify-content:center;gap:10px;padding:10px 26px 12px;min-width:260px;
+    border-radius:20px;border:3px solid var(--inchiostro);font-family:var(--titolo);font-size:28px;
+    color:#fff;text-shadow:var(--tx);
+    background:linear-gradient(180deg,#ffe36a 0%,#ffb22c 55%,#f08a14 100%);
+    box-shadow:var(--bombato),0 6px 0 var(--inchiostro),0 12px 22px rgba(0,0,0,.35);
     transition:transform .08s,box-shadow .08s}
-  .btn:active{transform:translateY(5px);box-shadow:0 2px 0 #b96e00,0 6px 14px rgba(0,0,0,.4)}
+  .btn .ic{font-size:38px;margin:-6px 0}
+  .btn:active{transform:translateY(4px);box-shadow:var(--bombato),0 2px 0 var(--inchiostro)}
   .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
-  .play-wrap{display:flex;justify-content:center;margin-bottom:11px}
+  /* il riflesso che passa ogni tanto sul bottone: dice "premimi" */
+  .btn::after{content:"";position:absolute;top:-20%;bottom:-20%;left:-40%;width:28%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+    transform:skewX(-20deg);animation:riflesso 3.2s ease-in-out infinite}
+  @keyframes riflesso{0%,62%{left:-40%}100%{left:130%}}
+  .btn.viola{background:linear-gradient(180deg,#c9a2ff,#8a58e0 55%,#6a3cc0);min-width:200px;font-size:24px}
+  .play-wrap{display:flex;justify-content:center;margin-bottom:10px}
 
-  /* la carta della rinascita: sta fra il risultato e i potenziamenti,
-     perché è la scelta che si fa quando i potenziamenti non bastano più */
-  .rebirth-card{display:block;width:100%;max-width:340px;margin:0 auto 6px;
-    padding:8px 16px 7px;border-radius:20px;cursor:pointer;font-family:inherit;
-    color:#fff;text-align:center;border:2px solid rgba(190,150,255,.5);
-    background:linear-gradient(180deg,#5b3f8f,#38265c);
-    box-shadow:0 5px 0 rgba(20,10,40,.65);
-    transition:transform .08s,box-shadow .08s,filter .2s}
-  .rebirth-card:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(20,10,40,.65)}
-  .rebirth-card:focus-visible{outline:3px solid #fff;outline-offset:2px}
-  .rebirth-card.ready{animation:rbPulse 1.8s ease-in-out infinite}
-  .rebirth-card.armed{border-color:#ffd970;
-    background:linear-gradient(180deg,#8a5fbf,#5b3f8f);animation:none}
-  @keyframes rbPulse{
-    0%,100%{box-shadow:0 5px 0 rgba(20,10,40,.65),0 0 0 0 rgba(190,150,255,.5)}
-    50%{box-shadow:0 5px 0 rgba(20,10,40,.65),0 0 0 10px rgba(190,150,255,0)}
-  }
-  .rb-head{font-size:11px;font-weight:900;letter-spacing:1.5px;opacity:.85}
-  .rb-row{display:flex;align-items:baseline;justify-content:center;gap:6px;
-    flex-wrap:wrap;margin-top:4px}
-  .rb-gain{font-size:20px;font-weight:900;color:#e2c4ff;font-variant-numeric:tabular-nums}
-  .rb-bonus{font-size:18px;font-weight:900;color:#ffd970;font-variant-numeric:tabular-nums}
-  .rb-lbl{font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.62}
-  .rb-sep{width:2px;height:16px;background:rgba(255,255,255,.22);border-radius:2px;
-    align-self:center;margin:0 4px}
-  .rb-note{margin-top:3px;font-size:10px;font-weight:800;letter-spacing:.9px;opacity:.72}
-  .rebirth-card.armed .rb-note{opacity:1;color:#ffd970}
-
-  /* Le tre carte di potenziamento. Sono il cuore del gioco — è lì che si
-     spende l'oro — e invece erano l'elemento più piccolo dello schermo:
-     un pollice ci arrivava, un occhio no. */
-  #upgrades{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
-  .up-card{display:flex;flex-direction:column;align-items:center;gap:2px;
-    padding:10px 6px 9px;border-radius:20px;cursor:pointer;font-family:inherit;
-    background:linear-gradient(180deg,#3f5a7a,#26374d);
-    border:2px solid rgba(255,255,255,.3);
-    box-shadow:0 5px 0 rgba(9,18,30,.6);color:#fff;
+  /* ------------------------ LE CARTE DEI POTENZIAMENTI ---------------- */
+  #upgrades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .up-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;
+    padding:5px 5px 7px;border-radius:18px;cursor:pointer;font-family:var(--titolo);color:#fff;
+    border:3px solid var(--inchiostro);box-shadow:var(--bombato),0 5px 0 var(--inchiostro);
     transition:transform .08s,box-shadow .08s,filter .12s}
-  .up-card:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(9,18,30,.6)}
-  /* Non comprabile: si spegne, ma il costo resta acceso — è il numero che
-     dice quanto manca, spegnerlo nasconde proprio l'informazione utile. */
-  .up-card.locked{filter:grayscale(.55) brightness(.72);cursor:default}
-  .up-card.locked .up-cost{filter:saturate(1.6) brightness(1.25)}
+  .up-card.blu{background:linear-gradient(180deg,#6cc8ff,#2a7ad6)}
+  .up-card.viola{background:linear-gradient(180deg,#c49bff,#7a46d6)}
+  .up-card.verde{background:linear-gradient(180deg,#8ee67a,#2f9e3e)}
+  .up-card:active{transform:translateY(4px);box-shadow:var(--bombato),0 1px 0 var(--inchiostro)}
+  .up-card.locked{filter:saturate(.35) brightness(.8);cursor:default}
+  .up-card.locked .up-cost{filter:saturate(2.4) brightness(1.2)}
   .up-card:focus-visible{outline:3px solid #fff;outline-offset:2px}
-  .up-name{font-size:13px;font-weight:900;letter-spacing:1px}
-  .up-level{font-size:10.5px;opacity:.55;font-weight:800;letter-spacing:.4px}
-  .up-value{margin-top:2px;font-size:21px;line-height:1.1;font-weight:900;color:#8fe3ff;
-    font-variant-numeric:tabular-nums}
-  /* il nome dell'arma è una parola, non un numero: "Lama Rúna" a 23px
-     andrebbe a capo dentro una carta larga un terzo di schermo */
-  .up-card[data-key="weapon"] .up-value{font-size:17px}
-  .up-cost{margin-top:5px;padding:4px 14px;border-radius:99px;font-size:14.5px;font-weight:900;
-    background:linear-gradient(180deg,#ffd970,#f5a91d);color:#3a2000;
-    box-shadow:0 3px 0 rgba(150,90,0,.55);
-    font-variant-numeric:tabular-nums;white-space:nowrap}
+  .up-name{font-size:16px;line-height:1.1;text-shadow:var(--tx-s);letter-spacing:.3px}
+  .up-ico{font-size:50px;margin:0 0 -3px}
+  .up-level{font-family:system-ui,sans-serif;font-size:10px;font-weight:900;letter-spacing:.5px;opacity:.9}
+  .up-value{font-size:18px;line-height:1.05;text-shadow:var(--tx-s);font-variant-numeric:tabular-nums;
+    white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .up-card[data-key="weapon"] .up-value{font-size:15px}
+  .up-next{height:13px;font-family:system-ui,sans-serif;font-size:10.5px;font-weight:900;color:#d6ffd0;
+    text-shadow:0 1px 0 rgba(0,0,0,.45);white-space:nowrap}
+  .up-cost{display:flex;align-items:center;gap:3px;margin-top:4px;padding:1px 10px 2px 5px;border-radius:99px;
+    font-size:16px;background:linear-gradient(180deg,#3a3050,#221a36);border:2px solid var(--inchiostro);
+    color:#ffe07a;text-shadow:var(--tx-s);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .up-cost .ic{font-size:21px}
+  /* la freccia verde: si può comprare */
+  .up-card:not(.locked)::after{content:"▲";position:absolute;top:26px;right:7px;font-size:15px;color:#8dff87;
+    text-shadow:var(--tx-s);animation:su .9s ease-in-out infinite}
+  @keyframes su{50%{transform:translateY(-3px)}}
+  .up-card.compra{animation:compra .35s ease-out}
+  @keyframes compra{30%{transform:scale(1.1) rotate(-2deg)}60%{transform:scale(.97)}}
 
-  /* ricomincia da capo: sta in fondo, lontano dal pollice che gioca, e
-     chiede due tocchi — cancella tutto e non si torna indietro */
-  .reset-btn{display:block;margin:0;padding:7px 15px;border-radius:99px;
-    cursor:pointer;font-family:inherit;font-size:10.5px;font-weight:800;
-    letter-spacing:1.2px;color:rgba(255,255,255,.55);
-    background:transparent;border:2px solid rgba(255,255,255,.16);
-    transition:color .15s,border-color .15s,background .15s}
-  .reset-btn:active{transform:translateY(2px)}
-  .reset-btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
-  .reset-btn.armed{color:#ffb4a2;border-color:rgba(255,120,90,.75);
-    background:rgba(120,30,20,.45)}
+  /* ----------------------------- LA BARRA IN BASSO ------------------- */
+  #nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,1fr);
+    align-items:end;gap:4px;padding:6px 8px calc(env(safe-area-inset-bottom,0px) + 6px);
+    background:linear-gradient(180deg,#2b3d6e,#16213f);border-top:3px solid var(--inchiostro);
+    box-shadow:0 -6px 18px rgba(0,0,0,.25)}
+  .nav-b{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;height:62px;
+    justify-content:flex-end;padding:0 0 3px;border-radius:14px;cursor:pointer;font-family:var(--titolo);
+    color:#fff;background:transparent;border:3px solid transparent}
+  .nav-b .ic{font-size:38px}
+  .nav-b span{font-size:12px;text-shadow:var(--tx-s);letter-spacing:.3px}
+  .nav-b small{position:absolute;top:-4px;left:4px;font-size:10px;
+    padding:0 5px;border-radius:99px;background:#16213f;border:2px solid var(--inchiostro)}
+  .nav-b.on{background:linear-gradient(180deg,#4c6cb0,#2c4078);border-color:var(--inchiostro);
+    box-shadow:var(--bombato)}
+  .nav-b.gioca{height:74px;margin-top:-16px;border-color:var(--inchiostro);
+    background:linear-gradient(180deg,#ff7a5a,#d63a2a);box-shadow:var(--bombato),0 4px 0 var(--inchiostro)}
+  .nav-b.gioca .ic{font-size:44px}
+  .nav-b:active{transform:translateY(2px)}
+  .badge{position:absolute;top:-4px;right:6px;width:20px;height:20px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#ff8a7a,#e0261a);border:2px solid #fff;
+    box-shadow:0 0 0 2px var(--inchiostro);animation:badge 1.4s ease-in-out infinite}
+  .badge::after{content:"!";position:absolute;inset:0;display:grid;place-items:center;
+    font-family:var(--titolo);font-style:normal;font-size:13px;color:#fff}
+  @keyframes badge{50%{transform:scale(1.15)}}
 
-  /* ========================= SECONDA OCCASIONE =======================
-     Compare nel momento in cui la corsa finirebbe: il muro ti ha fermato
-     a due blocchi dalla torre, o il carceriere ti ha piegato. È lì che i
-     diamanti hanno un senso, e il tempo che scorre fa parte della scelta. */
-  /* ------------------------ L'OBIETTIVO DEL GIORNO ------------------ */
-  .oggi{display:flex;align-items:center;justify-content:center;gap:6px;
-    margin:5px auto 0;padding:3px 11px;border-radius:99px;max-width:max-content;
-    background:rgba(16,32,52,.62);border:2px solid rgba(255,255,255,.14);
-    font-size:11.5px;font-weight:800;letter-spacing:.3px;color:rgba(255,255,255,.85)}
-  .oggi b{font-family:var(--titolo);font-weight:400;font-size:13px;color:#8fe3ff}
-  .oggi i{font-style:normal;font-size:11px;opacity:.8}
-  .oggi.fatto{border-color:rgba(141,255,135,.4)}
-  .oggi.fatto b{color:#8dff87}
-
-  /* ------------------------------ LA BOTTEGA ------------------------- */
-  #runePill{cursor:pointer;font-family:var(--titolo);color:#fff;position:relative}
-  /* il puntino dice "hai rune da spendere": senza, la bottega non la
-     troverebbe nessuno */
-  #runePill.spendi::after{content:"";position:absolute;top:-3px;right:-3px;
-    width:10px;height:10px;border-radius:50%;background:#ffd24b;
-    box-shadow:0 0 0 2px #0d1a2b,0 0 10px rgba(255,210,75,.9)}
-  .bottega{position:fixed;inset:0;z-index:5;display:flex;align-items:center;
-    justify-content:center;padding:16px;background:rgba(8,12,24,.78)}
-  .bt-card{width:100%;max-width:380px;max-height:100%;overflow-y:auto;
-    padding:16px 14px 12px;border-radius:24px;color:#fff;text-align:center;
-    border:2px solid rgba(190,150,255,.5);
-    background:linear-gradient(180deg,#4a3278,#2a1c48);
-    box-shadow:0 10px 0 rgba(12,6,26,.7),0 18px 40px rgba(0,0,0,.5)}
-  .bt-head{font-family:var(--titolo);font-size:22px;letter-spacing:.5px;color:#e2c4ff}
-  .bt-sub{margin-top:4px;font-size:11.5px;font-weight:700;opacity:.8;line-height:1.4}
+  /* ------------------------------- LE SCHEDE ------------------------- */
+  .scheda{position:fixed;left:0;right:0;top:0;bottom:calc(env(safe-area-inset-bottom,0px) + 80px);z-index:5;
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:calc(env(safe-area-inset-top,0px) + 12px) 10px 10px;background:rgba(8,12,24,.55)}
+  .sc-card{position:relative;width:100%;max-width:400px;max-height:100%;overflow-y:auto;
+    padding:4px 12px 14px;border-radius:22px;color:#fff;text-align:center;
+    background:linear-gradient(180deg,#3a5494,#233766);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato),0 6px 0 var(--inchiostro),0 16px 36px rgba(0,0,0,.45);
+    animation:schedaSu .22s ease-out}
+  .sc-card.viola{background:linear-gradient(180deg,#6a4aa8,#3b2670)}
+  .sc-card.oro{background:linear-gradient(180deg,#46608f,#26385e)}
+  @keyframes schedaSu{from{transform:translateY(18px) scale(.97);opacity:0}}
+  .sc-head{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 34px 8px;
+    font-family:var(--titolo);font-size:24px;text-shadow:var(--tx)}
+  .sc-head .ic{font-size:36px}
+  .sc-x{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:12px;cursor:pointer;
+    font-family:var(--titolo);font-size:18px;color:#fff;text-shadow:var(--tx-s);
+    background:linear-gradient(180deg,#ff8a7a,#d63a2a);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato)}
+  .sc-sez{margin:14px 0 7px;font-family:var(--titolo);font-size:16px;color:#ffd970;text-shadow:var(--tx-s);
+    letter-spacing:.4px}
+  .bt-sub{margin-top:2px;font-size:11.5px;font-weight:700;opacity:.9;line-height:1.4}
   .bt-sub b{color:#ffd970}
-  .bt-list{display:flex;flex-direction:column;gap:7px;margin-top:12px}
-  .bt-riga{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;
+  .bt-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .bt-riga{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;
     border-radius:16px;cursor:pointer;font-family:inherit;color:#fff;text-align:left;
-    background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.12);
-    transition:transform .08s,border-color .15s}
+    background:linear-gradient(180deg,#5a3e94,#402a70);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato);transition:transform .08s}
   .bt-riga:active{transform:scale(.98)}
-  .bt-riga.armata{border-color:#ffd970;background:rgba(255,210,75,.14)}
-  .bt-riga.caro{opacity:.55}
-  .bt-riga.max{opacity:.7;cursor:default}
-  .bt-ico{font-size:22px;width:28px;text-align:center}
+  .bt-riga.armata{background:linear-gradient(180deg,#8a64d0,#5a3e94);outline:3px solid #ffd970}
+  .bt-riga.caro{filter:saturate(.5) brightness(.85)}
+  .bt-riga.max{opacity:.8;cursor:default}
+  .bt-ico{font-size:24px;width:30px;text-align:center}
   .bt-testo{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}
-  .bt-testo b{font-size:13px;font-weight:900;letter-spacing:.3px}
-  .bt-testo small{font-size:10.5px;font-weight:700;opacity:.72}
+  .bt-testo b{font-family:var(--titolo);font-weight:400;font-size:15px;text-shadow:var(--tx-s)}
+  .bt-testo small{font-size:10.5px;font-weight:700;opacity:.85}
   .bt-pallini{font-size:10px;letter-spacing:1px;color:#e2c4ff}
-  .bt-costo{min-width:48px;padding:5px 9px;border-radius:99px;text-align:center;
-    font-family:var(--titolo);font-size:14px;color:#3a2000;
-    background:linear-gradient(180deg,#ffd970,#f5a91d)}
-  .bt-riga.max .bt-costo{background:rgba(255,255,255,.14);color:#fff}
-  .bt-chiudi{margin-top:12px;padding:8px 22px;border-radius:99px;cursor:pointer;
-    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1.2px;
-    color:rgba(255,255,255,.7);background:transparent;border:2px solid rgba(255,255,255,.2)}
+  .bt-costo{display:flex;align-items:center;gap:2px;min-width:52px;justify-content:center;padding:2px 8px;
+    border-radius:99px;font-family:var(--titolo);font-size:15px;color:#fff;text-shadow:var(--tx-s);
+    background:linear-gradient(180deg,#c9a2ff,#7a46d6);border:2px solid var(--inchiostro)}
+  .bt-costo .ic{font-size:20px}
+  .bt-riga.max .bt-costo{background:rgba(255,255,255,.14)}
 
-  /* il registro: stessa carta della bottega, in oro invece che viola */
-  .registro .bt-card{border-color:rgba(255,210,75,.45);
-    background:linear-gradient(180deg,#2c4466,#16263e)}
-  .registro .bt-head{color:#ffd970}
-  .rg-sez{margin-top:12px;padding-top:12px;border-top:2px solid rgba(255,255,255,.1);
-    display:flex;flex-direction:column;align-items:center;gap:8px}
-  .rg-imprese.hidden + .rg-sez{margin-top:0;padding-top:0;border-top:0}
-  .rg-tit{font-family:var(--titolo);font-size:18px;color:#8fe3ff}
-  .rg-vai{margin-top:8px;padding:5px 12px;border-radius:99px;cursor:pointer;font-family:inherit;
-    font-size:10.5px;font-weight:900;letter-spacing:1px;color:#8fe3ff;
-    background:transparent;border:2px solid rgba(143,227,255,.35)}
-  .rg-azioni{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-  .rg-btn{padding:8px 14px;border-radius:99px;cursor:pointer;font-family:inherit;
-    font-size:11px;font-weight:900;letter-spacing:1px;color:#fff;
-    background:rgba(143,227,255,.14);border:2px solid rgba(143,227,255,.45)}
-  .rg-btn:active{transform:translateY(2px)}
-  .rg-btn.oro{color:#3a2000;border-color:#fff3c0;
-    background:linear-gradient(180deg,#ffd970,#f5a91d)}
-  .rg-btn.armata{background:linear-gradient(180deg,#ff9d8a,#d9503c);color:#fff}
-  .rg-codice{width:100%;height:74px;resize:none;padding:8px;border-radius:12px;
-    font:600 10.5px/1.35 ui-monospace,monospace;color:#dff6ff;word-break:break-all;
-    background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.18)}
-  .rg-msg{min-height:14px;font-size:11px;font-weight:800;color:#8dff87}
-  .rg-msg.no{color:#ff9d8a}
-  .imp{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:14px;
-    text-align:left;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1)}
-  .imp.fatta{border-color:rgba(255,210,75,.55);background:rgba(255,210,75,.12)}
-  .imp-ico{font-size:21px;width:28px;text-align:center}
-  .imp:not(.fatta) .imp-ico{filter:grayscale(1);opacity:.55}
+  /* le imprese */
+  .imp{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:14px;text-align:left;
+    background:linear-gradient(180deg,#34508a,#223561);border:3px solid var(--inchiostro)}
+  .imp.fatta{background:linear-gradient(180deg,#b88a2a,#7a5818)}
+  .imp-ico{font-size:24px;width:30px;text-align:center}
+  .imp:not(.fatta) .imp-ico{filter:grayscale(1);opacity:.6}
   .imp-testo{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
-  .imp-testo b{font-size:12.5px;font-weight:900;letter-spacing:.2px}
-  .imp-testo small{font-size:10.5px;font-weight:700;opacity:.72}
-  .imp-barra{height:5px;border-radius:99px;background:rgba(0,0,0,.35);overflow:hidden}
-  .imp-barra i{display:block;height:100%;border-radius:99px;
-    background:linear-gradient(90deg,#8ff0ff,#ffd24b)}
-  .imp-premio{font-family:var(--titolo);font-size:14px;color:#8fe3ff;white-space:nowrap}
-  .imp.fatta .imp-premio{color:#ffd970}
+  .imp-testo b{font-family:var(--titolo);font-weight:400;font-size:14.5px;text-shadow:var(--tx-s)}
+  .imp-testo small{font-size:10.5px;font-weight:700;opacity:.85}
+  .imp-barra{height:9px;border-radius:99px;background:#16213f;border:2px solid var(--inchiostro);overflow:hidden}
+  .imp-barra i{display:block;height:100%;background:linear-gradient(180deg,#b8ff8a,#4cc43a)}
+  .imp-premio{display:flex;align-items:center;gap:2px;font-family:var(--titolo);font-size:15px;
+    text-shadow:var(--tx-s);white-space:nowrap}
+  .imp-premio .ic{font-size:22px}
+
+  /* il diario, in testa alle imprese */
+  .diary{margin:2px 0 6px}
+  .dy-lbl{font-family:var(--titolo);font-size:13px;color:#ffd970;text-shadow:var(--tx-s)}
+  .dy-row{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:5px}
+  .dy-chip{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:800;
+    background:#1a2544;border:2px solid var(--inchiostro);color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums}
+  .dy-chip b{color:#8fe3ff;font-size:12.5px}
+  .dy-chip.now{background:#5a4210}
+  .dy-chip.now b{color:#ffd24b}
+  .dy-chip i{font-style:normal;color:#7ce0a0}
+
+  /* l'eroe: il ritratto grande, gli aspetti, l'arsenale */
+  .eroe-grande .ic{font-size:132px;margin-top:-4px}
+  .sk-name{font-family:var(--titolo);font-size:18px;text-shadow:var(--tx-s);margin-bottom:8px}
+  .sk-name.armed{color:#8fe3ff}
+  .sk-row{display:flex;justify-content:center;gap:7px;flex-wrap:wrap}
+  .sk{position:relative;width:62px;height:66px;padding:0;border-radius:14px;cursor:pointer;font-family:var(--titolo);
+    background:linear-gradient(180deg,#4c6cb0,#2c4078) center/88% no-repeat;border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato);transition:transform .1s}
+  .sk .ic{position:absolute;inset:4px 4px 12px;width:auto;height:auto}
+  .sk em{position:absolute;left:0;right:0;bottom:1px;font-style:normal;font-size:11px;color:#fff;text-shadow:var(--tx-s)}
+  .sk.on{background:linear-gradient(180deg,#ffe07a,#f0a01a);transform:scale(1.08)}
+  .sk.locked .ic{filter:brightness(.35) saturate(.3)}
+  .sk.locked.armed{outline:3px solid #8fe3ff}
+  .arsenale{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+  .ars{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;
+    background:#1a2544;border:3px solid var(--inchiostro)}
+  .ars .ic{font-size:40px}
+  .ars.no .ic{filter:brightness(.25) saturate(0);opacity:.7}
+  .ars.su{background:linear-gradient(180deg,#c49bff,#7a46d6)}
+
+  /* la rinascita */
+  .rb-spiega{font-size:12px;font-weight:700;line-height:1.45;opacity:.92;text-wrap:balance}
+  .rb-row{display:flex;justify-content:center;gap:10px;margin:12px 0 6px}
+  .rb-box{display:flex;flex-direction:column;align-items:center;min-width:110px;padding:6px 8px;border-radius:16px;
+    background:#2a1c4a;border:3px solid var(--inchiostro)}
+  .rb-box .ic{font-size:40px}
+  .rb-box b{font-family:var(--titolo);font-weight:400;font-size:24px;text-shadow:var(--tx-s)}
+  .rb-box span{font-size:9.5px;font-weight:900;letter-spacing:1px;opacity:.8}
+  .rb-gain{color:#e2c4ff}
+  .rb-bonus{color:#ffd970}
+  .rb-note{margin:4px 0 12px;font-size:11px;font-weight:800;letter-spacing:.4px;opacity:.85}
+  .rb-note.armata{color:#ffd970;opacity:1}
+
+  /* le opzioni */
+  .langs{display:flex;gap:8px;justify-content:center}
+  .lang-btn,.rg-btn,.reset-btn{padding:8px 13px;border-radius:14px;cursor:pointer;font-family:var(--titolo);
+    font-size:14px;color:#fff;text-shadow:var(--tx-s);background:linear-gradient(180deg,#4c6cb0,#2c4078);
+    border:3px solid var(--inchiostro);box-shadow:var(--bombato),0 3px 0 var(--inchiostro)}
+  .lang-btn.on{background:linear-gradient(180deg,#6cc8ff,#2a7ad6)}
+  .lang-btn:active,.rg-btn:active,.reset-btn:active{transform:translateY(2px)}
+  .rg-azioni{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  .rg-btn.oro{background:linear-gradient(180deg,#ffe36a,#f08a14);margin-top:6px}
+  .rg-btn.armata,.reset-btn.armed{background:linear-gradient(180deg,#ff8a7a,#d63a2a)}
+  .reset-btn{display:inline-block;background:linear-gradient(180deg,#8a5a5a,#5a3434)}
+  .rg-codice{width:100%;height:74px;margin-top:8px;resize:none;padding:8px;border-radius:12px;
+    font:600 10.5px/1.35 ui-monospace,monospace;color:#dff6ff;word-break:break-all;
+    background:#16213f;border:3px solid var(--inchiostro)}
+  .rg-msg{min-height:14px;margin-top:6px;font-size:11px;font-weight:800;color:#8dff87}
+  .rg-msg.no{color:#ff9d8a}
+  .build-tag{margin-top:12px;font-size:10px;font-weight:800;letter-spacing:1.1px;
+    color:rgba(255,255,255,.45);font-variant-numeric:tabular-nums}
 
   /* il contatore dei fotogrammi: cinque tocchi sulla marca della build */
   #fps{position:fixed;left:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);z-index:9;
     padding:3px 7px;border-radius:8px;background:rgba(0,0,0,.6);color:#8dff87;
     font:700 11px/1.2 ui-monospace,monospace;pointer-events:none;white-space:pre}
 
+  /* ========================= SECONDA OCCASIONE ======================= */
   .revive{position:fixed;inset:0;z-index:5;display:flex;align-items:center;
     justify-content:center;padding:20px;background:rgba(8,16,28,.72)}
-  .rv-card{width:100%;max-width:330px;padding:20px 18px 14px;border-radius:24px;
-    text-align:center;color:#fff;border:2px solid rgba(120,230,255,.45);
-    background:linear-gradient(180deg,#1d4668,#122a44);
-    box-shadow:0 10px 0 rgba(6,14,24,.7),0 18px 40px rgba(0,0,0,.5)}
-  .rv-head{font-size:19px;font-weight:900;letter-spacing:1.4px;color:#8fe3ff}
-  .rv-why{margin-top:5px;font-size:11.5px;font-weight:800;letter-spacing:1.1px;opacity:.7}
-  .rv-go{display:flex;flex-direction:column;align-items:center;gap:2px;
-    width:100%;margin-top:15px;padding:13px 10px;border:none;border-radius:20px;
-    cursor:pointer;font-family:inherit;color:#0d2a12;
-    background:linear-gradient(180deg,#8ef2a0,#2fbd63);
-    box-shadow:0 6px 0 #1c7a3f;transition:transform .08s,box-shadow .08s}
-  .rv-go:active{transform:translateY(4px);box-shadow:0 2px 0 #1c7a3f}
-  .rv-go .rv-what{font-size:18px;font-weight:900;letter-spacing:.6px}
-  .rv-go .rv-gain{font-size:12px;font-weight:800;opacity:.75}
-  .rv-cost{display:inline-block;margin-bottom:3px;padding:3px 13px;border-radius:99px;
-    background:rgba(10,40,20,.35);font-size:14px;font-weight:900}
-  /* la barra che si svuota: dice che la scelta ha una fine */
-  .rv-bar{height:6px;margin:12px 4px 0;border-radius:99px;overflow:hidden;
-    background:rgba(255,255,255,.15)}
-  .rv-bar i{display:block;height:100%;width:100%;border-radius:99px;
-    background:linear-gradient(90deg,#8fe3ff,#ffd24b)}
-  .rv-no{margin-top:9px;padding:7px 16px;border-radius:99px;cursor:pointer;
-    font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1.1px;
-    color:rgba(255,255,255,.55);background:transparent;
-    border:2px solid rgba(255,255,255,.16)}
-  .rv-left{margin-top:8px;font-size:10.5px;font-weight:800;letter-spacing:1px;opacity:.45}
-
-  /* Il diario della salita: quanti tentativi è costata ogni torre.
-     È fatto per essere fotografato — una riga sola, numeri grandi
-     abbastanza da leggersi in uno screenshot. */
-  .diary{margin-top:6px}
-  .dy-lbl{text-align:center;font-size:9.5px;font-weight:800;letter-spacing:1.4px;
-    color:rgba(255,255,255,.35)}
-  .dy-row{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:4px}
-  .dy-chip{padding:3px 9px;border-radius:99px;font-size:11px;font-weight:800;
-    background:rgba(16,32,52,.62);border:2px solid rgba(255,255,255,.12);
-    color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
-  .dy-chip b{color:#8fe3ff;font-size:12.5px}
-  /* la torre in corso: quella che stai ancora provando */
-  .dy-chip.now{border-color:rgba(255,210,75,.55);background:rgba(60,45,16,.5)}
-  .dy-chip.now b{color:#ffd24b}
-  /* l'asterisco dice che lì hai usato la seconda occasione */
-  .dy-chip i{font-style:normal;color:#7ce0a0}
-
-  /* L'aspetto: una fila di pastiglie colorate sotto ai potenziamenti.
-     Colori e non nomi — cinque nomi in fila su un telefono non si leggono,
-     cinque macchie di colore sì — e il nome di quello toccato nella riga
-     sotto, una alla volta. */
-  .skins{margin-top:8px}
-  .sk-row{display:flex;justify-content:center;gap:9px}
-  .sk{width:34px;height:34px;border-radius:50%;cursor:pointer;padding:0;
-    position:relative;font-family:inherit;
-    border:2px solid rgba(255,255,255,.18);
-    box-shadow:inset 0 -6px 10px rgba(0,0,0,.28);
-    transition:transform .1s,border-color .15s}
-  .sk.on{border-color:#ffd24b;transform:scale(1.14);
-    box-shadow:inset 0 -6px 10px rgba(0,0,0,.28),0 0 0 3px rgba(255,210,75,.22)}
-  .sk.locked{filter:saturate(.35) brightness(.62)}
-  .sk.locked.armed{filter:none;border-color:#8fe3ff}
-  .sk i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    font-style:normal;font-size:14px}
-  .sk-name{margin-top:3px;text-align:center;font-size:10.5px;font-weight:800;
-    letter-spacing:1.2px;color:rgba(255,255,255,.5)}
-  .sk-name.armed{color:#8fe3ff}
-
-  /* le due bandierine: stanno in fondo, fuori dalla strada del pollice
-     che gioca, ma sempre visibili — una lingua che non si trova è come
-     non averla */
-  .fondo{display:flex;align-items:center;justify-content:center;gap:10px;
-    flex-wrap:wrap;margin-top:8px}
-  .langs{display:flex;gap:7px}
-  .lang-btn{padding:6px 14px;border-radius:99px;cursor:pointer;font-family:inherit;
-    font-size:11px;font-weight:800;letter-spacing:.8px;
-    color:rgba(255,255,255,.45);background:transparent;
-    border:2px solid rgba(255,255,255,.14);transition:color .15s,border-color .15s}
-  .lang-btn.on{color:#8fe3ff;border-color:rgba(143,227,255,.5);
-    background:rgba(22,60,84,.5)}
-
-  /* la marca della build: serve a sapere, guardando il telefono, se la
-     pagina che hai davanti è quella appena pubblicata o una in cache */
-  .build-tag{margin-top:5px;text-align:center;font-size:9.5px;font-weight:700;
-    letter-spacing:1.1px;color:rgba(255,255,255,.3);font-variant-numeric:tabular-nums}
+  .rv-card{width:100%;max-width:330px;padding:16px 16px 14px;border-radius:24px;
+    text-align:center;color:#fff;background:linear-gradient(180deg,#3a6ab0,#20406e);
+    border:3px solid var(--inchiostro);box-shadow:var(--bombato),0 7px 0 var(--inchiostro),0 18px 40px rgba(0,0,0,.5)}
+  .rv-head{font-family:var(--titolo);font-size:26px;text-shadow:var(--tx)}
+  .rv-why{margin-top:4px;font-size:11.5px;font-weight:800;letter-spacing:1px;opacity:.85}
+  .rv-go{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin-top:13px;
+    padding:10px;border-radius:20px;cursor:pointer;font-family:var(--titolo);color:#fff;
+    background:linear-gradient(180deg,#9ef08a,#2fb04a);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato),0 6px 0 var(--inchiostro);transition:transform .08s,box-shadow .08s}
+  .rv-go:active{transform:translateY(4px);box-shadow:var(--bombato),0 2px 0 var(--inchiostro)}
+  .rv-go .rv-what{font-size:23px;text-shadow:var(--tx)}
+  .rv-go .rv-gain{font-family:system-ui,sans-serif;font-size:12px;font-weight:800;text-shadow:0 1px 0 rgba(0,0,0,.4)}
+  .rv-cost{display:inline-flex;align-items:center;gap:3px;padding:1px 12px;border-radius:99px;
+    background:#1a4a26;border:2px solid var(--inchiostro);font-size:17px;text-shadow:var(--tx-s)}
+  .rv-cost .ic{font-size:24px}
+  .rv-bar{height:12px;margin:12px 4px 0;border-radius:99px;overflow:hidden;background:#16213f;
+    border:2px solid var(--inchiostro)}
+  .rv-bar i{display:block;height:100%;width:100%;background:linear-gradient(180deg,#ffe07a,#f0a01a)}
+  .rv-no{margin-top:10px;padding:6px 16px;border-radius:14px;cursor:pointer;font-family:var(--titolo);
+    font-size:14px;color:#fff;text-shadow:var(--tx-s);background:linear-gradient(180deg,#6a7896,#46526e);
+    border:3px solid var(--inchiostro)}
+  .rv-left{margin-top:8px;font-size:10.5px;font-weight:800;letter-spacing:1px;opacity:.6}
 
   /* ============================ IL CARATTERE ==========================
      Lilita One: rotondo, pesante, leggibile a 14 px e bello a 50. Il
@@ -561,6 +609,61 @@
   .vola{position:absolute;left:0;top:0;font-size:22px;pointer-events:none;
     will-change:transform,opacity;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
 
+  /* schermi bassi (sotto i 760 px): tutto un gradino più stretto, perché
+     fra il titolo e il bottone deve restare posto per l'eroe */
+  @media (max-height:760px){
+    .hub-title .name{font-size:30px}
+    .hub-title .best{font-size:12px;margin-top:3px}
+    .oggi{margin-top:6px;padding:4px 9px 5px 7px}
+    .oggi > .ic{font-size:30px}
+    .story{font-size:11.2px;line-height:1.32;padding:6px 10px;margin-top:6px}
+    .last-run{margin-top:7px;padding:4px 14px 5px}
+    .btn{font-size:24px;padding:7px 22px 9px}
+    .btn .ic{font-size:32px}
+    .up-ico{font-size:36px}
+    .up-next{display:none}
+    .up-card{padding:4px 4px 6px}
+    .torre-badge .ic{font-size:28px}
+    .coin-pill{font-size:15px}
+  }
+
+  /* ====================== LO STILE GRASSO, IN CORSA ===================
+     La plancia, i cartelli, la combo, il duello, la guida: stessa lingua
+     del menù — contorno scuro, bombatura, icone lucide. */
+  .pill{display:flex;align-items:center;gap:6px;padding:4px 12px 5px 6px;border-radius:15px;
+    background:linear-gradient(180deg,#34508a,#223561);backdrop-filter:none;
+    border:3px solid var(--inchiostro);box-shadow:var(--bombato),0 4px 0 var(--inchiostro);text-shadow:none}
+  .pill > .ic{font-size:32px}
+  .pill small{display:block;font-size:9.5px;font-weight:900;letter-spacing:1.1px;opacity:.85;line-height:1}
+  .pill b{display:block;font-size:22px;line-height:1.05;text-shadow:var(--tx-s)}
+  #powerPill{padding:4px 18px 6px 8px;background:linear-gradient(180deg,#7fe0ff,#1f8fd6 60%,#1670b8)}
+  #powerPill > .ic{font-size:42px}
+  #powerPill b{font-size:34px}
+  #coinPill{background:linear-gradient(180deg,#5a4a2a,#3a2e18)}
+  #coinPill b{color:#ffe07a}
+  #wallPill{background:linear-gradient(180deg,#7a5ab8,#4a3280)}
+  #wallPill b{color:#fff}
+  #progressWrap{height:14px;margin-top:10px;background:#16213f;border:3px solid var(--inchiostro)}
+  #progress{background:linear-gradient(180deg,#b8ff8a,#4cc43a)}
+  .buff,.po{background:linear-gradient(180deg,#34508a,#223561);border-width:3px}
+  .buff b,.po b{text-shadow:var(--tx-s)}
+  #combo{border:3px solid var(--inchiostro);box-shadow:var(--bombato),0 4px 0 var(--inchiostro)}
+  #combo b{text-shadow:var(--tx-s)}
+  #banner b{font-family:var(--titolo);font-weight:400;border-radius:18px;color:#ffd24b;text-shadow:var(--tx);
+    background:linear-gradient(180deg,#34508a,#1c2c52);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato),0 6px 0 var(--inchiostro),0 14px 30px rgba(0,0,0,.4)}
+  #banner.bad b{color:#ff9d8a;background:linear-gradient(180deg,#7a3a3a,#4a2020);border-color:var(--inchiostro)}
+  #banner.good b{background:linear-gradient(180deg,#3a6ab0,#20406e);border-color:var(--inchiostro)}
+  #impresaToast{border:3px solid var(--inchiostro);background:linear-gradient(180deg,#ffd970,#e09a14);
+    box-shadow:var(--bombato),0 5px 0 var(--inchiostro)}
+  #impresaToast b,#impresaToast em{text-shadow:var(--tx-s);color:#fff}
+  #impresaToast small{color:#5a3a00;text-shadow:none}
+  .du-scritta{font-family:var(--titolo);background:linear-gradient(180deg,#34508a,#1c2c52);
+    border:3px solid var(--inchiostro);text-shadow:var(--tx-s)}
+  #guida{background:linear-gradient(180deg,#34508a,#1c2c52);border:3px solid var(--inchiostro);
+    box-shadow:var(--bombato),0 5px 0 var(--inchiostro);text-shadow:var(--tx-s)}
+  .vola.ic{font-size:30px}
+
   @media (prefers-reduced-motion:reduce){
     .swipe .dito,.pop,.gu-dito span{animation:none}
     #banner.show{animation:none;opacity:1}
@@ -573,13 +676,13 @@
 <!-- ============================== HUD ============================== -->
 <div id="hud" class="hidden">
   <div class="row">
-    <div class="pill"><small data-t="hud.weapon">ARMA</small><b id="hWeapon">Pugni</b></div>
-    <div class="pill" id="powerPill"><small data-t="hud.power">POTENZA</small><b id="hPower">20</b></div>
-    <div class="pill" id="coinPill"><small data-t="hud.gold">ORO</small><b id="hCoins">0</b></div>
+    <div class="pill"><i class="ic ic-arma0" id="hArmaIco"></i><div><small data-t="hud.weapon">ARMA</small><b id="hWeapon">Pugni</b></div></div>
+    <div class="pill" id="powerPill"><i class="ic ic-fulmine"></i><div><small data-t="hud.power">POTENZA</small><b id="hPower">20</b></div></div>
+    <div class="pill" id="coinPill"><i class="ic ic-moneta"></i><div><small data-t="hud.gold">ORO</small><b id="hCoins">0</b></div></div>
   </div>
   <div class="row mid">
-    <div class="pill"><small data-t="hud.hit">COLPO</small><b id="hDamage">3</b></div>
-    <div class="pill" id="wallPill"><small data-t="hud.wall">MURO</small><b id="hWall">0/30</b></div>
+    <div class="pill"><i class="ic ic-stella"></i><div><small data-t="hud.hit">COLPO</small><b id="hDamage">3</b></div></div>
+    <div class="pill" id="wallPill"><i class="ic ic-muro"></i><div><small data-t="hud.wall">MURO</small><b id="hWall">0/30</b></div></div>
   </div>
   <div id="progressWrap"><div id="progress"></div></div>
   <div id="combo" class="hidden"><b id="comboN">×2</b><span id="comboBonus"></span></div>
@@ -605,39 +708,81 @@
 <div id="pops"></div>
 <div id="banner"><b></b></div>
 
-<!-- la bottega delle rune: si apre dalla pillola 🔮 del portafoglio -->
-<div class="bottega hidden" id="bottega">
-  <div class="bt-card">
-    <div class="bt-head">🔮 <span data-t="bt.titolo">BOTTEGA DELLE RUNE</span></div>
-    <div class="bt-sub" id="btSub"></div>
-    <div class="bt-list" id="btList"></div>
-    <button class="bt-chiudi" id="btChiudi" data-t="bt.chiudi">CHIUDI</button>
+<!-- ============================ LE SCHEDE ============================
+     Si aprono dalla barra in basso (e la bottega anche dalla pillola delle
+     rune). Una alla volta, sopra il menù e sotto la barra, che resta lì:
+     si passa da una all'altra senza chiudere. -->
+<div class="scheda hidden" id="schEroe">
+  <div class="sc-card">
+    <div class="sc-head"><i class="ic ic-elmo"></i><span data-t="nav.eroe">EROE</span></div>
+    <button class="sc-x" data-chiudi aria-label="chiudi">✕</button>
+    <div class="eroe-grande"><i class="ic" id="eroeRitratto"></i></div>
+    <div class="sk-name" id="skName"></div>
+    <div class="sk-row" id="skRow"></div>
+    <div class="sc-sez" data-t="eroe.arsenale">ARSENALE</div>
+    <div class="arsenale" id="arsenale"></div>
   </div>
 </div>
 
-<!-- il registro: le imprese e il salvataggio di riserva. Si apre dal
-     bottone in fondo al menù. -->
-<div class="bottega registro hidden" id="registro">
-  <div class="bt-card">
-    <div class="rg-imprese hidden" id="rgImpreseBox">
-      <div class="bt-head" id="rgHead">🏆 IMPRESE</div>
+<div class="scheda hidden" id="bottega">
+  <div class="sc-card viola">
+    <div class="sc-head"><i class="ic ic-runa"></i><span data-t="bt.titolo">BOTTEGA DELLE RUNE</span></div>
+    <button class="sc-x" id="btChiudi" data-chiudi aria-label="chiudi">✕</button>
+    <div class="bt-sub" id="btSub"></div>
+    <div class="bt-list" id="btList"></div>
+  </div>
+</div>
+
+<div class="scheda hidden" id="registro">
+  <div class="sc-card oro">
+    <div class="sc-head"><i class="ic ic-trofeo"></i><span id="rgHead">IMPRESE</span></div>
+    <button class="sc-x" data-chiudi aria-label="chiudi">✕</button>
+    <div class="diary hidden" id="diary">
+      <div class="dy-lbl" data-t="diary.lbl">TENTATIVI PER TORRE</div>
+      <div class="dy-row" id="dyRow"></div>
+    </div>
+    <div class="rg-imprese" id="rgImpreseBox">
       <div class="bt-sub" id="rgSub"></div>
-      <button class="rg-vai" id="rgVaiSalva" data-t="sv.vai">💾 SALVATAGGIO DI RISERVA ↓</button>
       <div class="bt-list" id="rgImprese"></div>
     </div>
-    <div class="rg-sez">
-      <div class="rg-tit" id="svTit" data-t="sv.tit">💾 SALVATAGGIO DI RISERVA</div>
-      <div class="bt-sub" data-t="sv.sub">La partita vive in questo browser. Copia il codice e tienilo in una nota: se si cancellano i dati, o cambi telefono, lo incolli qui e riprendi da dove eri.</div>
-      <div class="rg-azioni">
-        <button class="rg-btn" id="svCopia" data-t="sv.copia">COPIA IL CODICE</button>
-        <button class="rg-btn" id="svIncolla" data-t="sv.incolla">CARICA UN CODICE</button>
-      </div>
-      <textarea class="rg-codice hidden" id="svCodice" spellcheck="false" autocomplete="off"></textarea>
-      <div class="rg-msg" id="svMsg"></div>
-      <button class="rg-btn oro hidden" id="svCarica" data-t="sv.carica">CARICA</button>
-      <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
+  </div>
+</div>
+
+<div class="scheda hidden" id="schOpzioni">
+  <div class="sc-card">
+    <div class="sc-head"><i class="ic ic-ingranaggio"></i><span data-t="nav.opzioni">OPZIONI</span></div>
+    <button class="sc-x" data-chiudi aria-label="chiudi">✕</button>
+    <div class="sc-sez" data-t="op.lingua">LINGUA</div>
+    <div class="langs" id="langs">
+      <button class="lang-btn" data-lang="it">🇮🇹 ITALIANO</button>
+      <button class="lang-btn" data-lang="en">🇬🇧 ENGLISH</button>
     </div>
-    <button class="bt-chiudi" id="rgChiudi" data-t="bt.chiudi">CHIUDI</button>
+    <div class="sc-sez" id="svTit" data-t="sv.tit">SALVATAGGIO DI RISERVA</div>
+    <div class="bt-sub" data-t="sv.sub">La partita vive in questo browser. Copia il codice e tienilo in una nota: se si cancellano i dati, o cambi telefono, lo incolli qui e riprendi da dove eri.</div>
+    <div class="rg-azioni">
+      <button class="rg-btn" id="svCopia" data-t="sv.copia">COPIA IL CODICE</button>
+      <button class="rg-btn" id="svIncolla" data-t="sv.incolla">CARICA UN CODICE</button>
+    </div>
+    <textarea class="rg-codice hidden" id="svCodice" spellcheck="false" autocomplete="off"></textarea>
+    <div class="rg-msg" id="svMsg"></div>
+    <button class="rg-btn oro hidden" id="svCarica" data-t="sv.carica">CARICA</button>
+    <div class="sc-sez" data-t="op.partita">LA PARTITA</div>
+    <button class="reset-btn hidden" id="resetBtn">RICOMINCIA DA CAPO</button>
+    <div class="build-tag" id="buildTag"></div>
+  </div>
+</div>
+
+<div class="scheda hidden" id="schRinascita">
+  <div class="sc-card viola">
+    <div class="sc-head"><i class="ic ic-runa"></i><span data-t="rb.tile">RINASCITA</span></div>
+    <button class="sc-x" data-chiudi aria-label="chiudi">✕</button>
+    <div class="rb-spiega" data-t="rb.spiega">Ricominci dalla Torre 1 senza potenziamenti né oro. In cambio guadagni rune: ognuna vale +25% di potenza e oro per sempre, e si spendono in bottega.</div>
+    <div class="rb-row">
+      <div class="rb-box"><i class="ic ic-runa"></i><b class="rb-gain" id="rbGain">+0</b><span data-t="rb.runes">RUNE</span></div>
+      <div class="rb-box"><i class="ic ic-fulmine"></i><b class="rb-bonus" id="rbBonus">×1.00</b><span data-t="rb.what">POTENZA E ORO</span></div>
+    </div>
+    <div class="rb-note" id="rbNote">Riparti dalla Torre 1 · potenziamenti azzerati</div>
+    <button class="btn viola" id="rbVai"><span data-t="rb.vai">RINASCI</span></button>
   </div>
 </div>
 
@@ -660,22 +805,26 @@
 <!-- ============================== MENÙ ============================== -->
 <div id="hub">
   <div class="hub-top">
-    <div class="pill" id="hubLevel">TORRE 1</div>
+    <div class="torre-badge"><i class="ic ic-torre"></i>
+      <div><b id="hubLevel">TORRE 1</b><span id="hubZone">VALLE GELATA</span></div></div>
     <div class="wallet">
-      <div class="coin-pill">🪙 <span id="hubCoins">0</span></div>
-      <div class="coin-pill">💎 <span id="hubGems">0</span></div>
-      <button class="coin-pill hidden" id="runePill">🔮 <span id="hubRunes">0</span></button>
+      <div class="coin-pill"><i class="ic ic-moneta"></i><span id="hubCoins">0</span></div>
+      <div class="coin-pill"><i class="ic ic-gemma"></i><span id="hubGems">0</span></div>
+      <button class="coin-pill hidden" id="runePill"><i class="ic ic-runa"></i><span id="hubRunes">0</span></button>
     </div>
   </div>
 
   <div class="hub-title">
     <div class="name" data-t-html="hub.title">TORRE<br>DI GHIACCIO</div>
-    <div class="zone" id="hubZone">VALLE GELATA</div>
     <div class="best" id="hubBest">NESSUN RECORD</div>
   </div>
-  <!-- l'obiettivo del giorno: una riga, sotto al titolo -->
+
+  <!-- l'obiettivo del giorno: una carta "evento", come quelle a tempo -->
   <div class="oggi hidden" id="oggi">
-    <span>🎯</span><span id="oggiTesto"></span><b id="oggiConto"></b><i id="oggiPremio"></i>
+    <i class="ic ic-bersaglio"></i>
+    <div class="og-testo"><small data-t="og.tit">OBIETTIVO DI OGGI</small><span id="oggiTesto"></span>
+      <div class="og-barra"><i id="oggiBarra"></i><b id="oggiConto"></b></div></div>
+    <div class="og-premio"><i class="ic ic-gemma"></i><b id="oggiPremio"></b></div>
   </div>
 
   <div class="story" id="hubStory" data-t-html="hub.story"></div>
@@ -684,73 +833,64 @@
     <div class="lr-badge hidden" id="lrBadge" data-t="run.newRecord">NUOVO RECORD</div>
     <div class="lr-out" id="lrOut"></div>
     <div class="lr-row">
-      <div class="lr-cell"><b id="lrDepth">0</b><span data-t="run.wallLbl">MURO</span></div>
-      <div class="lr-sep"></div>
-      <div class="lr-cell"><b id="lrCoins" class="gold">+0</b><span data-t="run.lootLbl">BOTTINO</span></div>
+      <div class="lr-cell"><i class="ic ic-muro"></i><b id="lrDepth">0</b></div>
+      <div class="lr-cell"><i class="ic ic-moneta"></i><b id="lrCoins" class="gold">+0</b></div>
     </div>
   </div>
 
   <div class="hint" id="hubHint"><span class="swipe">‹<span class="dito">👆</span>›</span>
     <span data-t="hub.hint">trascina per cambiare corsia</span></div>
-  <div class="spacer"></div>
 
-  <button class="rebirth-card hidden" id="rebirthCard">
-    <div class="rb-head" data-t="rb.head">🔮 RINASCITA</div>
-    <div class="rb-row">
-      <span class="rb-gain" id="rbGain">+0</span>
-      <span class="rb-lbl" data-t="rb.runes">RUNE</span>
-      <span class="rb-sep"></span>
-      <span class="rb-bonus" id="rbBonus">×1.00</span>
-      <span class="rb-lbl" data-t="rb.what">POTENZA E ORO</span>
-    </div>
-    <div class="rb-note" id="rbNote">Riparti dalla Torre 1 · potenziamenti azzerati</div>
+  <!-- la rinascita: una tessera di lato, come le offerte dei giochi a tempo -->
+  <button class="tile hidden" id="rebirthCard">
+    <i class="ic ic-runa"></i><b data-t="rb.tile">RINASCITA</b>
+    <span class="tile-tag" id="rbTag" data-t="rb.pronta">PRONTA</span>
   </button>
 
-  <div class="play-wrap"><button class="btn" id="playBtn" data-t="hub.play">ALL'ASSALTO</button></div>
+  <div class="spacer"></div>
+
+  <div class="play-wrap"><button class="btn" id="playBtn"><i class="ic ic-spade"></i><span data-t="hub.play">ALL'ASSALTO</span></button></div>
 
   <div id="upgrades">
-    <button class="up-card" data-key="power">
+    <button class="up-card blu" data-key="power">
       <div class="up-name">POTENZA</div>
+      <i class="ic ic-fulmine up-ico"></i>
       <div class="up-level">Livello 0</div>
       <div class="up-value">×1.00</div>
-      <div class="up-cost">55</div>
+      <div class="up-next"></div>
+      <div class="up-cost"><i class="ic ic-moneta"></i><span>55</span></div>
     </button>
-    <button class="up-card" data-key="weapon">
+    <button class="up-card viola" data-key="weapon">
       <div class="up-name">ARMA</div>
+      <i class="ic ic-arma0 up-ico"></i>
       <div class="up-level">Livello 0</div>
       <div class="up-value">Pugni</div>
-      <div class="up-cost">420</div>
+      <div class="up-next"></div>
+      <div class="up-cost"><i class="ic ic-moneta"></i><span>420</span></div>
     </button>
-    <button class="up-card" data-key="income">
+    <button class="up-card verde" data-key="income">
       <div class="up-name">ORO</div>
+      <i class="ic ic-oro up-ico"></i>
       <div class="up-level">Livello 0</div>
       <div class="up-value">×1.00</div>
-      <div class="up-cost">90</div>
+      <div class="up-next"></div>
+      <div class="up-cost"><i class="ic ic-moneta"></i><span>90</span></div>
     </button>
   </div>
-
-  <div class="skins">
-    <div class="sk-row" id="skRow"></div>
-    <div class="sk-name" id="skName"></div>
-  </div>
-
-  <div class="fondo">
-    <div class="langs" id="langs">
-      <button class="lang-btn" data-lang="it">🇮🇹 IT</button>
-      <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
-    </div>
-    <button class="reset-btn" id="registroBtn">🏆 <span id="registroTesto">IMPRESE</span></button>
-  </div>
-  <div class="diary hidden" id="diary">
-    <div class="dy-lbl" data-t="diary.lbl">TENTATIVI PER TORRE</div>
-    <div class="dy-row" id="dyRow"></div>
-  </div>
-  <div class="build-tag" id="buildTag"></div>
 </div>
+
+<!-- la barra in basso: fuori dal menù, così resta sopra alle schede -->
+<nav id="nav">
+  <button class="nav-b" id="navEroe" data-scheda="schEroe"><i class="ic ic-elmo"></i><span data-t="nav.eroe">EROE</span><em class="badge hidden"></em></button>
+  <button class="nav-b" id="navRune" data-scheda="bottega"><i class="ic ic-runa"></i><span data-t="nav.rune">RUNE</span><em class="badge hidden"></em></button>
+  <button class="nav-b gioca on" id="navGioca" data-scheda=""><i class="ic ic-spade"></i><span data-t="nav.gioca">GIOCA</span></button>
+  <button class="nav-b" id="registroBtn" data-scheda="registro"><i class="ic ic-trofeo"></i><span data-t="nav.imprese">IMPRESE</span><small id="registroTesto"></small><em class="badge hidden"></em></button>
+  <button class="nav-b" id="navOpzioni" data-scheda="schOpzioni"><i class="ic ic-ingranaggio"></i><span data-t="nav.opzioni">OPZIONI</span><em class="badge hidden"></em></button>
+</nav>
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260925-0649';</script>
+<script>window.BUILD = '260926-0058';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
@@ -760,7 +900,7 @@
      ritrovarsi con metà file nuovi e metà vecchi — che è peggio che
      averli tutti vecchi. Cambiando l'indirizzo, la cache non c'entra più. */
   const FILES = ['src/i18n.js', 'src/core.js', 'src/art.js', 'src/world.js',
-                 'src/fx.js', 'src/actors.js', 'src/hub.js', 'src/imprese.js', 'src/trappole.js',
+                 'src/fx.js', 'src/actors.js', 'src/icone.js', 'src/hub.js', 'src/imprese.js', 'src/trappole.js',
                  'src/game.js']
                 .map(f => f + '?v=' + window.BUILD);
   function load(src, cb) {

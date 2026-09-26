@@ -46,11 +46,11 @@ const CROMO = process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-
     const r = await p.evaluate(() => {
       const h = document.getElementById('hub');
       const pezzi = {};
-      for (const [n, sel] of [['titolo', '.hub-title'], ['storia', '.story'], ['riepilogo', '#lastRun'],
-                              ['suggerimento', '#hubHint'], ['spazio', '.spacer'], ['rinascita', '#rebirthCard'],
-                              ['gioca', '.play-wrap'], ['potenziamenti', '#upgrades'], ['aspetti', '.skins'],
-                              ['fondo', '.fondo'], ['diario', '#diary'],
-                              ['build', '.build-tag']]) {
+      for (const [n, sel] of [['barra', '.hub-top'], ['titolo', '.hub-title'], ['oggi', '#oggi'],
+                              ['storia', '.story'], ['riepilogo', '#lastRun'],
+                              ['suggerimento', '#hubHint'], ['spazio', '.spacer'],
+                              ['gioca', '.play-wrap'], ['potenziamenti', '#upgrades'],
+                              ['navigazione', '#nav']]) {
         const e = document.querySelector(sel);
         if (!e || e.classList.contains('hidden')) continue;
         const st = getComputedStyle(e);

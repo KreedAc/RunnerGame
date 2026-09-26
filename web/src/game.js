@@ -1438,6 +1438,8 @@ function azzeraHudVisto() { hudVisto.power = run.power; hudVisto.coins = run.coi
 function renderHud() {
   $('hPower').textContent  = fmt(contaVerso('power', run.power));
   $('hWeapon').textContent = weaponName(run.weapon);
+  const armaIco = 'ic ic-arma' + run.weapon;
+  if ($('hArmaIco').className !== armaIco) $('hArmaIco').className = armaIco;
   $('hDamage').textContent = fmt(damage());
   $('hCoins').textContent  = fmt(contaVerso('coins', run.coins));
   $('hWall').textContent   = run.broken + '/' + CFG.wallRows;
@@ -1557,7 +1559,7 @@ function offerRevive(outcome) {
   $('rvWhy').textContent = outcome === 'wall'
     ? t('rv.byWall', run.broken, CFG.wallRows)
     : t('rv.byBoss');
-  $('rvCost').textContent = '💎 ' + reviveCost();
+  $('rvCost').innerHTML = '<i class="ic ic-gemma"></i>' + reviveCost();
   $('rvGain').textContent = t('rv.gain', fmt(torna));
   $('rvLeft').textContent = t('rv.have', gemsAvailable());
   $('revive').classList.remove('hidden');
@@ -2038,7 +2040,7 @@ let menuCamZ  = MENU_CAM_Z;
 function aimMenuCamera() {
   if ($('hub').classList.contains('hidden')) return;
   const alto  = $('lastRun').classList.contains('hidden') ? $('hubHint') : $('lastRun');
-  const basso = $('rebirthCard').classList.contains('hidden') ? $('playBtn') : $('rebirthCard');
+  const basso = $('playBtn');          // la rinascita ora è una tessera di lato, non una riga
   const a = alto.getBoundingClientRect().bottom;
   const b = basso.getBoundingClientRect().top;
   if (!(b > a)) return;                       // niente fascia: si lascia com'è
@@ -2105,6 +2107,7 @@ if (document.fonts && document.fonts.load) {
     .catch(() => {});
 }
 snapCamera();
+generaIcone();                   // le icone dell'interfaccia, fotografate dai modelli
 impreseRecupera();               // chi giocava già si vede riconoscere torri e rinascite
 renderHub();
 showScreen('hub');

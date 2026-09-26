@@ -53,18 +53,39 @@ const RIM = {
   forza: { value: 0.34 }
 };
 
+/* Il riflesso e il colore pieno. "Sembra vecchio": i giochi di adesso
+   hanno personaggi che sembrano giocattoli di plastica nuovi — un punto di
+   luce bianca netto sulle superfici curve — e colori più pieni. Il
+   riflesso è a gradino, non sfumato, perché resti un cartone: si accende
+   solo dove la superficie guarda fra il sole e la camera. Vale per i pezzi
+   con il contorno (personaggi, armi, poteri: addOutline accende
+   `brillo`), non per il terreno, che visto di taglio si riempirebbe di
+   lampi. La saturazione vale per tutto. */
+const SATURA = { value: 1.14 };
+
 function conBordo(m) {
+  m.userData.brillo = { value: 0 };
   m.onBeforeCompile = sh => {
     sh.uniforms.rimColor = RIM.color;
     sh.uniforms.rimForza = RIM.forza;
+    sh.uniforms.brillo = m.userData.brillo;
+    sh.uniforms.satura = SATURA;
     sh.fragmentShader = sh.fragmentShader
       .replace('uniform float opacity;',
-               'uniform float opacity;\nuniform vec3 rimColor;\nuniform float rimForza;')
+               'uniform float opacity;\nuniform vec3 rimColor;\nuniform float rimForza;\n' +
+               'uniform float brillo;\nuniform float satura;')
       .replace('gl_FragColor = vec4( outgoingLight, diffuseColor.a );', [
         'vec3 suV = normalize( ( viewMatrix * vec4( 0.0, 1.0, 0.0, 0.0 ) ).xyz );',
         'float lato = 1.0 - clamp( dot( normal, suV ), 0.0, 1.0 );',
         'float rimF = 1.0 - clamp( dot( normal, normalize( vViewPosition ) ), 0.0, 1.0 );',
         'outgoingLight += rimColor * rimForza * pow( rimF, 3.0 ) * lato;',
+        '#if NUM_DIR_LIGHTS > 0',
+        '  vec3 mezzo = normalize( directionalLights[ 0 ].direction + normalize( vViewPosition ) );',
+        '  float lucida = pow( max( dot( normal, mezzo ), 0.0 ), 36.0 );',
+        '  outgoingLight += vec3( smoothstep( 0.42, 0.5, lucida ) * brillo * 0.3 );',
+        '#endif',
+        'float grigio = dot( outgoingLight, vec3( 0.299, 0.587, 0.114 ) );',
+        'outgoingLight = max( mix( vec3( grigio ), outgoingLight, satura ), 0.0 );',
         'gl_FragColor = vec4( outgoingLight, diffuseColor.a );'
       ].join('\n'));
   };
@@ -219,6 +240,9 @@ function addOutline(group, k) {
   const thickness = k === undefined ? 0.04 : k;
   const shells = [];
   group.traverse(o => {
+    /* chi ha il contorno è un personaggio o un oggetto: prende il riflesso */
+    if (o.isMesh && o.material && o.material.userData && o.material.userData.brillo)
+      o.material.userData.brillo.value = 1;
     if (!o.isMesh || o.userData.noOutline || (o.material && o.material.transparent)) return;
     /* rivetti e borchie: il bordo sarebbe sotto il pixel, e il guscio
        costerebbe una draw call per niente */
