@@ -1454,6 +1454,17 @@ Se su fascia bassa non regge, in ordine di resa:
    (sta negli examples di three, va aggiunto): con i colori piatti è molto
    più semplice di prima, basta raggruppare per materiale.
 
+**Alta definizione.** "C'è qualche dettaglio sgranato": il 3D era
+disegnato al massimo a densità 2, e i telefoni di adesso sono a 2,6-3 —
+quindi a due terzi dei pixel e poi ingrandito. Ora si parte dalla densità
+vera fino a 3 (e se il telefono non regge si scende, di mezzo punto quando
+arranca davvero). In più, alzate le risoluzioni di tutto quello che si
+ingrandiva: numeri sulle colonne 512×256 (erano 320×160), mattoni 512 con
+le versioni ridotte e il filtro anisotropo (erano 64, sfocati da vicino e
+sfarfallanti da lontano), icone 384 (erano 192), ombre 2048 (erano 1024,
+a scalini), il traguardo a scacchi 256, il cielo 1024 righe (a 256 si
+vedevano le bande).
+
 ## 13. Cosa manca, in ordine di impatto sul feel
 
 1. **Audio e vibrazione** — il gioco è muto, ed è la cosa che manca di più: una

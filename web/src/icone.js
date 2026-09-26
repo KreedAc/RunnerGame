@@ -248,7 +248,9 @@ const VISTE = {
 /* ----------------------------- LA FOTO --------------------------------- */
 function generaIcone() {
   let r3;
-  const LATO = 192;
+  /* 384: il ritratto dell'eroe si vede largo 130 px, cioè ~390 pixel veri
+     a densità 3 — a 192 era ingrandito il doppio e sgranato */
+  const LATO = 384;
   try {
     r3 = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   } catch (e) { return false; }

@@ -8,10 +8,15 @@
 initArt();
 
 /* --------------------------- ETICHETTE 3D ---------------------------- */
+/* I numeri sulle colonne: disegnati su una tela 512×256 (era 320×160,
+   e da vicino, a densità 3, erano ingranditi il doppio e sgranati), con
+   le versioni ridotte per quando sono lontani e il filtro anisotropo. */
+const LABEL_W = 512, LABEL_H = 256;
 function labelTexture(text, color) {
   const c = document.createElement('canvas');
-  c.width = 320; c.height = 160;
+  c.width = LABEL_W; c.height = LABEL_H;
   const g = c.getContext('2d');
+  g.scale(LABEL_W / 320, LABEL_H / 160);        // le misure restano quelle di prima
   g.textAlign = 'center'; g.textBaseline = 'middle';
   let size = 112;
   do {
@@ -23,7 +28,9 @@ function labelTexture(text, color) {
   g.strokeText(text, 160, 84);
   g.fillStyle = color || '#ffffff';
   g.fillText(text, 160, 84);
-  return new THREE.CanvasTexture(c);
+  const t = new THREE.CanvasTexture(c);
+  t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  return t;
 }
 
 function labelSprite(text, color, size) {
@@ -512,13 +519,15 @@ function buildRun() {
 
 function buildFinishLine(z) {
   const c = document.createElement('canvas');
-  c.width = c.height = 64;
+  c.width = c.height = 256;                     // a 64 i quadretti avevano i bordi sfocati
   const g = c.getContext('2d');
+  g.scale(4, 4);
   for (let y = 0; y < 64; y += 16) for (let x = 0; x < 64; x += 16) {
     g.fillStyle = ((x + y) / 16) % 2 ? '#241d2e' : '#f4f7fb';
     g.fillRect(x, y, 16, 16);
   }
   const t = new THREE.CanvasTexture(c);
+  t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(4, 1);
   const m = new THREE.Mesh(GEO.box, toon({ map: t }));

@@ -596,7 +596,7 @@ scene.fog = new THREE.Fog(0x7fcfe8, 190, 580);
 
 const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 700);
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 3));
 
 /* ------------------------ RISOLUZIONE CHE SI ADATTA -------------------
    Lo shading a bande è calcolato per pixel, non per vertice come il
@@ -610,7 +610,12 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
    un quarto; sopra i 58 per sei misure di fila si risale. Scendere è
    subito, risalire è lento: un telefono che oscilla fra due densità
    farebbe più danno di uno che resta un po' sotto. */
-const DPR_MAX = Math.min(devicePixelRatio || 1, 2);
+/* Il tetto era 2: sui telefoni di adesso (densità 2,6-3) il 3D veniva
+   disegnato a due terzi dei pixel dello schermo e poi ingrandito — i
+   bordi e i numeri "sgranati". Adesso si parte dalla densità vera, fino a
+   3, e se il telefono non regge si scende come prima: di mezzo punto alla
+   volta quando arranca davvero, di un quarto quando rallenta appena. */
+const DPR_MAX = Math.min(devicePixelRatio || 1, 3);
 let dprOra = DPR_MAX, dprCampioni = 0, dprSomma = 0, dprCalmo = 0;
 
 function adattaRisoluzione(dtVero) {
@@ -620,7 +625,8 @@ function adattaRisoluzione(dtVero) {
   const medio = dprSomma / dprCampioni;
   dprCampioni = 0; dprSomma = 0;
   let nuova = dprOra;
-  if (medio > 1 / 48 && dprOra > 1) { nuova = Math.max(1, dprOra - 0.25); dprCalmo = 0; }
+  if (medio > 1 / 36 && dprOra > 1) { nuova = Math.max(1, dprOra - 0.5); dprCalmo = 0; }
+  else if (medio > 1 / 48 && dprOra > 1) { nuova = Math.max(1, dprOra - 0.25); dprCalmo = 0; }
   else if (medio < 1 / 58 && dprOra < DPR_MAX) {
     if (++dprCalmo >= 6) { nuova = Math.min(DPR_MAX, dprOra + 0.25); dprCalmo = 0; }
   } else dprCalmo = 0;
@@ -647,14 +653,14 @@ stage.appendChild(renderer.domElement);
 let skyTex = null;
 function paintSky(t) {
   const c = document.createElement('canvas');
-  c.width = 4; c.height = 256;
+  c.width = 4; c.height = 1024;                 // 256 righe davano bande visibili nel cielo
   const g = c.getContext('2d');
-  const grad = g.createLinearGradient(0, 0, 0, 256);
+  const grad = g.createLinearGradient(0, 0, 0, 1024);
   const hexOf = n => '#' + n.toString(16).padStart(6, '0');
   grad.addColorStop(0.00, hexOf(t.skyTop));
   grad.addColorStop(0.60, hexOf(t.skyMid));
   grad.addColorStop(1.00, hexOf(t.skyLow));
-  g.fillStyle = grad; g.fillRect(0, 0, 4, 256);
+  g.fillStyle = grad; g.fillRect(0, 0, 4, 1024);
   if (skyTex) skyTex.dispose();
   skyTex = new THREE.CanvasTexture(c);
   skyTex.minFilter = skyTex.magFilter = THREE.LinearFilter;
@@ -675,7 +681,8 @@ scene.add(rim);
 
 if (CFG.shadows) {
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  /* 2048: a 1024 le ombre dei personaggi avevano i bordi a scalini */
+  sun.shadow.mapSize.set(2048, 2048);
   const sc = sun.shadow.camera;
   sc.left = -26; sc.right = 26; sc.top = 30; sc.bottom = -22;
   sc.near = 6; sc.far = 110;

@@ -152,9 +152,14 @@ function initArt() {
 let brickTex = null;
 function brickTexture() {
   if (brickTex) return brickTex;
+  /* 512 invece di 64, e con le versioni ridotte: a 64 i mattoni delle
+     colonne vicine erano sfocati e quelli lontani sfarfallavano. Il
+     disegno è lo stesso, in scala ×8, con i giunti un filo smussati. */
+  const K = 8, S = 64 * K;
   const c = document.createElement('canvas');
-  c.width = c.height = 64;
+  c.width = c.height = S;
   const g = c.getContext('2d');
+  g.scale(K, K);
   g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 64);
   g.fillStyle = 'rgba(0,0,0,.26)';
   for (let y = 0; y < 64; y += 16) {
@@ -162,11 +167,15 @@ function brickTexture() {
     const off = (y / 16) % 2 ? 0 : 16;
     for (let x = off; x < 64; x += 32) g.fillRect(x, y, 3, 16); // giunti sfalsati
   }
+  g.fillStyle = 'rgba(0,0,0,.08)';                            // ombra sotto il giunto
+  for (let y = 3; y < 64; y += 16) g.fillRect(0, y, 64, 0.8);
   g.fillStyle = 'rgba(255,255,255,.35)';
-  for (let y = 3; y < 64; y += 16) g.fillRect(0, y, 64, 2);   // luce sul filare
+  for (let y = 3.8; y < 64; y += 16) g.fillRect(0, y, 64, 2);   // luce sul filare
   brickTex = new THREE.CanvasTexture(c);
   brickTex.wrapS = brickTex.wrapT = THREE.RepeatWrapping;
-  brickTex.minFilter = brickTex.magFilter = THREE.LinearFilter;
+  brickTex.minFilter = THREE.LinearMipmapLinearFilter;
+  brickTex.magFilter = THREE.LinearFilter;
+  brickTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   return brickTex;
 }
 
