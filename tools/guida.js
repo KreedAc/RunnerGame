@@ -31,7 +31,7 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   const errori = [];
   p.on('pageerror', e => errori.push(e.message));
   await p.goto(PAGINA);
-  await p.waitForFunction(() => window.BlockyRun);
+  await p.waitForFunction(() => window.BlockyRun, null, { timeout: 90000 });   // con le icone da fotografare l'avvio è più lungo
 
   /* 1. chi non ha mai giocato: la guida parte, le prime due file sono scritte */
   await p.click('#playBtn');
