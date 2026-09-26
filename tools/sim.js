@@ -58,6 +58,17 @@ const G = {
   oro: { base: num(core, /key:\s*'up\.income',\s*base:\s*(\d+)/, 'ORO base'),
          mult: num(core, /key:\s*'up\.income',\s*base:\s*\d+,\s*mult:\s*(\d*\.?\d+)/, 'ORO mult'),
          step: num(core, /'up\.income'[^}]*Math\.pow\((\d*\.?\d+)/, 'ORO passo') },
+  /* la rinascita: il bonus di una runa e quante rune dà una torre (la
+     funzione si legge intera dal gioco, così non si sdoppia) */
+  runeBonus : num(core, /RUNE_BONUS\s*=\s*(\d*\.?\d+)/, 'RUNE_BONUS'),
+  runeGain  : (() => { const m = core.match(/const runeGain\s*=\s*(\([^)]*\)\s*=>[^;\n]+);/);
+                       if (!m) { console.error('Il simulatore non trova runeGain.'); process.exit(1); }
+                       return eval(m[1]); })(),
+  ripartenza: num(core, /RIPARTENZA\s*=\s*(\d*\.?\d+)/, 'RIPARTENZA'),
+  pendenzaRune: num(core, /PENDENZA_RUNE\s*=\s*(\d*\.?\d+)/, 'PENDENZA_RUNE'),
+  durezza   : r => 1,
+  gap       : n => 1,                     // la pendenza per ciclo: sovrascritta più sotto                     // sovrascritta più sotto se il gioco la definisce
+  runePot   : null, runeOro: null,
   quotaBoss : num(core, /bossHealth\s*=\s*lvl\s*=>\s*Math\.round\(towerNeed\(lvl\)\s*\*\s*(\d*\.?\d+)\)/, 'bossHealth'),
 
   /* la combo: colpi puliti di fila */
@@ -166,9 +177,15 @@ const budgetMuro = l => Math.round(torreNeed(l) * G.quotaMuro);
    qualcuno non tocca uno dei due numeri. Adesso si legge dal gioco. */
 const vitaBoss   = l => Math.round(torreNeed(l) * G.quotaBoss);
 const righe      = l => Math.min(20, 10 + l);
-const passo      = l => torreNeed(l) * G.baseShare /
-                        (righe(l) * 3 * 0.75 * Math.pow(G.levelGap, l - 1));
+const passo      = (l, m) => torreNeed(l) * G.baseShare /
+                        (righe(l) * 3 * 0.75 * Math.pow(G.gap(m || {}), l - 1));
 const costoUp = (k, l) => Math.round(G[k].base * Math.pow(G[k].mult, l));
+
+/* come levelGap() e partenzaDopo() nel gioco */
+G.gap = m => G.levelGap * Math.pow(G.runePot(m.rune || 0), G.pendenzaRune / ((m.record || 1) + 1));
+G.partenza = (record, rinascite) => rinascite ? Math.max(1, Math.floor(record * G.ripartenza)) : 1;
+G.runePot = r => 1 + r * G.runeBonus;
+G.runeOro = r => 1 + r * G.runeBonus;
 
 /* ----------------------------- il caso ------------------------------- */
 let SEME = 1;
@@ -186,8 +203,9 @@ const fra = (a, b) => a + caso() * (b - a);
                 come dice il menù. Serve a rispondere a una domanda sola:
                 seguire il consiglio del gioco fa ancora perdere?        */
 function corsa(m, stile) {
-  const u = passo(m.level);
-  let potenza = G.potenzaIni, arma = m.up.arma, oro = 0, rotti = 0;
+  const u = passo(m.level, m);
+  /* l'arma di partenza: la migliore fra comprata e di famiglia (bottega) */
+  let potenza = G.potenzaIni, arma = Math.max(m.up.arma, m.armaFam || 0), oro = 0, rotti = 0;
   const bonus = { oro: 0, attacco: 0, potenza: 0 };
 
   let furia = 0, poteri = 0;                           // file di furia rimaste
@@ -201,13 +219,13 @@ function corsa(m, stile) {
      è tarata su chi gioca pulito, e chi sbaglia paga la combo persa. */
   let combo = 0;
   const molPot = () => Math.pow(G.pot.step, m.up.pot) * (1 + bonus.potenza * G.buffPotenza)
-                       * (1 + (m.rune || 0) * 0.25)
+                       * G.runePot(m.rune || 0)
                        * (1 + Math.min(combo, G.combo.max) * G.combo.passo);
   const molOro = () => Math.pow(G.oro.step, m.up.oro) * (1 + bonus.oro * G.buffOro)
-                       * (1 + (m.rune || 0) * 0.25);
+                       * G.runeOro(m.rune || 0);
 
   const n = righe(m.level);
-  let tierPista = m.up.arma;
+  let tierPista = arma;
   for (let i = 0; i < n; i++) {
     const A = { t: 'colonna', hp: Math.max(1, Math.round(u * fra(G.facile[0], G.facile[1]))) };
     let B;
@@ -252,7 +270,7 @@ function corsa(m, stile) {
   }
 
   const alMuro = potenza;
-  const budget = budgetMuro(m.level);
+  const budget = budgetMuro(m.level) * G.durezza(m.rinascite || 0);
   let pesi = 0;
   for (let i = 0; i < G.righeMuro; i++) pesi += 1 + i * 0.10;
   for (let i = 0; i < G.righeMuro; i++) {
@@ -277,7 +295,7 @@ function corsa(m, stile) {
   }
 
   const esito = rotti >= G.righeMuro
-    ? duello(Math.max(0, potenza), vitaBoss(m.level), stile, m.level) : 'muro';
+    ? duello(Math.max(0, potenza), vitaBoss(m.level) * G.durezza(m.rinascite || 0), stile, m.level) : 'muro';
   oro += Math.round(rotti * u * G.bloccoValore * molOro());
   if (esito === 'vinta') oro += Math.round(G.premioVinta * m.level * molOro());
   return { esito, alMuro, alBoss: Math.max(0, potenza), rotti, oro };
@@ -395,6 +413,46 @@ function salita(stile, seme, maxTorre, rune) {
   return storia;
 }
 
+/* --------------------------- LE RINASCITE ------------------------------
+   La prima salita non basta a tarare il gioco: dopo una rinascita le rune
+   (potenza e oro) e l'arma di famiglia rendono tutto più facile, ed è lì
+   che la prima prova vera ha detto "dopo i rebirth è troppo facile".
+
+   Un ciclo: si sale finché una torre non costa più di `soglia` corse di
+   fila (è lì che chi gioca si stufa e rinasce), si prendono le rune, in
+   bottega si compra per prima l'arma di famiglia (come ha fatto chi l'ha
+   provato), e si ricomincia. */
+function ciclo(stile, seme, rune, armaFam, rinascite, soglia, record) {
+  SEME = seme;
+  const m = { level: G.partenza(record || 1, rinascite), oro: 0, rune, armaFam, rinascite, record: record || 1,
+              up: { pot: 0, arma: 0, oro: 0 } };
+  const primo = m.level;
+  const tent = [];
+  let t = 0;
+  for (let n = 0; n < 500 && m.level <= 20; n++) {
+    let a; while ((a = acquisto(m, stile))) { m.oro -= a.costo; m.up[a.k]++; }
+    const r = corsa(m, stile);
+    t++; m.oro += r.oro;
+    if (r.esito === 'vinta') { tent.push(t); t = 0; m.level++; }
+    else if (t > soglia) break;
+  }
+  return { fino: m.level, tent, primo };
+}
+
+function cicli(stile, seme, quanti, soglia) {
+  let rune = 0, spese = 0, fam = 0, record = 1;
+  const out = [];
+  for (let c = 0; c < quanti; c++) {
+    const r = ciclo(stile, seme + c * 17, rune, fam, c, soglia, record);
+    record = Math.max(record, r.fino);
+    out.push(Object.assign({ rune }, r));
+    rune += G.runeGain(r.fino, r.primo);
+    for (const [g, costo] of [[1, 2], [2, 4], [3, 7]])
+      if (fam < g && rune - spese >= costo) { fam = g; spese += costo; }
+  }
+  return out;
+}
+
 /* ------------------------------ REPORT -------------------------------- */
 if (require.main === module) {
   const maxTorre = Number(process.argv[2] || 10);
@@ -422,9 +480,21 @@ if (require.main === module) {
     }
     console.log(`${stile.padEnd(9)} |${riga.join('')} | in tutto ${tot.toFixed(0)} corse`);
   }
+  /* le rinascite: si sale finché una torre costa più di 6 corse, si rinasce */
+  console.log('\nrinascite (umano, si rinasce dopo 6 corse ferme su una torre):');
+  const giri = [];
+  for (let q = 0; q < 16; q++) giri.push(cicli('umano', 5 + q * 97, 4, 6));
+  const media = a => a.reduce((x, y) => x + y, 0) / a.length;
+  for (let c = 0; c < 4; c++) {
+    const R = giri.map(g => g[c]);
+    const per = [];
+    for (let l = 0; l < 20; l++) { const v = R.map(r => r.tent[l]).filter(x => x); if (v.length >= 8) per.push(media(v).toFixed(1)); }
+    console.log(`  giro ${c + 1}: da T${media(R.map(r => r.primo)).toFixed(1)} a T${media(R.map(r => r.fino)).toFixed(1)}` +
+                ` · ${media(R.map(r => r.tent.reduce((x, y) => x + y, 0))).toFixed(0)} corse · per torre ${per.join(' ')}`);
+  }
   console.log('\nil giocatore "umano" salta l\'arma quando non gli serve e nel muro');
   console.log('punta gli scrigni invece del blocco più economico: è più bravo del');
   console.log('"perfetto", ed è su di lui che va tarata la difficoltà.');
 }
 
-module.exports = { corsa, salita, torreNeed, passo, G };
+module.exports = { corsa, salita, ciclo, cicli, torreNeed, passo, G };

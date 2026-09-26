@@ -388,7 +388,7 @@ const BASE_SHARE = 0.375;
 const LEVEL_GAP  = 1.34;
 const trackRows  = lvl => Math.min(20, 10 + lvl);
 const trackUnit  = lvl => towerNeed(lvl) * BASE_SHARE /
-                          (trackRows(lvl) * 3 * 0.75 * Math.pow(LEVEL_GAP, lvl - 1));
+                          (trackRows(lvl) * 3 * 0.75 * Math.pow(levelGap(), lvl - 1));
 
 /* Lo scrigno nel muro: quanto costa in potenza e quanto rende in oro,
    tutti e due in multipli del costo normale di quella corsia. È la
@@ -409,7 +409,38 @@ const speedFor = lvl => Math.min(CFG.speedMax, CFG.speed + (lvl - 1) * CFG.speed
    per sempre. Le rune si tengono e si sommano fra una rinascita e l'altra. */
 const RUNE_BONUS = 0.25;
 const runeMul    = runes => 1 + runes * RUNE_BONUS;
-const runeGain   = lvl => Math.max(0, lvl - 1);      // torri già superate
+const runeGain   = (lvl, partenza) => Math.max(0, lvl - (partenza || 1));   // torri salite in questo giro
+
+/* ---------------------- DOPO LA RINASCITA, LA SALITA -------------------
+   "Dopo i rebirth il gioco è troppo facile": dieci torri di fila in un
+   tentativo. Il simulatore lo conferma, ed è peggio: con 12 rune (×4 su
+   potenza e oro) la salita andava dalla torre 12 alla 21 senza un
+   inciampo. Non erano solo le rune: la difficoltà dopo la decima torre
+   cresce piano (2-3 corse per torre, 5 alla quattordicesima), e su una
+   curva così piatta qualunque aiuto regala torri a manciate. Tre regole:
+
+   - si RIPARTE DA METÀ del record (RIPARTENZA), non dalla torre 1: le
+     torri banali non si rigiocano, si rigioca la parte che conta;
+   - le rune contano le torri salite IN QUESTO GIRO (runeGain), così
+     rinascere appena ripartiti non ne regala;
+   - la PENDENZA della pista cresce con le rune, in proporzione a dove eri
+     arrivato: le prime torri del giro volano (è il premio), la fatica
+     torna vicino al vecchio record, e si va un paio di torri più in là.
+
+   Simulatore (tools/sim.js, cicli): record 12,6 → 15,9 → 17,9 → 18,9 →
+   19,6, ~25 corse a giro, la prima torre del giro ~4 corse (si ricompra
+   tutto), poi 3-4 torri veloci e la salita che si indurisce fino a 4-5
+   corse. La prima salita, senza rune, non cambia. */
+const RIPARTENZA = 0.5;
+const PENDENZA_RUNE = 1.45;
+const partenzaDopo = record => Math.max(1, Math.floor(record * RIPARTENZA));
+function levelGap() {
+  if (typeof meta === 'undefined' || !meta.runes) return LEVEL_GAP;
+  /* chi aveva già rinato prima di questa regola non ha il record del
+     giro: vale la torre più alta raggiunta */
+  const record = meta.recordCiclo || meta.bestLevel || 1;
+  return LEVEL_GAP * Math.pow(runeMul(meta.runes), PENDENZA_RUNE / (record + 1));
+}
 
 /* ------------------------------ LA BOTTEGA ----------------------------
    Le rune erano solo un moltiplicatore: invisibile, si subiva. Adesso si
@@ -512,6 +543,8 @@ function defaultSave() {
     poteriVisti: 0,      // le prime volte un potere in pista si annuncia
     impreseViste: 0,     // quante imprese fatte si sono già viste (il pallino rosso)
     backupFatto: false,  // ha mai copiato il codice di riserva?
+    partenza: 1,         // da che torre è ripartito questo giro (la rinascita)
+    recordCiclo: 0,      // la torre più alta raggiunta prima dell'ultima rinascita
     up: { power: 0, weapon: 0, income: 0 }
   };
 }

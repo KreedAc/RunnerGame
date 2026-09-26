@@ -638,6 +638,42 @@ Due attriti voluti:
 - Serve **toccare due volte**. Azzerare i potenziamenti è irreversibile, e un
   tocco solo, in un gioco che si gioca col pollice, è troppo poco.
 
+## 6a-bis. Dopo la rinascita, la salita
+
+Prima prova vera con due rinascite: "dopo i rebirth il gioco è troppo
+facile, verrebbe abbandonato" — dalla torre 1 alla 10 un tentativo a torre.
+Il simulatore (che fino a qui guardava solo la prima salita) lo conferma, ed
+è peggio: con 12 rune la salita va dalla 12 alla 21 senza un inciampo.
+
+Non erano solo le rune. La difficoltà dopo la decima torre cresce piano —
+2-3 corse per torre, 5 alla quattordicesima, 10 alla diciannovesima — e su
+una curva così piatta qualunque aiuto regala torri a manciate: anche con le
+rune a +4% invece di +25% il secondo giro arrivava alla 19. Anche rendere
+più duri muro e carceriere a ogni rinascita cambiava poco. Quello che
+funziona sono tre regole insieme (`RIPARTENZA`, `runeGain`, `levelGap()` in
+`core.js`):
+
+- **si riparte da metà del record**, non dalla torre 1: le torri banali non
+  si rigiocano, si rigioca la parte che conta;
+- **le rune contano le torri salite in questo giro** (dalla partenza), così
+  rinascere appena ripartiti non ne regala;
+- **la pendenza della pista cresce con le rune**, in proporzione a dove eri
+  arrivato: `LEVEL_GAP × runeMul^(1,45 / (record + 1))`. Le prime torri del
+  giro volano — è il premio — la fatica torna vicino al vecchio record, e si
+  va un paio di torri più in là.
+
+| giro | da | a | corse | per torre |
+|---|---|---|---|---|
+| 1 | T1 | T12,6 | 35 | 6,6 2,5 2,3 … 3,7 2,9 4,0 |
+| 2 | T6,3 | T15,9 | 26 | 4,0 1,2 1,1 1,2 1,2 2,7 2,7 3,7 3,4 5,1 |
+| 3 | T7,7 | T17,9 | 24 | 3,4 1,3 1,0 1,0 1,1 1,5 2,0 3,4 3,8 4,8 |
+| 4 | T8,7 | T18,9 | 23 | 3,1 1,0 1,0 1,0 1,0 1,1 2,2 2,8 3,7 4,2 |
+
+La prima torre del giro costa ~4 corse: si ricompra tutto, ed è giusto che
+si senta. La prima salita, senza rune, non cambia di una corsa. Il
+simulatore adesso stampa anche i giri (`node tools/sim.js`), leggendo le
+stesse regole dal gioco; `tools/bottega.js` controlla ripartenza e rune.
+
 ## 6b. Ricominciare da capo
 
 In fondo al menù, sotto ai potenziamenti, c'è **RICOMINCIA DA CAPO**: cancella

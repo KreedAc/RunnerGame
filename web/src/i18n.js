@@ -83,7 +83,7 @@ const STRINGS = {
     'rb.head'     : '🔮 RINASCITA',
     'rb.runes'    : 'RUNE',
     'rb.what'     : 'POTENZA E ORO',
-    'rb.note'     : 'Riparti dalla Torre 1 · potenziamenti azzerati',
+    'rb.note'     : 'Riparti dalla Torre {0} · potenziamenti azzerati',
     'rb.confirm'  : 'TOCCA ANCORA PER CONFERMARE',
     'rb.done'     : '+{0} RUNE · SPENDILE TOCCANDO 🔮',
 
@@ -193,8 +193,8 @@ const STRINGS = {
     'rb.pronta'   : 'PRONTA',
     'rb.vai'      : 'RINASCI',
     'rb.sicuro'   : 'SICURO?',
-    'rb.spiega'   : 'Ricominci dalla Torre 1 senza potenziamenti né oro. In cambio guadagni rune: ognuna vale +25% di potenza e oro per sempre, e si spendono in bottega.',
-    'rune.chiuse' : 'La bottega apre con la prima <b>RINASCITA</b>: le rune si guadagnano ricominciando dalla Torre 1, e restano per sempre.',
+    'rb.spiega'   : 'Riparti dalla Torre {0}, a metà del tuo record, senza potenziamenti né oro. In cambio guadagni una runa per ogni torre salita in questo giro: ognuna vale +25% di potenza e oro per sempre, e si spendono in bottega. Oltre il record, però, i carcerieri ti aspettano più preparati.',
+    'rune.chiuse' : 'La bottega apre con la prima <b>RINASCITA</b>: le rune si guadagnano ricominciando da metà del tuo record, e restano per sempre.',
     /* --- le imprese --- */
     'im.titolo'   : 'IMPRESE',
     'im.sub'      : '{0} su {1} · ognuna paga in diamanti',
@@ -326,7 +326,7 @@ const STRINGS = {
     'rb.head'     : '🔮 REBIRTH',
     'rb.runes'    : 'RUNES',
     'rb.what'     : 'POWER AND GOLD',
-    'rb.note'     : 'Back to Tower 1 · upgrades wiped',
+    'rb.note'     : 'Back to Tower {0} · upgrades wiped',
     'rb.confirm'  : 'TAP AGAIN TO CONFIRM',
     'rb.done'     : '+{0} RUNES · TAP 🔮 TO SPEND THEM',
 
@@ -436,8 +436,8 @@ const STRINGS = {
     'rb.pronta'   : 'READY',
     'rb.vai'      : 'REBIRTH',
     'rb.sicuro'   : 'SURE?',
-    'rb.spiega'   : 'You start again from Tower 1 with no upgrades and no gold. In exchange you earn runes: each one is worth +25% power and gold forever, and you spend them in the shop.',
-    'rune.chiuse' : 'The shop opens with your first <b>REBIRTH</b>: runes are earned by starting again from Tower 1, and they stay forever.',
+    'rb.spiega'   : 'You start again from Tower {0}, halfway to your record, with no upgrades and no gold. In exchange you earn a rune for every tower climbed this time: each one is worth +25% power and gold forever, and you spend them in the shop. Past your record, though, the jailers will be better prepared.',
+    'rune.chiuse' : 'The shop opens with your first <b>REBIRTH</b>: runes are earned by starting again from halfway to your record, and they stay forever.',
     /* --- feats --- */
     'im.titolo'   : 'FEATS',
     'im.sub'      : '{0} of {1} · each one pays in diamonds',

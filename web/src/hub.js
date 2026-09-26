@@ -120,7 +120,8 @@ let rebuildHook = null;      // lo riempie game.js: deve ricostruire il mondo
 let rebirthArmed = false;
 
 function renderRebirth() {
-  const gain = runeGain(meta.level);
+  const gain = runeGain(meta.level, meta.partenza);
+  const riparte = partenzaDopo(Math.max(meta.bestLevel || 1, meta.level));
   const card = $('rebirthCard');
   card.classList.toggle('hidden', gain < 1);
   if (gain < 1) { rebirthArmed = false; }
@@ -128,26 +129,29 @@ function renderRebirth() {
   $('rbTag').textContent = '+' + gain;
   $('rbBonus').textContent = '×' + runeMul(meta.runes + gain).toFixed(2);
   card.classList.toggle('ready', meta.lastOutcome === 'win');
-  $('rbNote').textContent = t(rebirthArmed ? 'rb.confirm' : 'rb.note');
+  $('rbNote').textContent = rebirthArmed ? t('rb.confirm') : t('rb.note', riparte);
+  $('rbSpiega').textContent = t('rb.spiega', riparte);
   $('rbNote').classList.toggle('armata', rebirthArmed);
   $('rbVai').querySelector('span').textContent = t(rebirthArmed ? 'rb.sicuro' : 'rb.vai');
 }
 
 function tapRebirth() {
-  if (runeGain(meta.level) < 1) return;
+  if (runeGain(meta.level, meta.partenza) < 1) return;
   if (!rebirthArmed) {                    // due tocchi: azzera tutto, non si torna indietro
     rebirthArmed = true;
     renderRebirth();
     setTimeout(() => { if (rebirthArmed) { rebirthArmed = false; renderRebirth(); } }, 6000);
     return;
   }
-  const gain = runeGain(meta.level);
+  const gain = runeGain(meta.level, meta.partenza);
   meta.runes += gain;
+  meta.recordCiclo = Math.max(meta.bestLevel || 1, meta.level);
+  meta.partenza = partenzaDopo(meta.recordCiclo);
   meta.rebirths++;
   impresaConta('rinascite', 1);
   meta.coins = 0;
   meta.up = { power: 0, weapon: 0, income: 0 };
-  meta.level = 1;
+  meta.level = meta.partenza;          // da metà del record, non dalla prima torre
   meta.best = 0; meta.last = 0; meta.lastCoins = 0;
   meta.lastRecord = false; meta.lastOutcome = '';
   meta.diary = []; meta.tries = 0; meta.towerRevived = 0;   // nuova salita, diario nuovo

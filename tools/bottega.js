@@ -95,6 +95,19 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   ok(due === 0, 'l\'obiettivo ha pagato due volte: +' + due + ' diamanti');
   await p.waitForTimeout(1800);
 
+  /* --- la rinascita: da metà del record, rune del giro, niente rune gratis --- */
+  const rin = await p.evaluate(() => {
+    Object.assign(meta, { level: 12, bestLevel: 12, runes: 0, runeSpese: 0, rebirths: 0, partenza: 1, recordCiclo: 0 });
+    renderHub();
+    rebirthArmed = false; tapRebirth(); tapRebirth();
+    return { level: meta.level, runes: meta.runes, ancora: runeGain(meta.level, meta.partenza),
+             gap: levelGap(), tessera: !document.getElementById('rebirthCard').classList.contains('hidden') };
+  });
+  ok(rin.level === 6, 'la rinascita dalla torre 12 non riparte dalla 6: ' + rin.level);
+  ok(rin.runes === 11, 'la rinascita dalla torre 12 non dà 11 rune: ' + rin.runes);
+  ok(rin.ancora === 0 && !rin.tessera, 'appena rinati si può rinascere di nuovo per altre rune');
+  ok(rin.gap > 1.4, 'dopo la rinascita la pendenza non cresce: ' + rin.gap);
+
   for (const e of errori) male.push('errore JS: ' + e);
   await b.close();
   if (male.length) {
