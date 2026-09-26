@@ -564,6 +564,15 @@ salta, i pallini che pulsano, la tessera della rinascita che respira, le
 schede che salgono, e comprando la carta rimbalza e le monete volano dal
 portafoglio dentro la carta.
 
+**Lucido, non pastello.** La prima versione, vista sul telefono: "molto
+bello, ma invece di questo pastello opaco proviamo la versione lucida".
+Due colpe: le carte non comprabili si sbiadivano (grigio al 35%), e metà
+home diventava pastello; e mancava il vetro. Adesso ogni bottone, carta e
+pillola ha una **lama di luce** bianca nella metà alta (un `::before` sotto
+al testo), i colori sono pieni e saturi (blu cobalto, viola, verde prato,
+arancio), il velo scuro sul menù è quasi sparito, e una carta non comprabile
+**resta colorata**: perde solo la freccia verde e il prezzo si fa rosso.
+
 **Gli schermi bassi.** Sotto i 760 px d'altezza tutto scende di un gradino
 (titolo, icone, bottone, niente valore successivo sulle carte), perché fra
 il titolo e il bottone deve restare posto per l'eroe: `tools/misura-home.js`

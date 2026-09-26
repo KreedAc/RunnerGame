@@ -188,7 +188,7 @@
     padding:calc(env(safe-area-inset-top,0px) + 10px) 12px
       calc(env(safe-area-inset-bottom,0px) + 86px);
     color:#fff;overflow-y:auto;
-    background:linear-gradient(180deg,rgba(10,26,44,.05),rgba(10,26,44,0) 40%,rgba(10,26,44,.55))}
+    background:linear-gradient(180deg,rgba(10,26,44,0),rgba(10,26,44,0) 55%,rgba(10,26,44,.28))}
 
   .hub-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
   .torre-badge{display:flex;align-items:center;gap:7px;padding:5px 13px 6px 7px;border-radius:16px;
@@ -308,8 +308,10 @@
   .up-card.viola{background:linear-gradient(180deg,#c49bff,#7a46d6)}
   .up-card.verde{background:linear-gradient(180deg,#8ee67a,#2f9e3e)}
   .up-card:active{transform:translateY(4px);box-shadow:var(--bombato),0 1px 0 var(--inchiostro)}
-  .up-card.locked{filter:saturate(.35) brightness(.8);cursor:default}
-  .up-card.locked .up-cost{filter:saturate(2.4) brightness(1.2)}
+  /* Non comprabile: resta colorata (sbiadita, mezza home diventava grigio
+     pastello); perde la freccia verde e il prezzo si fa rosso. */
+  .up-card.locked{cursor:default}
+  .up-card.locked .up-cost{color:#ff8a7a}
   .up-card:focus-visible{outline:3px solid #fff;outline-offset:2px}
   .up-name{font-size:16px;line-height:1.1;text-shadow:var(--tx-s);letter-spacing:.3px}
   .up-ico{font-size:50px;margin:0 0 -3px}
@@ -627,6 +629,58 @@
     .coin-pill{font-size:15px}
   }
 
+  /* =============================== LUCIDO ================================
+     "Invece di questo pastello opaco, la versione lucida": i giochi di
+     riferimento sembrano caramelle di vetro. Due cose lo fanno:
+     - una LAMA DI LUCE nella metà alta di ogni bottone, carta e pillola
+       (::before), sotto al testo e alle icone;
+     - colori SATURI e pieni, non polverosi.
+     I figli statici diventano `relative` (con specificità zero, così chi
+     è già `absolute` resta com'è) per stare sopra alla lama di luce. */
+  .btn,.up-card,.nav-b,.coin-pill,.torre-badge,.oggi,.last-run,.bt-riga,.imp,
+  .lang-btn,.rg-btn,.reset-btn,.rv-go,.rv-no,.pill,.tile-tag,.up-cost,.og-barra{position:relative}
+  .btn::before,.up-card::before,.nav-b.gioca::before,.nav-b.on::before,.coin-pill::before,.torre-badge::before,
+  .oggi::before,.last-run::before,.tile::before,.sc-x::before,.bt-riga::before,.imp::before,.lang-btn::before,
+  .rg-btn::before,.reset-btn::before,.rv-go::before,.rv-no::before,.pill::before,#combo::before,
+  .tile-tag::before,.lr-badge::before,.sk::before,.up-cost::before,.sc-card::before{
+    content:"";position:absolute;left:3px;right:3px;top:2px;height:46%;pointer-events:none;
+    border-radius:inherit;border-bottom-left-radius:45% 30%;border-bottom-right-radius:45% 30%;
+    background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.14))}
+  .sc-card::before{height:70px;opacity:.5}
+  .coin-pill::before,.up-cost::before,.tile-tag::before,.lr-badge::before{opacity:.55}
+  :where(.btn,.up-card,.nav-b,.coin-pill,.torre-badge,.oggi,.last-run,.tile,.sc-x,.bt-riga,.imp,.lang-btn,
+    .rg-btn,.reset-btn,.rv-go,.rv-no,.pill,#combo,.tile-tag,.lr-badge,.up-cost) > :where(*){position:relative}
+
+  /* colori pieni */
+  .up-card.blu{background:linear-gradient(180deg,#5fd8ff,#1c86f2 55%,#1462c8)}
+  .up-card.viola{background:linear-gradient(180deg,#e0a6ff,#9a4af0 55%,#7430c8)}
+  .up-card.verde{background:linear-gradient(180deg,#9cf56a,#2cbc3c 55%,#1c9430)}
+  .torre-badge,.last-run{background:linear-gradient(180deg,#4a9aff,#2362d6 60%,#1a4cb0)}
+  .coin-pill{background:linear-gradient(180deg,#2d4c8e,#16295a)}
+  .sc-card{background:linear-gradient(180deg,#3f86f0,#2255c4 45%,#1a3f96)}
+  .sc-card.viola{background:linear-gradient(180deg,#a06af0,#6a36c8 45%,#4a2296)}
+  .sc-card.oro{background:linear-gradient(180deg,#3f86f0,#2255c4 45%,#1a3f96)}
+  .bt-riga{background:linear-gradient(180deg,#8a58e8,#5a2eb8)}
+  .imp{background:linear-gradient(180deg,#3a78e0,#1f4aa8)}
+  .imp.fatta{background:linear-gradient(180deg,#ffcf4a,#e08a10)}
+  .lang-btn,.rg-btn{background:linear-gradient(180deg,#4a9aff,#2362d6)}
+  .lang-btn.on{background:linear-gradient(180deg,#5fe0ff,#1aa0e8)}
+  .reset-btn{background:linear-gradient(180deg,#ff7a6a,#c8342a)}
+  .sk{background:linear-gradient(180deg,#4a9aff,#2362d6)}
+  .ars{background:#16306e}
+  #nav{background:linear-gradient(180deg,#3f78e0,#1c3f96)}
+  .nav-b.on{background:linear-gradient(180deg,#6ab8ff,#2a7ae8)}
+  .nav-b.gioca,.nav-b.gioca.on{background:linear-gradient(180deg,#ff8a6a,#e8402a 55%,#c0281a)}
+  .oggi{background:linear-gradient(180deg,#ffb04a,#ff7a1a 55%,#e0560e)}
+  .tile{background:linear-gradient(180deg,#c28aff,#8a46f0 55%,#6a2ec8)}
+  .pill{background:linear-gradient(180deg,#4a9aff,#2362d6 60%,#1a4cb0)}
+  #powerPill{background:linear-gradient(180deg,#8ff0ff,#22b0f0 55%,#1286d0)}
+  #coinPill{background:linear-gradient(180deg,#ffcf4a,#e8960e 55%,#c07408)}
+  #coinPill b{color:#fff}
+  #wallPill{background:linear-gradient(180deg,#b88aff,#7a46e0 55%,#5a2ebc)}
+  .rv-card{background:linear-gradient(180deg,#4a9aff,#2362d6 50%,#1a4cb0)}
+  #banner b,#banner.good b{background:linear-gradient(180deg,#4a9aff,#2362d6 55%,#1a4cb0)}
+
   /* ====================== LO STILE GRASSO, IN CORSA ===================
      La plancia, i cartelli, la combo, il duello, la guida: stessa lingua
      del menù — contorno scuro, bombatura, icone lucide. */
@@ -890,7 +944,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260926-0058';</script>
+<script>window.BUILD = '260926-0111';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
