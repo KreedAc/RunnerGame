@@ -693,6 +693,27 @@
   #powerPill{padding:4px 18px 6px 8px;background:linear-gradient(180deg,#7fe0ff,#1f8fd6 60%,#1670b8)}
   #powerPill > .ic{font-size:42px}
   #powerPill b{font-size:34px}
+  /* La riga in alto è una griglia a tre colonne: potenza e oro hanno la
+     larghezza che serve loro (l'oro è al massimo quattro caratteri, 52K),
+     l'arma prende quello che resta. Con un
+     flex, "Lama Rúna" spingeva l'oro fuori dallo schermo. */
+  #hud > .row:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px}
+  #hud > .row:first-child > .pill:first-child{justify-self:start;max-width:100%;min-width:0}
+  #hud > .row:first-child > .pill:last-child{justify-self:end;max-width:100%;min-width:0}
+  .pill > div{min-width:0}
+  /* il nome dell'arma cresce con lo schermo e, se serve, va a capo su due
+     righe ("Lama / Rúna"): mai più lungo della sua colonna */
+  #hWeapon{font-size:clamp(14px,4.3vw,20px);line-height:.95;white-space:normal;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  /* telefoni stretti: la potenza cede un po' di posto all'arma */
+  @media (max-width:390px){
+    #powerPill{padding:4px 10px 6px 6px}
+    #powerPill > .ic{font-size:32px}
+    #powerPill b{font-size:29px}
+  }
+  #powerPill{padding-right:14px}
+  #hud > .row:first-child > .pill:first-child{padding-right:9px;gap:4px}
+  #hud > .row:first-child > .pill:first-child > .ic{font-size:26px}
   #coinPill{background:linear-gradient(180deg,#5a4a2a,#3a2e18)}
   #coinPill b{color:#ffe07a}
   #wallPill{background:linear-gradient(180deg,#7a5ab8,#4a3280)}
@@ -944,7 +965,7 @@
 
 <!-- La marca della build. La riscrive tools/stamp.sh ad ogni pubblicazione,
      e sta prima di three.js perché finisca anche nel file singolo. -->
-<script>window.BUILD = '260926-0111';</script>
+<script>window.BUILD = '260926-0130';</script>
 <script src="vendor/three.min.js"></script>
 <script>
 /* three.js: copia locale (offline / Android) con fallback su CDN */
