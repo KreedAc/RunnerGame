@@ -194,7 +194,7 @@ const STRINGS = {
     'rb.vai'      : 'RINASCI',
     'rb.sicuro'   : 'SICURO?',
     'rb.spiega'   : 'Riparti dalla Torre {0}, a metà del tuo record, senza potenziamenti né oro. In cambio guadagni una runa per ogni torre salita in questo giro: ognuna vale +25% di potenza e oro per sempre, e si spendono in bottega. Oltre il record, però, i carcerieri ti aspettano più preparati.',
-    'rune.chiuse' : 'La bottega apre con la prima <b>RINASCITA</b>: le rune si guadagnano ricominciando da metà del tuo record, e restano per sempre.',
+    'rune.chiuse' : 'La bottega apre con la prima <b>RINASCITA</b>, dalla Torre 6: le rune si guadagnano ricominciando da metà del tuo record, e restano per sempre.',
     /* --- le imprese --- */
     'im.titolo'   : 'IMPRESE',
     'im.sub'      : '{0} su {1} · ognuna paga in diamanti',
@@ -437,7 +437,7 @@ const STRINGS = {
     'rb.vai'      : 'REBIRTH',
     'rb.sicuro'   : 'SURE?',
     'rb.spiega'   : 'You start again from Tower {0}, halfway to your record, with no upgrades and no gold. In exchange you earn a rune for every tower climbed this time: each one is worth +25% power and gold forever, and you spend them in the shop. Past your record, though, the jailers will be better prepared.',
-    'rune.chiuse' : 'The shop opens with your first <b>REBIRTH</b>: runes are earned by starting again from halfway to your record, and they stay forever.',
+    'rune.chiuse' : 'The shop opens with your first <b>REBIRTH</b>, from Tower 6: runes are earned by starting again from halfway to your record, and they stay forever.',
     /* --- feats --- */
     'im.titolo'   : 'FEATS',
     'im.sub'      : '{0} of {1} · each one pays in diamonds',

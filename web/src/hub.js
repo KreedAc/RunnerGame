@@ -119,12 +119,24 @@ function renderWallet() {
 let rebuildHook = null;      // lo riempie game.js: deve ricostruire il mondo
 let rebirthArmed = false;
 
+/* Quando si può rinascere: la prima volta dalla torre 6 (prima non c'è
+   niente da rigiocare, e a metà strada si ripartirebbe dalla 1 o dalla 2);
+   poi solo dopo aver superato il record del giro prima — rinascere appena
+   ripartiti, in fila, per raccogliere rune facili non deve pagare. */
+const RINASCITA_MIN = 6;
+function puoRinascere() {
+  if (runeGain(meta.level, meta.partenza) < 1) return false;
+  if (!meta.rebirths) return meta.level >= RINASCITA_MIN;
+  return meta.level > (meta.recordCiclo || 0);
+}
+
 function renderRebirth() {
   const gain = runeGain(meta.level, meta.partenza);
   const riparte = partenzaDopo(Math.max(meta.bestLevel || 1, meta.level));
   const card = $('rebirthCard');
-  card.classList.toggle('hidden', gain < 1);
-  if (gain < 1) { rebirthArmed = false; }
+  const puo = puoRinascere();
+  card.classList.toggle('hidden', !puo);
+  if (!puo) { rebirthArmed = false; }
   $('rbGain').textContent = '+' + gain;
   $('rbTag').textContent = '+' + gain;
   $('rbBonus').textContent = '×' + runeMul(meta.runes + gain).toFixed(2);
@@ -136,7 +148,7 @@ function renderRebirth() {
 }
 
 function tapRebirth() {
-  if (runeGain(meta.level, meta.partenza) < 1) return;
+  if (!puoRinascere()) return;
   if (!rebirthArmed) {                    // due tocchi: azzera tutto, non si torna indietro
     rebirthArmed = true;
     renderRebirth();

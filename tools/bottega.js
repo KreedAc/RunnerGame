@@ -95,6 +95,30 @@ const ok = (c, cosa) => { if (!c) male.push(cosa); };
   ok(due === 0, 'l\'obiettivo ha pagato due volte: +' + due + ' diamanti');
   await p.waitForTimeout(1800);
 
+  /* --- il minimo per rinascere: torre 6 la prima volta, poi oltre il record --- */
+  const soglia = await p.evaluate(() => {
+    const vista = () => !document.getElementById('rebirthCard').classList.contains('hidden');
+    const out = {};
+    Object.assign(meta, { level: 5, bestLevel: 5, runes: 0, runeSpese: 0, rebirths: 0, partenza: 1, recordCiclo: 0 });
+    renderHub(); out.t5 = vista();
+    rebirthArmed = false; tapRebirth(); tapRebirth(); out.t5rinato = meta.rebirths;
+    Object.assign(meta, { level: 6, bestLevel: 6 });
+    renderHub(); out.t6 = vista();
+    Object.assign(meta, { level: 12, bestLevel: 14, runes: 6, rebirths: 1, partenza: 6, recordCiclo: 12 });
+    renderHub(); out.record = vista();
+    rebirthArmed = false; tapRebirth(); tapRebirth(); out.recordRinato = meta.rebirths;
+    Object.assign(meta, { level: 13 });
+    renderHub(); out.oltre = vista();
+    Object.assign(meta, { level: 7, recordCiclo: 0 });      // salvataggi di prima: nessun record del giro
+    renderHub(); out.vecchio = vista();
+    return out;
+  });
+  ok(!soglia.t5 && soglia.t5rinato === 0, 'alla torre 5 la prima rinascita è già possibile');
+  ok(soglia.t6, 'alla torre 6 la prima rinascita non compare');
+  ok(!soglia.record && soglia.recordRinato === 1, 'si rinasce senza aver superato il record del giro prima');
+  ok(soglia.oltre, 'oltre il record del giro prima la rinascita non compare');
+  ok(soglia.vecchio, 'un salvataggio senza record del giro non può più rinascere');
+
   /* --- la rinascita: da metà del record, rune del giro, niente rune gratis --- */
   const rin = await p.evaluate(() => {
     Object.assign(meta, { level: 12, bestLevel: 12, runes: 0, runeSpese: 0, rebirths: 0, partenza: 1, recordCiclo: 0 });

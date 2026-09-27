@@ -669,6 +669,13 @@ funziona sono tre regole insieme (`RIPARTENZA`, `runeGain`, `levelGap()` in
 | 3 | T7,7 | T17,9 | 24 | 3,4 1,3 1,0 1,0 1,1 1,5 2,0 3,4 3,8 4,8 |
 | 4 | T8,7 | T18,9 | 23 | 3,1 1,0 1,0 1,0 1,0 1,1 2,2 2,8 3,7 4,2 |
 
+**Quando si può rinascere** (`puoRinascere()` in `hub.js`): la prima volta
+dalla **torre 6** — prima non c'è niente da rigiocare, e a metà strada si
+ripartirebbe dalla 1 o dalla 2 — e nei giri dopo solo **oltre il record del
+giro prima** (`meta.level > meta.recordCiclo`), almeno di una torre. Prima
+la tessera compariva dalla torre 2: una rinascita presa così presto era
+quasi sempre un errore, e buttava i potenziamenti per una runa.
+
 La prima torre del giro costa ~4 corse: si ricompra tutto, ed è giusto che
 si senta. La prima salita, senza rune, non cambia di una corsa. Il
 simulatore adesso stampa anche i giri (`node tools/sim.js`), leggendo le
